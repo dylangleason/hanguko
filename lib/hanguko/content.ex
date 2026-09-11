@@ -78,6 +78,11 @@ defmodule Hanguko.Content do
     |> Repo.one!()
   end
 
+  @doc "Gets an active deck by slug, without its items. Returns `nil` if not found."
+  def get_deck_by_slug(slug) when is_binary(slug) do
+    Repo.one(from d in Deck, where: d.slug == ^slug and not d.retired)
+  end
+
   defp active_items_query do
     from i in Item, where: not i.retired, order_by: [i.position, i.id]
   end

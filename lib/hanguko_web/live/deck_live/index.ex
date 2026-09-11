@@ -44,23 +44,25 @@ defmodule HangukoWeb.DeckLive.Index do
           id={dom_id}
           class="group relative flex flex-col rounded-box border border-base-300 bg-base-100 p-5 transition hover:-translate-y-0.5 hover:shadow-md"
         >
-          <div class="flex items-start justify-between gap-3">
-            <div class="min-w-0">
-              <p class="text-xs font-semibold tracking-wide text-base-content/50 uppercase">
-                {deck_kind_label(deck.kind)} · Level {deck.level}
-              </p>
-              <h2 class="mt-1 text-lg font-semibold">
-                <.link
-                  navigate={~p"/decks/#{deck.slug}"}
-                  class="after:absolute after:inset-0 group-hover:text-primary"
-                >
-                  {deck.title}
-                </.link>
-              </h2>
-              <.korean :if={deck.title_ko} class="text-sm text-base-content/60">
-                {deck.title_ko}
-              </.korean>
-            </div>
+          <p class="text-xs font-semibold tracking-wide text-base-content/50 uppercase">
+            {deck_kind_label(deck.kind)} · Level {deck.level}
+          </p>
+          <h2 class="mt-1 text-lg font-semibold">
+            <.link
+              navigate={~p"/decks/#{deck.slug}"}
+              class="after:absolute after:inset-0 group-hover:text-primary"
+            >
+              {deck.title}
+            </.link>
+          </h2>
+          <.korean :if={deck.title_ko} class="text-sm text-base-content/60">
+            {deck.title_ko}
+          </.korean>
+          <p class="mt-3 line-clamp-3 flex-1 text-sm text-base-content/70">{deck.description}</p>
+          <div class="mt-4 flex items-center justify-between gap-3">
+            <p class="text-xs font-medium text-base-content/50">
+              {deck.item_count} {if(deck.item_count == 1, do: "item", else: "items")}
+            </p>
             <.enroll_button
               id={"enroll-#{deck.id}"}
               deck={deck}
@@ -68,10 +70,6 @@ defmodule HangukoWeb.DeckLive.Index do
               current_scope={@current_scope}
             />
           </div>
-          <p class="mt-3 line-clamp-3 flex-1 text-sm text-base-content/70">{deck.description}</p>
-          <p class="mt-4 text-xs font-medium text-base-content/50">
-            {deck.item_count} {if(deck.item_count == 1, do: "card", else: "cards")}
-          </p>
         </article>
       </div>
     </Layouts.app>

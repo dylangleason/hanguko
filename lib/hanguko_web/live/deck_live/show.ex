@@ -28,15 +28,25 @@ defmodule HangukoWeb.DeckLive.Show do
           </h1>
           <p class="mt-2 max-w-2xl text-base-content/70">{@deck.description}</p>
           <p class="mt-2 text-sm text-base-content/50">
-            Level {@deck.level} · {@item_count} cards
+            Level {@deck.level} · {@item_count} items
           </p>
         </div>
-        <.enroll_button
-          id="enroll"
-          deck={@deck}
-          enrolled={@enrolled}
-          current_scope={@current_scope}
-        />
+        <div class="flex items-center gap-2">
+          <.link
+            :if={@enrolled}
+            navigate={~p"/study?deck=#{@deck.slug}"}
+            id="study-deck"
+            class="inline-flex items-center gap-1.5 rounded-field bg-primary px-3 py-1.5 text-sm font-medium text-primary-content shadow-sm transition hover:brightness-110"
+          >
+            Study now <.icon name="hero-arrow-right" class="size-4" />
+          </.link>
+          <.enroll_button
+            id="enroll"
+            deck={@deck}
+            enrolled={@enrolled}
+            current_scope={@current_scope}
+          />
+        </div>
       </header>
 
       <div class="mt-6 flex flex-wrap gap-2">

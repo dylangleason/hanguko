@@ -1,0 +1,31 @@
+defmodule Hanguko.SRSFixtures do
+  @moduledoc """
+  Test helpers for creating cards in a given scheduling state.
+  """
+
+  alias Hanguko.Repo
+  alias Hanguko.SRS.Card
+
+  @doc """
+  Inserts a card for `user` and `item`. Defaults to a review card that is
+  due at `attrs[:due]` (or now).
+  """
+  def card_fixture(user, item, attrs \\ %{}) do
+    now = DateTime.utc_now(:second)
+
+    %Card{
+      user_id: user.id,
+      item_id: item.id,
+      template: :recognition,
+      state: :review,
+      stability: 5.0,
+      difficulty: 5.0,
+      due: now,
+      last_review_at: DateTime.add(now, -5, :day),
+      introduced_at: DateTime.add(now, -10, :day),
+      reps: 3
+    }
+    |> struct(Map.new(attrs))
+    |> Repo.insert!()
+  end
+end

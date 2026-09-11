@@ -34,6 +34,7 @@ defmodule HangukoWeb.KoreanComponents do
   attr :rate, :float, default: nil
   attr :size, :string, default: "md", values: ~w(sm md lg)
   attr :class, :any, default: nil
+  attr :rest, :global
 
   def speak_button(assigns) do
     ~H"""
@@ -55,6 +56,7 @@ defmodule HangukoWeb.KoreanComponents do
         @size == "lg" && "size-12",
         @class
       ]}
+      {@rest}
     >
       <.icon
         name="hero-speaker-wave"
