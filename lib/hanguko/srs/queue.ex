@@ -11,10 +11,13 @@ defmodule Hanguko.SRS.Queue do
     * Learning cards (in their minute-long learning steps) come first when due.
     * Review cards due before the end of the study day come next, oldest
       first, up to the daily review limit.
-    * Then new cards, up to the daily new limit, in curriculum order (deck,
-      then item position). Recognition cards are introduced first; an item's
-      recall card becomes available the day after its recognition card, and
-      the two kinds are interleaved.
+    * Then new cards, up to the daily new limit. The limit is shared by all
+      enrolled decks, which take turns (one card from each, in curriculum
+      order); within a deck, items come in position order. Recognition cards
+      are introduced first; an item's recall card becomes available the day
+      after its recognition card, and the two kinds are interleaved.
+    * `new_limit_reached` / `review_limit_reached` are true when that daily
+      limit is used up while more cards are waiting.
     * Siblings (the other template of the same item) are buried: an item is
       reviewed at most once per day in the review/new queues.
     * When nothing else is left, learning cards due within the next 20
@@ -33,6 +36,8 @@ defmodule Hanguko.SRS.Queue do
             new: [],
             learning_ahead: [],
             next_learning_due: nil,
+            new_limit_reached: false,
+            review_limit_reached: false,
             day_start: nil,
             day_end: nil
 
@@ -58,7 +63,9 @@ defmodule Hanguko.SRS.Queue do
       deck_ids ->
         {learning, ahead, later} = learning_cards(user_id, deck_ids, now, day_end)
         reviewed_today = items_reviewed_since(user_id, day_start)
-        review = review_cards(user_id, deck_ids, settings, day_start, day_end, reviewed_today)
+
+        {review, review_limit_reached} =
+          review_cards(user_id, deck_ids, settings, day_start, day_end, reviewed_today)
 
         busy_items =
           MapSet.union(
@@ -66,7 +73,7 @@ defmodule Hanguko.SRS.Queue do
             MapSet.new(learning ++ ahead ++ review, & &1.item.id)
           )
 
-        new = new_entries(user_id, deck_ids, settings, day_start, busy_items)
+        {new, new_limit_reached} = new_entries(user_id, deck_ids, settings, day_start, busy_items)
 
         %{
           queue
@@ -74,6 +81,8 @@ defmodule Hanguko.SRS.Queue do
             learning_ahead: ahead,
             review: review,
             new: new,
+            new_limit_reached: new_limit_reached,
+            review_limit_reached: review_limit_reached,
             next_learning_due:
               later |> Enum.map(& &1.card.due) |> Enum.min(DateTime, fn -> nil end)
         }
@@ -135,35 +144,32 @@ defmodule Hanguko.SRS.Queue do
     {Enum.map(due, &entry/1), Enum.map(ahead, &entry/1), Enum.map(later, &entry/1)}
   end
 
+  # Returns {entries, limit_reached?}.
   defp review_cards(user_id, deck_ids, settings, day_start, day_end, reviewed_today) do
     budget = max(settings.daily_review_limit - reviews_done_since(user_id, day_start), 0)
 
-    if budget == 0 do
-      []
-    else
-      cards =
-        cards_query(user_id, deck_ids)
-        |> where([c], c.state == :review and c.due < ^day_end)
-        |> Repo.all()
+    cards =
+      cards_query(user_id, deck_ids)
+      |> where([c], c.state == :review and c.due < ^day_end)
+      |> Repo.all()
 
-      # Bury siblings: skip a card if another card of its item was already
-      # reviewed today or comes earlier in the queue.
-      {entries, _seen} =
-        Enum.flat_map_reduce(cards, MapSet.new(), fn card, seen ->
-          sibling_reviewed? =
-            Enum.any?(reviewed_today, fn {item_id, card_id} ->
-              item_id == card.item_id and card_id != card.id
-            end)
+    # Bury siblings: skip a card if another card of its item was already
+    # reviewed today or comes earlier in the queue.
+    {entries, _seen} =
+      Enum.flat_map_reduce(cards, MapSet.new(), fn card, seen ->
+        sibling_reviewed? =
+          Enum.any?(reviewed_today, fn {item_id, card_id} ->
+            item_id == card.item_id and card_id != card.id
+          end)
 
-          if sibling_reviewed? or MapSet.member?(seen, card.item_id) do
-            {[], seen}
-          else
-            {[entry(card)], MapSet.put(seen, card.item_id)}
-          end
-        end)
+        if sibling_reviewed? or MapSet.member?(seen, card.item_id) do
+          {[], seen}
+        else
+          {[entry(card)], MapSet.put(seen, card.item_id)}
+        end
+      end)
 
-      Enum.take(entries, budget)
-    end
+    {Enum.take(entries, budget), budget == 0 and entries != []}
   end
 
   defp reviews_done_since(user_id, day_start) do
@@ -196,13 +202,15 @@ defmodule Hanguko.SRS.Queue do
         :count
       )
 
-    case max(settings.daily_new_limit - introduced_today, 0) do
-      0 -> []
-      budget -> find_new_entries(user_id, deck_ids, day_start, busy_items, budget)
-    end
+    budget = max(settings.daily_new_limit - introduced_today, 0)
+
+    # With no budget left, still look for one card to know if any are waiting.
+    candidates = find_new_entries(user_id, deck_ids, day_start, busy_items, max(budget, 1))
+    {Enum.take(candidates, budget), budget == 0 and candidates != []}
   end
 
-  defp find_new_entries(user_id, deck_ids, day_start, busy_items, budget) do
+  # Up to `count` new entries, taking one from each deck in turn.
+  defp find_new_entries(user_id, deck_ids, day_start, busy_items, count) do
     kinds = Enum.map(Deck.kinds(), &Atom.to_string/1)
 
     items =
@@ -230,6 +238,17 @@ defmodule Hanguko.SRS.Queue do
       )
       |> Map.new()
 
+    # Items are sorted by deck, so chunking groups each deck's items.
+    items
+    |> Enum.chunk_by(& &1.deck_id)
+    |> Enum.map(&deck_new_entries(&1, existing, busy_items, day_start, count))
+    |> round_robin()
+    |> Enum.take(count)
+  end
+
+  # One deck's new entries in position order, alternating between items'
+  # recognition cards and (from the day after) their recall cards.
+  defp deck_new_entries(items, existing, busy_items, day_start, count) do
     recognition =
       Stream.filter(
         items,
@@ -247,8 +266,15 @@ defmodule Hanguko.SRS.Queue do
       end)
       |> Stream.map(&%{card: nil, item: &1, template: :recall})
 
-    interleave(Enum.take(recognition, budget), Enum.take(recall, budget))
-    |> Enum.take(budget)
+    interleave(Enum.take(recognition, count), Enum.take(recall, count))
+  end
+
+  # [[a1, a2, a3], [b1]] -> [a1, b1, a2, a3]
+  defp round_robin(lists) do
+    case Enum.reject(lists, &(&1 == [])) do
+      [] -> []
+      lists -> Enum.map(lists, &hd/1) ++ round_robin(Enum.map(lists, &tl/1))
+    end
   end
 
   defp introduced_before?(nil, _day_start), do: false

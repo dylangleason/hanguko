@@ -121,6 +121,37 @@ defmodule Hanguko.SRS.QueueTest do
       assert new_keys(queue(scope)) == [{c.id, :recognition}, {a.id, :recall}]
     end
 
+    test "enrolled decks take turns sharing the daily limit", %{scope: scope, deck: deck} do
+      [a1, a2, a3 | _] = items(deck, 5)
+      phrases = deck_fixture(kind: :phrases, position: 1)
+      SRS.enroll_deck(scope, phrases)
+      b1 = item_fixture(phrases, position: 1, kind: :phrase)
+      {:ok, _} = SRS.update_settings(scope, %{daily_new_limit: 4})
+
+      # The phrases deck runs out after one card; the rest goes to the first deck.
+      assert Enum.map(queue(scope).new, & &1.item.id) == [a1.id, b1.id, a2.id, a3.id]
+    end
+
+    test "report when the new-card limit is used up and cards are waiting", %{
+      scope: scope,
+      user: user,
+      deck: deck
+    } do
+      [a, b, c] = items(deck, 3)
+      {:ok, _} = SRS.update_settings(scope, %{daily_new_limit: 2})
+      refute queue(scope).new_limit_reached
+
+      card_fixture(user, a, introduced_at: @now, due: DateTime.add(@now, 3, :day))
+      card_fixture(user, b, introduced_at: @now, due: DateTime.add(@now, 3, :day))
+      queue = queue(scope)
+      assert queue.new == [] and queue.new_limit_reached
+
+      # Once every item's recognition card was introduced today, nothing is
+      # waiting (recall cards only become available tomorrow).
+      card_fixture(user, c, introduced_at: @now, due: DateTime.add(@now, 3, :day))
+      refute queue(scope).new_limit_reached
+    end
+
     test "letters only have a recognition card", %{scope: scope, user: user} do
       letters = deck_fixture(kind: :hangeul, position: 1)
       SRS.enroll_deck(scope, letters)
@@ -187,7 +218,13 @@ defmodule Hanguko.SRS.QueueTest do
       assert Enum.map(queue.review, & &1.item.id) == [b.id, c.id]
 
       {:ok, _} = SRS.review_card(scope, Queue.next(queue), 3, @now)
-      assert Enum.map(queue(scope).review, & &1.item.id) == [c.id]
+      queue = queue(scope)
+      assert Enum.map(queue.review, & &1.item.id) == [c.id]
+      refute queue.review_limit_reached
+
+      {:ok, _} = SRS.review_card(scope, Queue.next(queue), 3, @now)
+      queue = queue(scope)
+      assert queue.review == [] and queue.review_limit_reached
     end
 
     test "siblings are buried: one card per item per day", %{scope: scope, user: user, deck: deck} do

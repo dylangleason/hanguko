@@ -268,6 +268,9 @@ defmodule Hanguko.SRS do
     * `:reviewed_today` - reviews done so far today
     * `:next_learning_due` - when the next learning card comes back, if any
       are waiting later today
+    * `:new_limit_reached`, `:review_limit_reached` - whether that daily
+      limit is used up while more cards are waiting
+    * `:settings` - the user's study settings
   """
   def summary(%Scope{user: user} = scope, %DateTime{} = now) do
     settings = get_settings(scope)
@@ -296,7 +299,10 @@ defmodule Hanguko.SRS do
       due: Enum.sum_by(decks, & &1.due),
       new: Enum.sum_by(decks, & &1.new),
       reviewed_today: reviewed_today,
-      next_learning_due: queue.next_learning_due
+      next_learning_due: queue.next_learning_due,
+      new_limit_reached: queue.new_limit_reached,
+      review_limit_reached: queue.review_limit_reached,
+      settings: settings
     }
   end
 end

@@ -83,6 +83,8 @@ defmodule HangukoWeb.StudyLive do
             session={@session}
             next_learning_due={@next_learning_due}
             has_decks={@has_decks}
+            limits={@limits}
+            settings={@settings}
           />
         <% end %>
       </div>
@@ -198,6 +200,8 @@ defmodule HangukoWeb.StudyLive do
   attr :session, :map, required: true
   attr :next_learning_due, :any, required: true
   attr :has_decks, :boolean, required: true
+  attr :limits, :map, required: true
+  attr :settings, :any, required: true
 
   defp session_done(assigns) do
     ~H"""
@@ -209,9 +213,7 @@ defmodule HangukoWeb.StudyLive do
         <div class="mx-auto flex size-14 items-center justify-center rounded-full bg-success/15 text-success">
           <.icon name="hero-check" class="size-8" />
         </div>
-        <h1 class="mt-4 text-2xl font-bold">
-          {if @session.reviewed > 0, do: "Nice work!", else: "Nothing to study right now"}
-        </h1>
+        <h1 class="mt-4 text-2xl font-bold">{done_title(@session, @limits)}</h1>
         <p class="mt-2 text-base-content/70">
           <%= if @next_learning_due do %>
             Some cards you're learning come back later today. Leave this page open and they'll
@@ -220,6 +222,14 @@ defmodule HangukoWeb.StudyLive do
             You're done for today. Come back tomorrow for your next reviews.
           <% end %>
         </p>
+
+        <.limit_notice
+          id="limit-notice"
+          new_limit_reached={@limits.new_limit_reached}
+          review_limit_reached={@limits.review_limit_reached}
+          settings={@settings}
+          class="mx-auto mt-6 max-w-md"
+        />
 
         <dl
           :if={@session.reviewed > 0}
@@ -381,6 +391,7 @@ defmodule HangukoWeb.StudyLive do
       socket
       |> assign(:counts, Queue.counts(queue))
       |> assign(:next_learning_due, queue.next_learning_due)
+      |> assign(:limits, Map.take(queue, [:new_limit_reached, :review_limit_reached]))
 
     case Queue.next(queue) do
       nil -> socket |> assign(entry: nil, revealed: false) |> schedule_refresh(queue)
@@ -425,6 +436,12 @@ defmodule HangukoWeb.StudyLive do
   defp prompt(%{template: :recall}), do: "How do you say this in Korean?"
   defp prompt(%{item: %Item{kind: :jamo}}), do: "What sound does this letter make?"
   defp prompt(_entry), do: "What does this mean?"
+
+  defp done_title(%{reviewed: reviewed}, _limits) when reviewed > 0, do: "Nice work!"
+
+  defp done_title(_session, %{new_limit_reached: true}), do: "Daily limit reached"
+  defp done_title(_session, %{review_limit_reached: true}), do: "Daily limit reached"
+  defp done_title(_session, _limits), do: "Nothing to study right now"
 
   defp remembered_percent(%{reviewed: reviewed, ratings: ratings}) do
     round((reviewed - ratings[1]) / reviewed * 100)

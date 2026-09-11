@@ -2,7 +2,51 @@ defmodule HangukoWeb.StudyComponents do
   @moduledoc """
   Components for study sessions and the dashboard.
   """
-  use Phoenix.Component
+  use HangukoWeb, :html
+
+  @doc """
+  Explains that a daily limit is used up while more cards are waiting, with
+  a link to change the limits. Renders nothing when no limit was reached.
+  """
+  attr :id, :string, required: true
+  attr :new_limit_reached, :boolean, required: true
+  attr :review_limit_reached, :boolean, required: true
+  attr :settings, :any, required: true, doc: "the user's study settings"
+  attr :class, :any, default: nil
+
+  def limit_notice(assigns) do
+    ~H"""
+    <div
+      :if={@new_limit_reached or @review_limit_reached}
+      id={@id}
+      class={[
+        "flex gap-3 rounded-box border border-info/30 bg-info/10 px-4 py-3 text-left text-sm",
+        @class
+      ]}
+    >
+      <.icon name="hero-information-circle" class="mt-0.5 size-5 shrink-0 text-info" />
+      <div class="space-y-1">
+        <p :if={@new_limit_reached} id={"#{@id}-new"}>
+          You've reached today's limit of {count(@settings.daily_new_limit, "new card")}.
+          More cards from your decks will be introduced tomorrow.
+        </p>
+        <p :if={@review_limit_reached} id={"#{@id}-review"}>
+          You've reached today's limit of {count(@settings.daily_review_limit, "review")}.
+          The remaining reviews will wait until tomorrow.
+        </p>
+        <.link
+          navigate={~p"/study/settings"}
+          class="inline-block font-medium text-info hover:underline"
+        >
+          Change daily limits
+        </.link>
+      </div>
+    </div>
+    """
+  end
+
+  defp count(1, noun), do: "1 #{noun}"
+  defp count(n, noun), do: "#{n} #{noun}s"
 
   @ratings [
     {1, "Again", "bg-error/10 text-error hover:bg-error/20 focus-visible:ring-error"},
