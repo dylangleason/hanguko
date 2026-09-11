@@ -114,6 +114,27 @@ defmodule HangukoWeb.StudyLiveTest do
       refute has_element?(view, "#flashcard")
     end
 
+    test "explains when the daily new-card limit stops a session", %{conn: conn, scope: scope} do
+      {:ok, _} = SRS.update_settings(scope, %{daily_new_limit: 1})
+      {:ok, view, _html} = live(conn, ~p"/study")
+      render_hook(view, "flip", %{})
+      rate(view, 4)
+
+      assert has_element?(view, "#session-done", "Nice work!")
+      assert has_element?(view, "#limit-notice-new", "limit of 1 new card")
+      assert has_element?(view, "#limit-notice a[href='/study/settings']")
+      refute has_element?(view, "#limit-notice-review")
+
+      # Studying another deck once the shared limit is used up
+      phrases = deck_fixture(slug: "phrases", title: "Phrases", kind: :phrases)
+      SRS.enroll_deck(scope, phrases)
+      item_fixture(phrases, korean: "안녕하세요", kind: :phrase)
+
+      {:ok, view, _html} = live(conn, ~p"/study?deck=phrases")
+      assert has_element?(view, "#session-done", "Daily limit reached")
+      assert has_element?(view, "#limit-notice-new")
+    end
+
     test "recall cards show the meaning first", %{
       conn: conn,
       user: user,

@@ -38,6 +38,23 @@ defmodule HangukoWeb.DashboardLiveTest do
       assert has_element?(view, "#study-now[href='/study']")
       assert has_element?(view, "#deck-#{deck.id}", "Food")
       assert has_element?(view, "#study-deck-#{deck.id}[href='/study?deck=food']")
+      refute has_element?(view, "#limit-notice")
+    end
+
+    test "explains when today's new-card limit is used up", %{conn: conn, user: user} do
+      scope = Scope.for_user(user)
+      deck = deck_fixture()
+      SRS.enroll_deck(scope, deck)
+      learned = item_fixture(deck, position: 1)
+      item_fixture(deck, position: 2)
+      {:ok, _} = SRS.update_settings(scope, %{daily_new_limit: 1})
+      now = DateTime.utc_now(:second)
+      card_fixture(user, learned, introduced_at: now, due: DateTime.add(now, 3, :day))
+
+      {:ok, view, _html} = live(conn, ~p"/dashboard")
+
+      assert has_element?(view, "#today-new", "0")
+      assert has_element?(view, "#limit-notice-new", "limit of 1 new card")
     end
 
     test "remembers the browser's time zone", %{conn: conn, user: user} do

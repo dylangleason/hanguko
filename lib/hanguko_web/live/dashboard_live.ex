@@ -4,6 +4,8 @@ defmodule HangukoWeb.DashboardLive do
   """
   use HangukoWeb, :live_view
 
+  import HangukoWeb.StudyComponents, only: [limit_notice: 1]
+
   alias Hanguko.SRS
 
   @impl true
@@ -64,6 +66,13 @@ defmodule HangukoWeb.DashboardLive do
         <p :if={@summary.next_learning_due} class="mt-4 text-sm text-base-content/60">
           Cards you're learning come back later today.
         </p>
+        <.limit_notice
+          id="limit-notice"
+          new_limit_reached={@summary.new_limit_reached}
+          review_limit_reached={@summary.review_limit_reached}
+          settings={@summary.settings}
+          class="mt-4"
+        />
       </section>
 
       <section id="my-decks" class="mt-10">
