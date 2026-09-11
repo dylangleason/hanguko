@@ -38,6 +38,12 @@ topbar.config({barColors: {0: "#29d"}, shadowColor: "rgba(0, 0, 0, .3)"})
 window.addEventListener("phx:page-loading-start", _info => topbar.show(300))
 window.addEventListener("phx:page-loading-stop", _info => topbar.hide())
 
+// Close the mobile nav menu when navigating (its close command lives in data-close).
+window.addEventListener("phx:page-loading-start", _info => {
+  const menu = document.getElementById("mobile-menu")
+  if (menu) liveSocket.execJS(menu, menu.getAttribute("data-close"))
+})
+
 // connect if there are any LiveViews on the page
 liveSocket.connect()
 

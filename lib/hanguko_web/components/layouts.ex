@@ -35,60 +35,124 @@ defmodule HangukoWeb.Layouts do
 
   def app(assigns) do
     ~H"""
-    <header class="sticky top-0 z-30 border-b border-base-300 bg-base-100/85 backdrop-blur">
-      <nav class="mx-auto flex max-w-5xl items-center gap-3 px-4 py-2.5 sm:px-6">
+    <header
+      id="site-header"
+      class="sticky top-0 z-30 border-b border-base-300 bg-base-100/85 backdrop-blur"
+      phx-click-away={close_mobile_menu()}
+      phx-window-keydown={close_mobile_menu()}
+      phx-key="escape"
+    >
+      <nav class="mx-auto flex max-w-5xl items-center gap-3 px-4 py-2.5 sm:px-6" aria-label="Main">
         <.link navigate={~p"/"} class="group mr-2 flex shrink-0 items-baseline gap-1.5" id="brand">
           <span lang="ko" class="text-xl font-bold text-primary transition group-hover:opacity-80">
             한국어
           </span>
-          <span class="hidden text-sm font-semibold tracking-wide sm:inline">Hanguko</span>
+          <span class="text-sm font-semibold tracking-wide">Hanguko</span>
         </.link>
 
-        <div class="-mx-1 flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto px-1">
-          <.nav_link navigate={~p"/hangeul"} id="nav-hangeul">Hangeul</.nav_link>
-          <.nav_link navigate={~p"/decks?kind=vocab"} id="nav-vocab">Vocabulary</.nav_link>
-          <.nav_link navigate={~p"/decks?kind=phrases"} id="nav-phrases">Phrases</.nav_link>
+        <%!-- Desktop: everything inline --%>
+        <div class="hidden min-w-0 flex-1 items-center gap-0.5 md:flex">
+          <.nav_link :for={{label, path, id} <- nav_items()} navigate={path} id={"nav-#{id}"}>
+            {label}
+          </.nav_link>
         </div>
 
-        <.theme_toggle />
+        <div class="hidden shrink-0 items-center gap-3 md:flex">
+          <.theme_toggle />
+          <div class="flex items-center gap-1 text-sm">
+            <%= if @current_scope do %>
+              <.link
+                navigate={~p"/users/settings"}
+                id="nav-settings"
+                class="flex items-center gap-1.5 rounded-field px-2 py-1.5 text-base-content/70 transition hover:bg-base-200 hover:text-base-content"
+                title={@current_scope.user.email}
+              >
+                <.icon name="hero-user-circle" class="size-5" />
+                <span class="max-w-40 truncate">{@current_scope.user.email}</span>
+              </.link>
+              <.link
+                href={~p"/users/log-out"}
+                method="delete"
+                id="nav-log-out"
+                class="rounded-field px-2 py-1.5 text-base-content/70 transition hover:bg-base-200 hover:text-base-content"
+              >
+                Log out
+              </.link>
+            <% else %>
+              <.link
+                navigate={~p"/users/log-in"}
+                id="nav-log-in"
+                class="rounded-field px-2 py-1.5 text-base-content/70 transition hover:bg-base-200 hover:text-base-content"
+              >
+                Log in
+              </.link>
+              <.link
+                navigate={~p"/users/register"}
+                id="nav-register"
+                class="rounded-field bg-primary px-3 py-1.5 font-medium text-primary-content transition hover:brightness-110"
+              >
+                Sign up
+              </.link>
+            <% end %>
+          </div>
+        </div>
 
-        <div class="flex shrink-0 items-center gap-1 text-sm">
+        <%!-- Mobile: a menu button that opens the panel below --%>
+        <button
+          type="button"
+          id="mobile-menu-button"
+          class="group ml-auto inline-flex size-10 cursor-pointer items-center justify-center rounded-field text-base-content/70 transition hover:bg-base-200 hover:text-base-content md:hidden"
+          aria-label="Menu"
+          aria-controls="mobile-menu"
+          aria-expanded="false"
+          phx-click={toggle_mobile_menu()}
+        >
+          <.icon name="hero-bars-3" class="size-6 group-aria-expanded:hidden" />
+          <.icon name="hero-x-mark" class="hidden size-6 group-aria-expanded:inline-block" />
+        </button>
+      </nav>
+
+      <div
+        id="mobile-menu"
+        class="hidden border-t border-base-300 md:hidden"
+        data-close={close_mobile_menu()}
+      >
+        <div class="mx-auto max-w-5xl px-4 py-3 sm:px-6">
+          <.mobile_link
+            :for={{label, path, id} <- nav_items()}
+            navigate={path}
+            id={"mobile-nav-#{id}"}
+          >
+            {label}
+          </.mobile_link>
+
+          <div class="my-3 border-t border-base-300"></div>
+
           <%= if @current_scope do %>
-            <.link
-              navigate={~p"/users/settings"}
-              id="nav-settings"
-              class="flex items-center gap-1.5 rounded-field px-2 py-1.5 text-base-content/70 transition hover:bg-base-200 hover:text-base-content"
-              title={@current_scope.user.email}
-            >
-              <.icon name="hero-user-circle" class="size-5" />
-              <span class="hidden max-w-40 truncate md:inline">{@current_scope.user.email}</span>
-            </.link>
-            <.link
-              href={~p"/users/log-out"}
-              method="delete"
-              id="nav-log-out"
-              class="rounded-field px-2 py-1.5 text-base-content/70 transition hover:bg-base-200 hover:text-base-content"
-            >
-              Log out
-            </.link>
+            <.mobile_link navigate={~p"/users/settings"} id="mobile-nav-settings">
+              <.icon name="hero-user-circle" class="size-5 shrink-0" />
+              <span class="truncate">{@current_scope.user.email}</span>
+            </.mobile_link>
+            <.mobile_link href={~p"/users/log-out"} method="delete" id="mobile-nav-log-out">
+              <.icon name="hero-arrow-right-start-on-rectangle" class="size-5 shrink-0" /> Log out
+            </.mobile_link>
           <% else %>
-            <.link
-              navigate={~p"/users/log-in"}
-              id="nav-log-in"
-              class="rounded-field px-2 py-1.5 text-base-content/70 transition hover:bg-base-200 hover:text-base-content"
-            >
-              Log in
-            </.link>
+            <.mobile_link navigate={~p"/users/log-in"} id="mobile-nav-log-in">Log in</.mobile_link>
             <.link
               navigate={~p"/users/register"}
-              id="nav-register"
-              class="hidden rounded-field bg-primary px-3 py-1.5 font-medium text-primary-content transition hover:brightness-110 sm:inline-block"
+              id="mobile-nav-register"
+              class="mt-2 block rounded-field bg-primary px-3 py-2.5 text-center font-medium text-primary-content transition hover:brightness-110"
             >
               Sign up
             </.link>
           <% end %>
+
+          <div class="mt-3 flex items-center justify-between px-3 py-1.5">
+            <span class="text-sm text-base-content/60">Theme</span>
+            <.theme_toggle />
+          </div>
         </div>
-      </nav>
+      </div>
     </header>
 
     <main class="px-4 py-8 sm:px-6 sm:py-12">
@@ -99,6 +163,14 @@ defmodule HangukoWeb.Layouts do
 
     <.flash_group flash={@flash} />
     """
+  end
+
+  defp nav_items do
+    [
+      {"Hangeul", ~p"/hangeul", "hangeul"},
+      {"Vocabulary", ~p"/decks?kind=vocab", "vocab"},
+      {"Phrases", ~p"/decks?kind=phrases", "phrases"}
+    ]
   end
 
   attr :navigate, :string, required: true
@@ -115,6 +187,32 @@ defmodule HangukoWeb.Layouts do
       {render_slot(@inner_block)}
     </.link>
     """
+  end
+
+  attr :rest, :global, include: ~w(navigate href method)
+  slot :inner_block, required: true
+
+  defp mobile_link(assigns) do
+    ~H"""
+    <.link
+      class="flex items-center gap-2 rounded-field px-3 py-2.5 font-medium text-base-content/80 transition hover:bg-base-200 hover:text-base-content"
+      {@rest}
+    >
+      {render_slot(@inner_block)}
+    </.link>
+    """
+  end
+
+  # The mobile menu also closes when a live navigation starts (see the
+  # `phx:page-loading-start` listener in app.js, which runs `data-close`).
+  defp toggle_mobile_menu do
+    JS.toggle_class("hidden", to: "#mobile-menu")
+    |> JS.toggle_attribute({"aria-expanded", "true", "false"}, to: "#mobile-menu-button")
+  end
+
+  defp close_mobile_menu do
+    JS.add_class("hidden", to: "#mobile-menu")
+    |> JS.set_attribute({"aria-expanded", "false"}, to: "#mobile-menu-button")
   end
 
   @doc """
