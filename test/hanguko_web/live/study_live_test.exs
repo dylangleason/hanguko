@@ -101,6 +101,20 @@ defmodule HangukoWeb.StudyLiveTest do
       assert Repo.get_by(Card, user_id: user.id) == nil
     end
 
+    test "undo takes the rating out of the session stats", %{conn: conn, scope: scope} do
+      {:ok, _} = SRS.update_settings(scope, %{daily_new_limit: 1})
+      {:ok, view, _html} = live(conn, ~p"/study")
+
+      render_hook(view, "flip", %{})
+      rate(view, 1)
+      view |> element("#undo") |> render_click()
+      render_hook(view, "flip", %{})
+      rate(view, 4)
+
+      assert has_element?(view, "#session-stats", "Cards 1")
+      assert has_element?(view, "#session-stats", "100%")
+    end
+
     test "shows a summary when the session is done", %{conn: conn, scope: scope} do
       {:ok, _} = SRS.update_settings(scope, %{daily_new_limit: 1})
       {:ok, view, _html} = live(conn, ~p"/study")

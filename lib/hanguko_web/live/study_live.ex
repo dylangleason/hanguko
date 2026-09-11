@@ -330,7 +330,8 @@ defmodule HangukoWeb.StudyLive do
         session = %{
           session
           | reviewed: session.reviewed - 1,
-            ratings: Map.update!(session.ratings, log.rating, &(&1 - 1))
+            ratings: Map.update!(session.ratings, log.rating, &(&1 - 1)),
+            duration_ms: session.duration_ms - (log.duration_ms || 0)
         }
 
         {:noreply,
