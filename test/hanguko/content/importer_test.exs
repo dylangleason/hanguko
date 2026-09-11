@@ -128,6 +128,48 @@ defmodule Hanguko.Content.ImporterTest do
   end
 
   @tag :tmp_dir
+  test "treats empty tags and metadata as none", %{tmp_dir: dir} do
+    write_packs(dir, %{
+      "letters.yml" => """
+      deck: {slug: letters, title: Letters, kind: hangeul}
+      defaults:
+        kind: jamo
+        tags: [consonant]
+        metadata: {name: default}
+      items:
+        - korean: ㄱ
+          meaning: g
+          tags:
+          metadata:
+      """
+    })
+
+    assert {:ok, _} = Importer.import_dir(dir)
+    assert %{tags: [], metadata: %{}} = items_by_key()["letters/ㄱ"]
+    assert {:ok, %{items: %{unchanged: 1}}} = Importer.import_dir(dir)
+  end
+
+  @tag :tmp_dir
+  test "imports text longer than 255 characters", %{tmp_dir: dir} do
+    sentence = String.duplicate("저는 매일 아침에 커피를 마셔요. ", 20)
+    meaning = String.duplicate("I drink coffee every morning. ", 20)
+    assert String.length(sentence) > 255 and String.length(meaning) > 255
+
+    write_packs(dir, %{
+      "sentences.yml" => """
+      deck: {slug: sentences, title: Sentences, kind: sentences}
+      items:
+        - kind: sentence
+          korean: "#{sentence}"
+          meaning: "#{meaning}"
+      """
+    })
+
+    assert {:ok, %{items: %{created: 1}}} = Importer.import_dir(dir)
+    assert %{korean: ^sentence, meaning: ^meaning} = items_by_key()["sentences/#{sentence}"]
+  end
+
+  @tag :tmp_dir
   test "reports every error with its file and writes nothing", %{tmp_dir: dir} do
     write_packs(dir, %{
       "good.yml" => @food,

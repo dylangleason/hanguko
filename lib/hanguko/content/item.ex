@@ -50,6 +50,9 @@ defmodule Hanguko.Content.Item do
       :metadata,
       :retired
     ])
+    # An empty `tags:` or `metadata:` in a content pack means "none", not NULL.
+    |> update_change(:tags, &(&1 || []))
+    |> update_change(:metadata, &(&1 || %{}))
     |> validate_required([:source_key, :kind, :korean, :meaning, :position])
     |> validate_format(:korean, ~r/\p{Hangul}/u, message: "must contain Hangul")
     |> unique_constraint(:source_key)
