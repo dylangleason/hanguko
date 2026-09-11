@@ -1,0 +1,79 @@
+deck:
+  slug: time
+  title: Time and days
+  title_ko: 시간
+  kind: vocab
+  level: 1
+  position: 5
+  description: Times of day and days of the week.
+
+defaults:
+  kind: word
+  part_of_speech: noun
+  tags: [time]
+
+items:
+  - korean: 시간
+    romanization: sigan
+    meaning: time; hour
+  - korean: 지금
+    romanization: jigeum
+    meaning: now
+  - korean: 오늘
+    romanization: oneul
+    meaning: today
+  - korean: 어제
+    romanization: eoje
+    meaning: yesterday
+  - korean: 내일
+    romanization: naeil
+    meaning: tomorrow
+  - korean: 아침
+    romanization: achim
+    meaning: morning; breakfast
+  - korean: 점심
+    romanization: jeomsim
+    meaning: lunch; midday
+  - korean: 저녁
+    romanization: jeonyeok
+    meaning: evening; dinner
+  - korean: 밤
+    romanization: bam
+    meaning: night
+  - korean: 매일
+    romanization: maeil
+    meaning: every day; daily
+  - korean: 주말
+    romanization: jumal
+    meaning: weekend
+  - korean: 일주일
+    romanization: iljuil
+    meaning: a week; one week
+  - korean: 월요일
+    romanization: woryoil
+    meaning: Monday
+    tags: [time, weekdays]
+  - korean: 화요일
+    romanization: hwayoil
+    meaning: Tuesday
+    tags: [time, weekdays]
+  - korean: 수요일
+    romanization: suyoil
+    meaning: Wednesday
+    tags: [time, weekdays]
+  - korean: 목요일
+    romanization: mogyoil
+    meaning: Thursday
+    tags: [time, weekdays]
+  - korean: 금요일
+    romanization: geumyoil
+    meaning: Friday
+    tags: [time, weekdays]
+  - korean: 토요일
+    romanization: toyoil
+    meaning: Saturday
+    tags: [time, weekdays]
+  - korean: 일요일
+    romanization: iryoil
+    meaning: Sunday
+    tags: [time, weekdays]

@@ -1,0 +1,117 @@
+deck:
+  slug: hangeul-vowels
+  title: Basic vowels
+  title_ko: 기본 모음
+  kind: hangeul
+  level: 1
+  position: 3
+  description: >-
+    The 10 basic vowels, built from three shapes: a dot for heaven (now a short
+    stroke), a flat line for earth (ㅡ) and a standing line for a person (ㅣ).
+    Doubling the short stroke adds a "y" sound. A vowel cannot stand alone, so
+    it is written after the silent ㅇ: 아, 야, 어…
+
+defaults:
+  kind: jamo
+  tags: [vowel]
+
+items:
+  - korean: ㅏ
+    romanization: a
+    meaning: a
+    hint: The stroke points right, out of the "person" line — an open "ah" as in "father".
+    metadata:
+      name: 아
+      example_syllable: 아
+      example_word: 아이
+      example_meaning: child
+
+  - korean: ㅑ
+    romanization: ya
+    meaning: ya
+    hint: ㅏ with a second stroke — the extra stroke adds a y.
+    metadata:
+      name: 야
+      example_syllable: 야
+      example_word: 야구
+      example_meaning: baseball
+
+  - korean: ㅓ
+    romanization: eo
+    meaning: eo
+    hint: The stroke points left — an open "uh", between the o in "hot" and the u in "cup".
+    metadata:
+      name: 어
+      example_syllable: 어
+      example_word: 어머니
+      example_meaning: mother
+
+  - korean: ㅕ
+    romanization: yeo
+    meaning: yeo
+    hint: ㅓ with a second stroke — "yuh".
+    metadata:
+      name: 여
+      example_syllable: 여
+      example_word: 여자
+      example_meaning: woman
+
+  - korean: ㅗ
+    romanization: o
+    meaning: o
+    hint: The stroke points up from the "earth" line — a rounded "o" as in "go", without the w glide.
+    metadata:
+      name: 오
+      example_syllable: 오
+      example_word: 오이
+      example_meaning: cucumber
+
+  - korean: ㅛ
+    romanization: yo
+    meaning: yo
+    hint: ㅗ with a second stroke — "yo".
+    metadata:
+      name: 요
+      example_syllable: 요
+      example_word: 요리
+      example_meaning: cooking; dish
+
+  - korean: ㅜ
+    romanization: u
+    meaning: u
+    hint: The stroke points down — "oo" as in "moon".
+    metadata:
+      name: 우
+      example_syllable: 우
+      example_word: 우유
+      example_meaning: milk
+
+  - korean: ㅠ
+    romanization: yu
+    meaning: yu
+    hint: ㅜ with a second stroke — "you".
+    metadata:
+      name: 유
+      example_syllable: 유
+      example_word: 유리
+      example_meaning: glass
+
+  - korean: ㅡ
+    romanization: eu
+    meaning: eu
+    hint: The flat "earth" line. Say "oo" with your lips spread flat instead of rounded.
+    metadata:
+      name: 으
+      example_syllable: 으
+      example_word: 크다
+      example_meaning: to be big
+
+  - korean: ㅣ
+    romanization: i
+    meaning: i
+    hint: The standing "person" line — "ee" as in "see".
+    metadata:
+      name: 이
+      example_syllable: 이
+      example_word: 이름
+      example_meaning: name

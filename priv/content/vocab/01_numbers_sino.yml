@@ -1,0 +1,62 @@
+deck:
+  slug: numbers-sino-korean
+  title: Sino-Korean numbers
+  title_ko: 한자어 숫자
+  kind: vocab
+  level: 1
+  position: 1
+  description: >-
+    Numbers borrowed from Chinese. Used for dates, money, minutes, phone
+    numbers and counting above 99.
+
+defaults:
+  kind: word
+  part_of_speech: number
+  tags: [numbers]
+
+items:
+  - korean: 영
+    romanization: yeong
+    meaning: zero
+    notes: 공 (gong) is used instead when reading out phone numbers.
+  - korean: 일
+    romanization: il
+    meaning: one; 1
+  - korean: 이
+    romanization: i
+    meaning: two; 2
+  - korean: 삼
+    romanization: sam
+    meaning: three; 3
+  - korean: 사
+    romanization: sa
+    meaning: four; 4
+  - korean: 오
+    romanization: o
+    meaning: five; 5
+  - korean: 육
+    romanization: yuk
+    meaning: six; 6
+  - korean: 칠
+    romanization: chil
+    meaning: seven; 7
+  - korean: 팔
+    romanization: pal
+    meaning: eight; 8
+  - korean: 구
+    romanization: gu
+    meaning: nine; 9
+  - korean: 십
+    romanization: sip
+    meaning: ten; 10
+    notes: Tens are built by multiplying — 이십 is 20, 삼십오 is 35.
+  - korean: 백
+    romanization: baek
+    meaning: hundred; one hundred; 100
+  - korean: 천
+    romanization: cheon
+    meaning: thousand; one thousand; 1,000
+  - korean: 만
+    romanization: man
+    meaning: ten thousand; 10,000
+    notes: Korean groups large numbers by 10,000, not 1,000 — 100,000 is 십만 ("ten ten-thousands").

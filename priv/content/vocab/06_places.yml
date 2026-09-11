@@ -1,0 +1,78 @@
+deck:
+  slug: places
+  title: Places and transport
+  title_ko: 장소
+  kind: vocab
+  level: 1
+  position: 6
+  description: Places around town, and how to get there.
+
+defaults:
+  kind: word
+  part_of_speech: noun
+  tags: [places]
+
+items:
+  - korean: 집
+    romanization: jip
+    meaning: house; home
+  - korean: 학교
+    romanization: hakgyo
+    meaning: school
+  - korean: 회사
+    romanization: hoesa
+    meaning: company; office
+  - korean: 식당
+    romanization: sikdang
+    meaning: restaurant
+  - korean: 카페
+    romanization: kape
+    meaning: café; coffee shop
+  - korean: 가게
+    romanization: gage
+    meaning: store; shop
+  - korean: 시장
+    romanization: sijang
+    meaning: market
+  - korean: 편의점
+    romanization: pyeonuijeom
+    meaning: convenience store
+  - korean: 은행
+    romanization: eunhaeng
+    meaning: bank
+  - korean: 병원
+    romanization: byeongwon
+    meaning: hospital; clinic
+  - korean: 약국
+    romanization: yakguk
+    meaning: pharmacy
+  - korean: 화장실
+    romanization: hwajangsil
+    meaning: restroom; bathroom; toilet
+  - korean: 도서관
+    romanization: doseogwan
+    meaning: library
+  - korean: 공원
+    romanization: gongwon
+    meaning: park
+  - korean: 호텔
+    romanization: hotel
+    meaning: hotel
+  - korean: 역
+    romanization: yeok
+    meaning: station
+  - korean: 지하철
+    romanization: jihacheol
+    meaning: subway; metro
+    tags: [places, transport]
+  - korean: 버스
+    romanization: beoseu
+    meaning: bus
+    tags: [places, transport]
+  - korean: 공항
+    romanization: gonghang
+    meaning: airport
+    tags: [places, transport]
+  - korean: 한국
+    romanization: hanguk
+    meaning: Korea; South Korea

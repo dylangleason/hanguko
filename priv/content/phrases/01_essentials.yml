@@ -1,0 +1,200 @@
+deck:
+  slug: phrases-essentials
+  title: Survival phrases
+  title_ko: 필수 표현
+  kind: phrases
+  level: 1
+  position: 1
+  description: >-
+    The first phrases to learn: greetings, thanks, apologies, and asking for
+    help. Most are in the polite 해요체 style, which is safe with strangers.
+
+defaults:
+  kind: phrase
+  tags: [essentials]
+
+# metadata:
+#   politeness  formal (합쇼체, -ㅂ니다) | polite (해요체, -요) | casual (반말)
+#   situation   when you would say it
+#   literal     a word-for-word translation, when it differs from the meaning
+items:
+  - korean: 안녕하세요
+    romanization: annyeonghaseyo
+    meaning: hello; hi; good morning; good afternoon
+    notes: Works at any time of day, with anyone.
+    metadata:
+      politeness: polite
+      situation: greetings
+      literal: Are you at peace?
+
+  - korean: 안녕히 가세요
+    romanization: annyeonghi gaseyo
+    meaning: goodbye (to someone who is leaving)
+    notes: Say this when the other person leaves and you stay.
+    metadata:
+      politeness: polite
+      situation: greetings
+      literal: Go in peace.
+
+  - korean: 안녕히 계세요
+    romanization: annyeonghi gyeseyo
+    meaning: goodbye (when you are the one leaving)
+    notes: Say this when you leave and the other person stays, e.g. leaving a shop.
+    metadata:
+      politeness: polite
+      situation: greetings
+      literal: Stay in peace.
+
+  - korean: 처음 뵙겠습니다
+    romanization: cheoeum boepgetseumnida
+    meaning: nice to meet you (formal); how do you do
+    notes: A formal greeting for a first meeting, often followed by your name.
+    metadata:
+      politeness: formal
+      situation: introductions
+      literal: I see you for the first time.
+
+  - korean: 만나서 반가워요
+    romanization: mannaseo bangawoyo
+    meaning: nice to meet you
+    metadata:
+      politeness: polite
+      situation: introductions
+      literal: I'm glad because we met.
+
+  - korean: 이름이 뭐예요?
+    romanization: ireumi mwoyeyo
+    meaning: what is your name?
+    metadata:
+      politeness: polite
+      situation: introductions
+
+  - korean: 감사합니다
+    romanization: gamsahamnida
+    meaning: thank you
+    notes: The standard, formal thank you — always appropriate.
+    metadata:
+      politeness: formal
+      situation: thanks
+
+  - korean: 고마워요
+    romanization: gomawoyo
+    meaning: thanks; thank you
+    notes: Softer and friendlier than 감사합니다.
+    metadata:
+      politeness: polite
+      situation: thanks
+
+  - korean: 죄송합니다
+    romanization: joesonghamnida
+    meaning: I'm sorry; I apologize
+    notes: A formal apology, e.g. to a customer or a stranger.
+    metadata:
+      politeness: formal
+      situation: apologies
+
+  - korean: 미안해요
+    romanization: mianhaeyo
+    meaning: sorry; I'm sorry
+    metadata:
+      politeness: polite
+      situation: apologies
+
+  - korean: 괜찮아요
+    romanization: gwaenchanayo
+    meaning: it's okay; I'm fine; no thank you
+    notes: Also a polite way to turn something down.
+    metadata:
+      politeness: polite
+      situation: everyday
+
+  - korean: 네
+    romanization: ne
+    meaning: "yes"
+    notes: Also used to show you are listening, like "I see" or "uh-huh".
+    metadata:
+      politeness: polite
+      situation: everyday
+
+  - korean: 아니요
+    romanization: aniyo
+    meaning: "no"
+    metadata:
+      politeness: polite
+      situation: everyday
+
+  - korean: 저기요
+    romanization: jeogiyo
+    meaning: excuse me (to get attention)
+    notes: Used to call a server in a restaurant or to stop a stranger.
+    metadata:
+      politeness: polite
+      situation: everyday
+      literal: Over there!
+
+  - korean: 잠시만요
+    romanization: jamsimanyo
+    meaning: just a moment; excuse me (to get past)
+    metadata:
+      politeness: polite
+      situation: everyday
+
+  - korean: 이거 얼마예요?
+    romanization: igeo eolmayeyo
+    meaning: how much is this?
+    metadata:
+      politeness: polite
+      situation: shopping
+
+  - korean: 화장실이 어디예요?
+    romanization: hwajangsiri eodiyeyo
+    meaning: where is the restroom?
+    metadata:
+      politeness: polite
+      situation: directions
+
+  - korean: 잘 모르겠어요
+    romanization: jal moreugesseoyo
+    meaning: I'm not sure; I don't really know
+    metadata:
+      politeness: polite
+      situation: communication
+
+  - korean: 다시 한번 말해 주세요
+    romanization: dasi hanbeon malhae juseyo
+    meaning: please say that again
+    metadata:
+      politeness: polite
+      situation: communication
+      literal: Please speak once more.
+
+  - korean: 천천히 말해 주세요
+    romanization: cheoncheonhi malhae juseyo
+    meaning: please speak slowly
+    metadata:
+      politeness: polite
+      situation: communication
+
+  - korean: 한국어를 조금 해요
+    romanization: hangugeoreul jogeum haeyo
+    meaning: I speak a little Korean
+    metadata:
+      politeness: polite
+      situation: communication
+
+  - korean: 잘 먹겠습니다
+    romanization: jal meokgetseumnida
+    meaning: thank you for the meal (said before eating)
+    notes: Said to the host or whoever is paying, just before you start eating.
+    metadata:
+      politeness: formal
+      situation: dining
+      literal: I will eat well.
+
+  - korean: 잘 먹었습니다
+    romanization: jal meogeotseumnida
+    meaning: thank you for the meal (said after eating)
+    metadata:
+      politeness: formal
+      situation: dining
+      literal: I ate well.

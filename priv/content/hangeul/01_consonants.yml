@@ -1,0 +1,179 @@
+deck:
+  slug: hangeul-consonants
+  title: Basic consonants
+  title_ko: 기본 자음
+  kind: hangeul
+  level: 1
+  position: 1
+  description: >-
+    The 14 basic consonants. Five of them (ㄱ ㄴ ㅁ ㅅ ㅇ) picture the mouth or
+    throat making the sound; the rest add strokes to those shapes.
+
+defaults:
+  kind: jamo
+  tags: [consonant]
+
+# metadata:
+#   name             the letter's Korean name
+#   example_syllable the letter with ㅏ, used for pronunciation
+#   example_word     a common word using the letter, with its meaning
+#   final_sound      how the letter sounds as a final consonant (batchim)
+items:
+  - korean: ㄱ
+    romanization: g / k
+    meaning: g; k
+    hint: Shaped like the back of the tongue lifting to touch the soft palate.
+    notes: Between vowels it sounds like a soft g; at the start of a word it is closer to k.
+    metadata:
+      name: 기역
+      example_syllable: 가
+      example_word: 가방
+      example_meaning: bag
+      final_sound: k
+
+  - korean: ㄴ
+    romanization: "n"
+    meaning: "n"
+    hint: Shaped like the tip of the tongue touching the ridge behind the upper teeth.
+    metadata:
+      name: 니은
+      example_syllable: 나
+      example_word: 나무
+      example_meaning: tree
+      final_sound: "n"
+
+  - korean: ㄷ
+    romanization: d / t
+    meaning: d; t
+    hint: ㄴ with a lid on top — the tongue is in the same place, but the air is stopped.
+    metadata:
+      name: 디귿
+      example_syllable: 다
+      example_word: 다리
+      example_meaning: leg; bridge
+      final_sound: t
+
+  - korean: ㄹ
+    romanization: r / l
+    meaning: r; l
+    hint: A zig-zag like the tongue flicking once against the roof of the mouth.
+    notes: A light tap (like the tt in American "butter") between vowels; l at the end of a syllable.
+    metadata:
+      name: 리을
+      example_syllable: 라
+      example_word: 라면
+      example_meaning: ramyeon (instant noodles)
+      final_sound: l
+
+  - korean: ㅁ
+    romanization: m
+    meaning: m
+    hint: A closed square, like lips pressed together to say m.
+    metadata:
+      name: 미음
+      example_syllable: 마
+      example_word: 모자
+      example_meaning: hat
+      final_sound: m
+
+  - korean: ㅂ
+    romanization: b / p
+    meaning: b; p
+    hint: ㅁ with two strokes rising out of it — the lips close, then burst open.
+    metadata:
+      name: 비읍
+      example_syllable: 바
+      example_word: 바다
+      example_meaning: sea
+      final_sound: p
+
+  - korean: ㅅ
+    romanization: s
+    meaning: s
+    hint: Shaped like a tooth; the air hisses past the teeth.
+    notes: Before ㅣ and y-vowels it sounds closer to sh (시 = shi).
+    metadata:
+      name: 시옷
+      example_syllable: 사
+      example_word: 사과
+      example_meaning: apple
+      final_sound: t
+
+  - korean: ㅇ
+    romanization: "- / ng"
+    meaning: silent; ng
+    hint: A circle, like the open throat.
+    notes: Silent at the start of a syllable (아 is just "a"); ng at the end (방 = bang).
+    metadata:
+      name: 이응
+      example_syllable: 아
+      example_word: 아이
+      example_meaning: child
+      final_sound: ng
+
+  - korean: ㅈ
+    romanization: j
+    meaning: j
+    hint: ㅅ with a line on top — the hiss becomes a j.
+    metadata:
+      name: 지읒
+      example_syllable: 자
+      example_word: 자리
+      example_meaning: seat
+      final_sound: t
+
+  - korean: ㅊ
+    romanization: ch
+    meaning: ch
+    hint: ㅈ with an extra stroke on top — the extra stroke adds a puff of air.
+    metadata:
+      name: 치읓
+      example_syllable: 차
+      example_word: 차
+      example_meaning: car; tea
+      final_sound: t
+
+  - korean: ㅋ
+    romanization: k
+    meaning: k
+    hint: ㄱ with an extra stroke — a k with a strong puff of air.
+    metadata:
+      name: 키읔
+      example_syllable: 카
+      example_word: 코
+      example_meaning: nose
+      final_sound: k
+
+  - korean: ㅌ
+    romanization: t
+    meaning: t
+    hint: ㄷ with an extra stroke — a t with a strong puff of air.
+    metadata:
+      name: 티읕
+      example_syllable: 타
+      example_word: 토끼
+      example_meaning: rabbit
+      final_sound: t
+
+  - korean: ㅍ
+    romanization: p
+    meaning: p
+    hint: Built up from ㅂ — a p with a strong puff of air.
+    metadata:
+      name: 피읖
+      example_syllable: 파
+      example_word: 포도
+      example_meaning: grapes
+      final_sound: p
+
+  - korean: ㅎ
+    romanization: h
+    meaning: h
+    hint: ㅇ (the throat) with strokes on top — breath pushed out of the throat.
+    notes: Often weakens or disappears between vowels (좋아요 sounds like 조아요).
+    metadata:
+      name: 히읗
+      example_syllable: 하
+      example_word: 하나
+      example_meaning: one
+      final_sound: t

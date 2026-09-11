@@ -2,10 +2,7 @@
 #
 #     mix run priv/repo/seeds.exs
 #
-# Inside the script, you can read and write to any of your
-# repositories directly:
-#
-#     Hanguko.Repo.insert!(%Hanguko.SomeSchema{})
-#
-# We recommend using the bang functions (`insert!`, `update!`
-# and so on) as they will fail if something goes wrong.
+# Curated study content lives in priv/content and is loaded by the same
+# importer as `mix hanguko.content.import`, so this is safe to re-run.
+
+Mix.Task.run("hanguko.content.import")

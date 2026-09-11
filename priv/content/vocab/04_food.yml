@@ -1,0 +1,80 @@
+deck:
+  slug: food
+  title: Food and drink
+  title_ko: 음식
+  kind: vocab
+  level: 1
+  position: 4
+  description: Everyday food and drink, from rice and kimchi to coffee.
+
+defaults:
+  kind: word
+  part_of_speech: noun
+  tags: [food]
+
+items:
+  - korean: 음식
+    romanization: eumsik
+    meaning: food
+  - korean: 밥
+    romanization: bap
+    meaning: rice (cooked); meal
+    notes: 밥 먹었어요? ("Have you eaten?") is a common way to say hello.
+  - korean: 물
+    romanization: mul
+    meaning: water
+  - korean: 우유
+    romanization: uyu
+    meaning: milk
+  - korean: 커피
+    romanization: keopi
+    meaning: coffee
+  - korean: 차
+    romanization: cha
+    meaning: tea
+    notes: 차 also means "car"; context makes it clear.
+  - korean: 빵
+    romanization: ppang
+    meaning: bread
+  - korean: 고기
+    romanization: gogi
+    meaning: meat
+  - korean: 소고기
+    romanization: sogogi
+    meaning: beef
+  - korean: 돼지고기
+    romanization: dwaejigogi
+    meaning: pork
+  - korean: 닭고기
+    romanization: dakgogi
+    meaning: chicken (meat)
+  - korean: 생선
+    romanization: saengseon
+    meaning: fish (as food)
+    notes: A live fish is 물고기.
+  - korean: 김치
+    romanization: gimchi
+    meaning: kimchi
+  - korean: 라면
+    romanization: ramyeon
+    meaning: ramyeon; instant noodles
+  - korean: 과일
+    romanization: gwail
+    meaning: fruit
+  - korean: 사과
+    romanization: sagwa
+    meaning: apple
+    notes: 사과 also means "apology".
+  - korean: 채소
+    romanization: chaeso
+    meaning: vegetables
+    notes: 야채 means the same and is just as common.
+  - korean: 계란
+    romanization: gyeran
+    meaning: egg
+  - korean: 맥주
+    romanization: maekju
+    meaning: beer
+  - korean: 술
+    romanization: sul
+    meaning: alcohol; liquor

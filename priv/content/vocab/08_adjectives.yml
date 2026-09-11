@@ -1,0 +1,79 @@
+deck:
+  slug: basic-adjectives
+  title: Basic adjectives
+  title_ko: 기본 형용사
+  kind: vocab
+  level: 1
+  position: 8
+  description: >-
+    Korean adjectives behave like verbs: 크다 means "to be big" and is
+    conjugated just like 가다.
+
+defaults:
+  kind: word
+  part_of_speech: adjective
+  tags: [adjectives]
+
+items:
+  - korean: 좋다
+    romanization: jota
+    meaning: good; to be good
+  - korean: 나쁘다
+    romanization: nappeuda
+    meaning: bad; to be bad
+  - korean: 크다
+    romanization: keuda
+    meaning: big; to be big
+  - korean: 작다
+    romanization: jakda
+    meaning: small; to be small
+  - korean: 많다
+    romanization: manta
+    meaning: many; a lot; to be many
+  - korean: 적다
+    romanization: jeokda
+    meaning: few; little; to be few
+  - korean: 맛있다
+    romanization: masitda
+    meaning: delicious; tasty; to be delicious
+  - korean: 맛없다
+    romanization: madeopda
+    meaning: not tasty; to taste bad
+  - korean: 비싸다
+    romanization: bissada
+    meaning: expensive; to be expensive
+  - korean: 싸다
+    romanization: ssada
+    meaning: cheap; to be cheap
+  - korean: 덥다
+    romanization: deopda
+    meaning: hot (weather); to be hot
+    notes: For hot things you touch, use 뜨겁다.
+  - korean: 춥다
+    romanization: chupda
+    meaning: cold (weather); to be cold
+    notes: For cold things you touch, use 차갑다.
+  - korean: 뜨겁다
+    romanization: tteugeopda
+    meaning: hot (to the touch); to be hot
+  - korean: 차갑다
+    romanization: chagapda
+    meaning: cold (to the touch); to be cold
+  - korean: 바쁘다
+    romanization: bappeuda
+    meaning: busy; to be busy
+  - korean: 피곤하다
+    romanization: pigonhada
+    meaning: tired; to be tired
+  - korean: 재미있다
+    romanization: jaemiitda
+    meaning: fun; interesting; to be fun
+  - korean: 어렵다
+    romanization: eoryeopda
+    meaning: difficult; hard; to be difficult
+  - korean: 쉽다
+    romanization: swipda
+    meaning: easy; to be easy
+  - korean: 예쁘다
+    romanization: yeppeuda
+    meaning: pretty; to be pretty

@@ -1,0 +1,59 @@
+deck:
+  slug: numbers-native-korean
+  title: Native Korean numbers
+  title_ko: 고유어 숫자
+  kind: vocab
+  level: 1
+  position: 2
+  description: >-
+    Native Korean numbers, used for counting things and people, for hours,
+    and for age. They only go up to 99.
+
+defaults:
+  kind: word
+  part_of_speech: number
+  tags: [numbers]
+
+items:
+  - korean: 하나
+    romanization: hana
+    meaning: one; 1
+    notes: Becomes 한 before a counter (한 개, one thing).
+  - korean: 둘
+    romanization: dul
+    meaning: two; 2
+    notes: Becomes 두 before a counter (두 명, two people).
+  - korean: 셋
+    romanization: set
+    meaning: three; 3
+    notes: Becomes 세 before a counter (세 시, three o'clock).
+  - korean: 넷
+    romanization: net
+    meaning: four; 4
+    notes: Becomes 네 before a counter.
+  - korean: 다섯
+    romanization: daseot
+    meaning: five; 5
+  - korean: 여섯
+    romanization: yeoseot
+    meaning: six; 6
+  - korean: 일곱
+    romanization: ilgop
+    meaning: seven; 7
+  - korean: 여덟
+    romanization: yeodeol
+    meaning: eight; 8
+  - korean: 아홉
+    romanization: ahop
+    meaning: nine; 9
+  - korean: 열
+    romanization: yeol
+    meaning: ten; 10
+    notes: 11–19 are 열 + a number — 열하나, 열둘…
+  - korean: 스물
+    romanization: seumul
+    meaning: twenty; 20
+    notes: Becomes 스무 before a counter (스무 살, twenty years old).
+  - korean: 서른
+    romanization: seoreun
+    meaning: thirty; 30

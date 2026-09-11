@@ -1,0 +1,87 @@
+deck:
+  slug: basic-verbs
+  title: Basic verbs
+  title_ko: 기본 동사
+  kind: vocab
+  level: 1
+  position: 7
+  description: >-
+    Everyday action verbs, in their dictionary form (ending in -다). The
+    Grammar lessons show how to conjugate them.
+
+defaults:
+  kind: word
+  part_of_speech: verb
+  tags: [verbs]
+
+items:
+  - korean: 가다
+    romanization: gada
+    meaning: to go; go
+  - korean: 오다
+    romanization: oda
+    meaning: to come; come
+  - korean: 먹다
+    romanization: meokda
+    meaning: to eat; eat
+  - korean: 마시다
+    romanization: masida
+    meaning: to drink; drink
+  - korean: 보다
+    romanization: boda
+    meaning: to see; to watch; to look
+  - korean: 하다
+    romanization: hada
+    meaning: to do; do
+    notes: Joins with many nouns to make verbs — 공부 (study) + 하다 = 공부하다 (to study).
+  - korean: 자다
+    romanization: jada
+    meaning: to sleep; sleep
+  - korean: 일어나다
+    romanization: ireonada
+    meaning: to get up; to wake up
+  - korean: 읽다
+    romanization: ikda
+    meaning: to read; read
+  - korean: 쓰다
+    romanization: sseuda
+    meaning: to write; to use
+  - korean: 듣다
+    romanization: deutda
+    meaning: to listen; to hear
+  - korean: 말하다
+    romanization: malhada
+    meaning: to speak; to say; to talk
+  - korean: 사다
+    romanization: sada
+    meaning: to buy; buy
+  - korean: 팔다
+    romanization: palda
+    meaning: to sell; sell
+  - korean: 만나다
+    romanization: mannada
+    meaning: to meet; meet
+  - korean: 좋아하다
+    romanization: joahada
+    meaning: to like; like
+  - korean: 공부하다
+    romanization: gongbuhada
+    meaning: to study; study
+  - korean: 일하다
+    romanization: ilhada
+    meaning: to work; work
+  - korean: 기다리다
+    romanization: gidarida
+    meaning: to wait; wait
+  - korean: 알다
+    romanization: alda
+    meaning: to know; know
+  - korean: 모르다
+    romanization: moreuda
+    meaning: to not know; to not understand
+  - korean: 있다
+    romanization: itda
+    meaning: to be (somewhere); to exist; to have
+  - korean: 없다
+    romanization: eopda
+    meaning: to not be (somewhere); to not exist; to not have

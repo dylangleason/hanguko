@@ -1,0 +1,80 @@
+deck:
+  slug: family
+  title: Family and people
+  title_ko: 가족
+  kind: vocab
+  level: 1
+  position: 3
+  description: >-
+    Family members. Words for older siblings depend on whether the speaker is
+    male or female.
+
+defaults:
+  kind: word
+  part_of_speech: noun
+  tags: [family, people]
+
+items:
+  - korean: 가족
+    romanization: gajok
+    meaning: family
+  - korean: 부모님
+    romanization: bumonim
+    meaning: parents
+    notes: -님 makes it respectful.
+  - korean: 아버지
+    romanization: abeoji
+    meaning: father
+  - korean: 어머니
+    romanization: eomeoni
+    meaning: mother
+  - korean: 아빠
+    romanization: appa
+    meaning: dad
+  - korean: 엄마
+    romanization: eomma
+    meaning: mom
+  - korean: 형
+    romanization: hyeong
+    meaning: older brother (of a male)
+    notes: Used by men to mean an older brother, and as a friendly way to address older men who are close to them.
+  - korean: 오빠
+    romanization: oppa
+    meaning: older brother (of a female)
+    notes: Used by women to mean an older brother, and as a friendly way to address older men who are close to them.
+  - korean: 누나
+    romanization: nuna
+    meaning: older sister (of a male)
+  - korean: 언니
+    romanization: eonni
+    meaning: older sister (of a female)
+  - korean: 동생
+    romanization: dongsaeng
+    meaning: younger sibling
+  - korean: 남동생
+    romanization: namdongsaeng
+    meaning: younger brother
+  - korean: 여동생
+    romanization: yeodongsaeng
+    meaning: younger sister
+  - korean: 할아버지
+    romanization: harabeoji
+    meaning: grandfather
+  - korean: 할머니
+    romanization: halmeoni
+    meaning: grandmother
+  - korean: 아들
+    romanization: adeul
+    meaning: son
+  - korean: 딸
+    romanization: ttal
+    meaning: daughter
+  - korean: 남편
+    romanization: nampyeon
+    meaning: husband
+  - korean: 아내
+    romanization: anae
+    meaning: wife
+  - korean: 친구
+    romanization: chingu
+    meaning: friend

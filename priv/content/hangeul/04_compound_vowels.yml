@@ -1,0 +1,133 @@
+deck:
+  slug: hangeul-compound-vowels
+  title: Compound vowels
+  title_ko: 이중 모음
+  kind: hangeul
+  level: 1
+  position: 4
+  description: >-
+    Eleven vowels made by combining basic ones. Combining with ㅗ or ㅜ adds a
+    "w" sound (ㅗ + ㅏ = ㅘ "wa"). In modern Seoul speech several pairs sound
+    alike: ㅐ/ㅔ, and ㅙ/ㅚ/ㅞ.
+
+defaults:
+  kind: jamo
+  tags: [vowel, compound]
+
+items:
+  - korean: ㅐ
+    romanization: ae
+    meaning: ae
+    hint: ㅏ + ㅣ — "e" as in "bed", with the mouth a little more open.
+    notes: Most speakers pronounce ㅐ and ㅔ the same.
+    metadata:
+      name: 애
+      example_syllable: 애
+      example_word: 개
+      example_meaning: dog
+
+  - korean: ㅒ
+    romanization: yae
+    meaning: yae
+    hint: ㅑ + ㅣ — "ye". Rare; mostly in 얘 (this person / this kid).
+    metadata:
+      name: 얘
+      example_syllable: 얘
+      example_word: 얘기
+      example_meaning: talk; story
+
+  - korean: ㅔ
+    romanization: e
+    meaning: e
+    hint: ㅓ + ㅣ — "e" as in "bed".
+    notes: Most speakers pronounce ㅐ and ㅔ the same.
+    metadata:
+      name: 에
+      example_syllable: 에
+      example_word: 게
+      example_meaning: crab
+
+  - korean: ㅖ
+    romanization: ye
+    meaning: ye
+    hint: ㅕ + ㅣ — "ye" as in "yes".
+    notes: After most consonants it is pronounced like ㅔ (시계 sounds like 시게).
+    metadata:
+      name: 예
+      example_syllable: 예
+      example_word: 시계
+      example_meaning: clock; watch
+
+  - korean: ㅘ
+    romanization: wa
+    meaning: wa
+    hint: ㅗ + ㅏ — "o" glides into "a", giving "wa".
+    metadata:
+      name: 와
+      example_syllable: 와
+      example_word: 사과
+      example_meaning: apple
+
+  - korean: ㅙ
+    romanization: wae
+    meaning: wae
+    hint: ㅗ + ㅐ — "we" as in "wet".
+    metadata:
+      name: 왜
+      example_syllable: 왜
+      example_word: 돼지
+      example_meaning: pig
+
+  - korean: ㅚ
+    romanization: oe
+    meaning: oe
+    hint: ㅗ + ㅣ — nowadays pronounced "we", like ㅙ and ㅞ.
+    metadata:
+      name: 외
+      example_syllable: 외
+      example_word: 회사
+      example_meaning: company
+
+  - korean: ㅝ
+    romanization: wo
+    meaning: wo
+    hint: ㅜ + ㅓ — "wuh", as in "won" (the Korean currency, 원).
+    metadata:
+      name: 워
+      example_syllable: 워
+      example_word: 뭐
+      example_meaning: what
+
+  - korean: ㅞ
+    romanization: we
+    meaning: we
+    hint: ㅜ + ㅔ — "we" as in "wet". Rare outside loanwords.
+    metadata:
+      name: 웨
+      example_syllable: 웨
+      example_word: 웨이터
+      example_meaning: waiter
+
+  - korean: ㅟ
+    romanization: wi
+    meaning: wi
+    hint: ㅜ + ㅣ — "wee".
+    metadata:
+      name: 위
+      example_syllable: 위
+      example_word: 귀
+      example_meaning: ear
+
+  - korean: ㅢ
+    romanization: ui
+    meaning: ui
+    hint: ㅡ + ㅣ — "eu" gliding quickly into "i".
+    notes: >-
+      Said fully only at the start of a word (의사). After a consonant it
+      sounds like ㅣ (희망 → 히망), and as the particle 의 ("of") it is often
+      said as 에.
+    metadata:
+      name: 의
+      example_syllable: 의
+      example_word: 의사
+      example_meaning: doctor

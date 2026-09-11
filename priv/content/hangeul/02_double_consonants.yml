@@ -1,0 +1,68 @@
+deck:
+  slug: hangeul-double-consonants
+  title: Double consonants
+  title_ko: 쌍자음
+  kind: hangeul
+  level: 1
+  position: 2
+  description: >-
+    Five "tense" consonants written by doubling a basic one. Say them with a
+    tight throat and no puff of air.
+
+defaults:
+  kind: jamo
+  tags: [consonant, tense]
+
+items:
+  - korean: ㄲ
+    romanization: kk
+    meaning: kk
+    hint: A doubled ㄱ — a tight, sharp g/k with no breath (like the k in "skin").
+    metadata:
+      name: 쌍기역
+      example_syllable: 까
+      example_word: 까치
+      example_meaning: magpie
+      final_sound: k
+
+  - korean: ㄸ
+    romanization: tt
+    meaning: tt
+    hint: A doubled ㄷ — like the t in "stop". Never used as a final consonant.
+    metadata:
+      name: 쌍디귿
+      example_syllable: 따
+      example_word: 딸기
+      example_meaning: strawberry
+
+  - korean: ㅃ
+    romanization: pp
+    meaning: pp
+    hint: A doubled ㅂ — like the p in "spin". Never used as a final consonant.
+    metadata:
+      name: 쌍비읍
+      example_syllable: 빠
+      example_word: 빵
+      example_meaning: bread
+
+  - korean: ㅆ
+    romanization: ss
+    meaning: ss
+    hint: A doubled ㅅ — a hard, hissing s.
+    notes: Very common as a final consonant in past-tense verbs (했어요).
+    metadata:
+      name: 쌍시옷
+      example_syllable: 싸
+      example_word: 쌀
+      example_meaning: rice (uncooked)
+      final_sound: t
+
+  - korean: ㅉ
+    romanization: jj
+    meaning: jj
+    hint: A doubled ㅈ — a tight j/ch sound with no breath. Never used as a final consonant.
+    metadata:
+      name: 쌍지읒
+      example_syllable: 짜
+      example_word: 짜다
+      example_meaning: to be salty
