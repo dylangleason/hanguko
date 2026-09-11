@@ -52,7 +52,11 @@ defmodule HangukoWeb.Layouts do
 
         <%!-- Desktop: everything inline --%>
         <div class="hidden min-w-0 flex-1 items-center gap-0.5 md:flex">
-          <.nav_link :for={{label, path, id} <- nav_items()} navigate={path} id={"nav-#{id}"}>
+          <.nav_link
+            :for={{label, path, id} <- nav_items(@current_scope)}
+            navigate={path}
+            id={"nav-#{id}"}
+          >
             {label}
           </.nav_link>
         </div>
@@ -119,7 +123,7 @@ defmodule HangukoWeb.Layouts do
       >
         <div class="mx-auto max-w-5xl px-4 py-3 sm:px-6">
           <.mobile_link
-            :for={{label, path, id} <- nav_items()}
+            :for={{label, path, id} <- nav_items(@current_scope)}
             navigate={path}
             id={"mobile-nav-#{id}"}
           >
@@ -165,12 +169,15 @@ defmodule HangukoWeb.Layouts do
     """
   end
 
-  defp nav_items do
-    [
-      {"Hangeul", ~p"/hangeul", "hangeul"},
-      {"Vocabulary", ~p"/decks?kind=vocab", "vocab"},
-      {"Phrases", ~p"/decks?kind=phrases", "phrases"}
-    ]
+  defp nav_items(current_scope) do
+    study = if current_scope, do: [{"Study", ~p"/dashboard", "study"}], else: []
+
+    study ++
+      [
+        {"Hangeul", ~p"/hangeul", "hangeul"},
+        {"Vocabulary", ~p"/decks?kind=vocab", "vocab"},
+        {"Phrases", ~p"/decks?kind=phrases", "phrases"}
+      ]
   end
 
   attr :navigate, :string, required: true

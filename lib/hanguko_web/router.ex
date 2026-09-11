@@ -54,6 +54,11 @@ defmodule HangukoWeb.Router do
       on_mount: [{HangukoWeb.UserAuth, :require_authenticated}] do
       live "/users/settings", UserLive.Settings, :edit
       live "/users/settings/confirm-email/:token", UserLive.Settings, :confirm_email
+
+      # Studying is per user, so these require logging in.
+      live "/dashboard", DashboardLive, :index
+      live "/study", StudyLive, :index
+      live "/study/settings", StudySettingsLive, :edit
     end
 
     post "/users/update-password", UserSessionController, :update_password

@@ -14,13 +14,14 @@ defmodule HangukoWeb.NavigationTest do
     end
 
     refute has_element?(view, "#mobile-nav-log-out")
+    refute has_element?(view, "#nav-study")
   end
 
   test "logged-in users get settings and log-out links in both menus", %{conn: conn} do
     %{conn: conn, user: user} = register_and_log_in_user(%{conn: conn})
     {:ok, view, _html} = live(conn, ~p"/hangeul")
 
-    for id <- ~w(settings log-out) do
+    for id <- ~w(study settings log-out) do
       assert has_element?(view, "#nav-#{id}")
       assert has_element?(view, "#mobile-menu #mobile-nav-#{id}")
     end

@@ -23,6 +23,9 @@ config :hanguko, HangukoWeb.Endpoint,
   secret_key_base: "hZcYi/+ynHpUTyXBcBl4otSnluz5VM+PdbnD4LH8h2feBervsImLkh8tcHo3jwoE",
   server: false
 
+# Deterministic review intervals in tests
+config :hanguko, Hanguko.SRS, fuzz: false
+
 # In test we don't send emails
 config :hanguko, Hanguko.Mailer, adapter: Swoosh.Adapters.Test
 

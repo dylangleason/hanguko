@@ -79,6 +79,13 @@ config :logger, :default_formatter,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
+# Needed to compute each learner's local "today" for daily study limits.
+config :elixir, :time_zone_database, Tz.TimeZoneDatabase
+
+# Spread review due dates slightly so cards learned together don't stay
+# bunched together forever (FSRS interval fuzzing).
+config :hanguko, Hanguko.SRS, fuzz: true
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"

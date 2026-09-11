@@ -25,12 +25,14 @@ import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/hanguko"
 import topbar from "../vendor/topbar"
 import Speak from "./hooks/speak"
+import StudyKeys from "./hooks/study_keys"
 
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
-  params: {_csrf_token: csrfToken},
-  hooks: {...colocatedHooks, Speak},
+  // The time zone decides when the learner's study day starts.
+  params: {_csrf_token: csrfToken, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone},
+  hooks: {...colocatedHooks, Speak, StudyKeys},
 })
 
 // Show progress bar on live navigation and form submits
