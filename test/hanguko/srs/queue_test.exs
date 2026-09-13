@@ -166,6 +166,27 @@ defmodule Hanguko.SRS.QueueTest do
       assert item.id == example.id
     end
 
+    test "un-marking a grammar point puts its cards aside", %{scope: scope, user: user} do
+      sentences = deck_fixture(kind: :sentences, position: 1)
+      SRS.enroll_deck(scope, sentences)
+      point = grammar_point_fixture()
+      example = example_fixture(sentences, point, position: 1)
+      {:ok, _} = Hanguko.Content.mark_grammar_learned(scope, point)
+
+      card =
+        card_fixture(user, example, template: :cloze, due: DateTime.add(@now, -60))
+
+      assert Enum.map(queue(scope).review, & &1.item.id) == [example.id]
+
+      {:ok, 1} = Hanguko.Content.unmark_grammar_learned(scope, point)
+      assert queue(scope).review == []
+
+      # The card kept its history and comes back where it left off.
+      {:ok, _} = Hanguko.Content.mark_grammar_learned(scope, point)
+      assert [%{card: %{id: id}}] = queue(scope).review
+      assert id == card.id
+    end
+
     test "letters only have a recognition card", %{scope: scope, user: user} do
       letters = deck_fixture(kind: :hangeul, position: 1)
       SRS.enroll_deck(scope, letters)

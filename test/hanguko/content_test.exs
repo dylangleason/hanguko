@@ -5,6 +5,7 @@ defmodule Hanguko.ContentTest do
 
   alias Hanguko.Content
   alias Hanguko.Content.{GrammarPoint, Item}
+  alias Hanguko.SRS.Card
 
   describe "list_decks/1" do
     test "orders decks, counts active items and hides retired decks" do
@@ -68,6 +69,61 @@ defmodule Hanguko.ContentTest do
 
     test "meanings/1 splits alternatives" do
       assert Item.meanings(%Item{meaning: "to go; go ;"}) == ["to go", "go"]
+    end
+
+    test "the cloze has to appear in the sentence exactly once" do
+      changeset = fn attrs ->
+        Item.import_changeset(
+          %Item{},
+          Enum.into(attrs, %{
+            source_key: "grammar/1",
+            kind: :sentence,
+            korean: "한국에 가고 싶어요.",
+            meaning: "I want to go to Korea.",
+            position: 1
+          })
+        )
+      end
+
+      assert changeset.(%{cloze: "고 싶어요"}).valid?
+      assert changeset.(%{}).valid?
+
+      # An empty `cloze:` in a pack means "none", like tags and metadata, so
+      # the sentence simply isn't studied as a cloze card.
+      empty = changeset.(%{cloze: ""})
+      assert empty.valid?
+      assert Ecto.Changeset.apply_changes(empty).cloze == nil
+      assert Card.templates_for(Ecto.Changeset.apply_changes(empty)) == []
+
+      # A blank left on a record is still an error, rather than a card whose
+      # blank stands for nothing.
+      assert %{cloze: ["can't be blank"]} =
+               errors_on(Item.import_changeset(%Item{cloze: ""}, %{korean: "한국에 가고 싶어요."}))
+
+      assert %{cloze: [missing]} = errors_on(changeset.(%{cloze: "고 있어요"}))
+      assert missing =~ "does not appear in"
+
+      assert %{cloze: [ambiguous]} =
+               errors_on(changeset.(%{korean: "학교에 가고 집에 가고 싶어요.", cloze: "가고"}))
+
+      assert ambiguous =~ "appears 2 times"
+    end
+
+    test "editing only the sentence still checks the cloze" do
+      item = %Item{
+        source_key: "grammar/1",
+        kind: :sentence,
+        korean: "한국에 가고 싶어요.",
+        meaning: "I want to go to Korea.",
+        cloze: "고 싶어요",
+        position: 1
+      }
+
+      changeset = Item.import_changeset(item, %{korean: "저는 학생이에요.", cloze: "고 싶어요"})
+
+      refute changeset.valid?
+      assert %{cloze: [message]} = errors_on(changeset)
+      assert message =~ "does not appear in"
     end
 
     test "cloze_parts/1 splits a sentence around its grammar" do

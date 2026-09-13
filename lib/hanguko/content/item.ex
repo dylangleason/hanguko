@@ -63,15 +63,40 @@ defmodule Hanguko.Content.Item do
   end
 
   # A sentence is studied by blanking out the grammar it demonstrates, so the
-  # cloze has to be text that actually appears in the sentence.
+  # cloze has to appear in the sentence exactly once: twice would leave it
+  # ambiguous which one the blank stands for. Checked against the final
+  # values, so that editing only `korean` can't leave a stale cloze behind.
   defp validate_cloze(changeset) do
     korean = get_field(changeset, :korean) || ""
 
-    validate_change(changeset, :cloze, fn :cloze, cloze ->
-      if String.contains?(korean, cloze),
-        do: [],
-        else: [cloze: "#{inspect(cloze)} does not appear in #{inspect(korean)}"]
-    end)
+    case get_field(changeset, :cloze) do
+      nil ->
+        changeset
+
+      "" ->
+        add_error(changeset, :cloze, "can't be blank")
+
+      cloze ->
+        case length(String.split(korean, cloze)) - 1 do
+          1 ->
+            changeset
+
+          0 ->
+            add_error(
+              changeset,
+              :cloze,
+              "#{inspect(cloze)} does not appear in #{inspect(korean)}"
+            )
+
+          count ->
+            add_error(
+              changeset,
+              :cloze,
+              "#{inspect(cloze)} appears #{count} times in #{inspect(korean)}, " <>
+                "so the blank would be ambiguous"
+            )
+        end
+    end
   end
 
   @doc """

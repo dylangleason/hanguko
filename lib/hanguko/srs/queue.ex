@@ -11,8 +11,8 @@ defmodule Hanguko.SRS.Queue do
     * Learning cards (in their minute-long learning steps) come first when due.
     * Review cards due before the end of the study day come next, oldest
       first, up to the daily review limit.
-    * Example sentences are only introduced once the learner has marked
-      their grammar point as learned.
+    * Example sentences are only studied while their grammar point is
+      marked as learned, both when introduced and afterwards.
     * Then new cards, up to the daily new limit. The limit is shared by all
       enrolled decks, which take turns (one card from each, in curriculum
       order); within a deck, items come in position order. Recognition cards
@@ -125,8 +125,12 @@ defmodule Hanguko.SRS.Queue do
   defp cards_query(user_id, deck_ids) do
     from c in Card,
       join: i in assoc(c, :item),
+      left_join: p in GrammarProgress,
+      on: p.grammar_point_id == i.grammar_point_id and p.user_id == ^user_id,
       where: c.user_id == ^user_id and not c.suspended,
       where: i.deck_id in ^deck_ids and not i.retired,
+      # Un-marking a grammar point puts its sentences aside, history and all.
+      where: is_nil(i.grammar_point_id) or not is_nil(p.id),
       order_by: [c.due, c.id],
       preload: [item: i]
   end
