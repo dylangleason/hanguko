@@ -10,6 +10,9 @@ defmodule Hanguko.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
+      name: "Hanguko",
+      source_url: "https://github.com/dylangleason/hanguko",
+      docs: docs(),
       compilers: [:phoenix_live_view] ++ Mix.compilers(),
       listeners: [Phoenix.CodeReloader]
     ]
@@ -28,6 +31,50 @@ defmodule Hanguko.MixProject do
   def cli do
     [
       preferred_envs: [precommit: :test]
+    ]
+  end
+
+  # Documentation built by `mix docs`. The guides are the prose; the module
+  # docs fill in the detail.
+  defp docs do
+    [
+      main: "readme",
+      extras: [
+        "README.md": [title: "Overview"],
+        "guides/architecture.md": [title: "Architecture"],
+        "guides/domain-model.md": [title: "Domain model"]
+      ],
+      groups_for_extras: [Guides: ~r"guides/"],
+      groups_for_modules: [
+        Curriculum: [
+          Hanguko.Content,
+          Hanguko.Content.Deck,
+          Hanguko.Content.GrammarPoint,
+          Hanguko.Content.GrammarProgress,
+          Hanguko.Content.Importer,
+          Hanguko.Content.Item
+        ],
+        "Spaced repetition": [
+          Hanguko.SRS,
+          Hanguko.SRS.Card,
+          Hanguko.SRS.Day,
+          Hanguko.SRS.DeckEnrollment,
+          Hanguko.SRS.Queue,
+          Hanguko.SRS.ReviewLog,
+          Hanguko.SRS.Scheduler,
+          Hanguko.SRS.Settings
+        ],
+        Korean: [Hanguko.Korean],
+        Accounts: [
+          Hanguko.Accounts,
+          Hanguko.Accounts.Scope,
+          Hanguko.Accounts.User,
+          Hanguko.Accounts.UserNotifier,
+          Hanguko.Accounts.UserToken
+        ],
+        Web: [~r"HangukoWeb\."]
+      ],
+      nest_modules_by_prefix: [Hanguko.Content, Hanguko.SRS, HangukoWeb]
     ]
   end
 
@@ -73,6 +120,7 @@ defmodule Hanguko.MixProject do
       {:fsrs_ex, "~> 0.1.2"},
       {:tz, "~> 0.28.2"},
       {:stream_data, "~> 1.4", only: [:dev, :test]},
+      {:ex_doc, "~> 0.34", only: :dev, runtime: false},
       {:telemetry_metrics, "~> 1.0"},
       {:telemetry_poller, "~> 1.0"},
       {:gettext, "~> 1.0"},
