@@ -44,6 +44,7 @@ Sign-in is by magic link. In development the mail is not sent anywhere: open
 | `mix ecto.migrate` / `mix ecto.rollback` | Apply or undo migrations |
 | `mix ecto.gen.migration name` | Start a new migration |
 | `mix ecto.reset` | Drop, recreate, migrate and re-seed — **deletes all study progress** |
+| `mix docs` | Build the HTML documentation into `doc/` (git-ignored) |
 | `mix assets.build` | Rebuild CSS and JS once |
 | `mix assets.deploy` | Minified assets plus a digest, for releases |
 
@@ -91,8 +92,22 @@ test/                 mirrors lib/
 
 ## Documentation
 
+Read the guides straight from the repository:
+
 * [guides/architecture.md](guides/architecture.md) — how the pieces fit: contexts,
   the content pipeline, the study loop, and why it's shaped this way
 * [guides/domain-model.md](guides/domain-model.md) — the tables, what they mean and
   the rules they enforce
 * `AGENTS.md` — Phoenix 1.8 and LiveView conventions this codebase follows
+
+Or build them together with the module documentation, where the guides and
+every `@doc` are cross-linked:
+
+```sh
+mix docs
+open doc/index.html      # Linux: xdg-open doc/index.html
+```
+
+ExDoc writes into `doc/`, which is git-ignored — that's why the guides
+themselves live in `guides/`. The modules are grouped there by what they do:
+Curriculum, Spaced repetition, Korean, Accounts and Web.

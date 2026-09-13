@@ -15,6 +15,8 @@ defmodule Hanguko.SRS.Card do
 
   alias Hanguko.Content.Item
 
+  @type t :: %__MODULE__{}
+
   @templates [:recognition, :recall, :cloze]
   @states [:learning, :review, :relearning]
 

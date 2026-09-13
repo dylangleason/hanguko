@@ -10,6 +10,8 @@ defmodule Hanguko.Content.Item do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @type t :: %__MODULE__{}
+
   @kinds [:jamo, :syllable, :word, :phrase, :sentence]
 
   schema "items" do
