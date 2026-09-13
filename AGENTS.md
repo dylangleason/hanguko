@@ -5,6 +5,44 @@ This is a web application written using the Phoenix web framework.
 - Use `mix precommit` alias when you are done with all changes and fix any pending issues
 - Use the already included and available `:req` (`Req`) library for HTTP requests, **avoid** `:httpoison`, `:tesla`, and `:httpc`. Req is included by default and is the preferred HTTP client for Phoenix apps
 
+### Documentation guidelines
+
+Documentation is part of the change, not a follow-up. When you introduce a
+feature, a subsystem, a data model or a domain abstraction, **update the
+documentation in the same commit as the code**. Which document depends on
+what changed:
+
+- **`README.md`** — a new Mix task, a new step to get the app running, or any
+  change to the commands used day to day (its table is the list of those
+  commands). Also update it when a workflow changes, such as how the
+  curriculum is edited
+- **`guides/architecture.md`** — a new context, subsystem or pipeline; a new
+  rule in the study loop; a change to how time, scoping or content loading
+  works. Say **why** it is shaped that way, not just what it does — the
+  rationale is the part that can't be read off the code
+- **`guides/domain-model.md`** — a new table, a new column that carries
+  meaning, a new relationship, or a new invariant. Keep the Mermaid ER
+  diagram and the "rules worth keeping in mind" list in step with the schema
+- **`@moduledoc`** — every new module says what it is responsible for and how
+  it relates to its neighbours. New public functions get a `@doc`. Invariants
+  that a reader would otherwise have to infer (why a card has no `new` state,
+  why content is retired rather than deleted) belong next to the code that
+  enforces them
+- **`AGENTS.md`** — a convention future work has to follow
+
+Rules for writing it:
+
+- **Verify every claim against the code before writing it down.** Read the
+  module, run the function, check the migration. Documentation that is
+  confidently wrong is worse than none
+- Prefer explaining decisions and invariants over restating structure a
+  reader can see. Never paste a file listing that will drift
+- Keep prose in `guides/`. `doc/` is git-ignored because `mix docs` (ExDoc)
+  generates into it, so anything written there is lost
+- Add new guides to the `extras` list in `mix.exs` so `mix docs` picks them up
+- `mix docs` must build without warnings; an undefined `t()` or a broken
+  reference means a type or a link is missing
+
 ### Phoenix v1.8 guidelines
 
 - **Always** begin your LiveView templates with `<Layouts.app flash={@flash} ...>` which wraps all inner content
