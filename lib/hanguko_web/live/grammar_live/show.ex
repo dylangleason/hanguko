@@ -195,7 +195,8 @@ defmodule HangukoWeb.GrammarLive.Show do
     {:noreply, assign_try(socket, word)}
   end
 
-  def handle_event("mark_learned", _params, %{assigns: %{current_scope: nil}} = socket) do
+  def handle_event(event, _params, %{assigns: %{current_scope: nil}} = socket)
+      when event in ~w(mark_learned unmark_learned) do
     {:noreply, push_navigate(socket, to: ~p"/users/log-in")}
   end
 

@@ -62,11 +62,14 @@ defmodule Hanguko.Content.PacksTest do
       for item <- point.items do
         assert item.kind == :sentence
         assert item.cloze, "#{item.korean} has no cloze"
-        # The blank has to fall on the grammar being taught, which is the
-        # first place the cloze text appears in the sentence.
-        assert {before, cloze, _rest} = Item.cloze_parts(item)
+        # The blank has to be unambiguous: the grammar being taught appears
+        # in the sentence exactly once.
+        assert length(String.split(item.korean, item.cloze)) == 2,
+               "#{item.korean} does not contain #{item.cloze} exactly once"
+
+        assert {before, cloze, rest} = Item.cloze_parts(item)
         assert cloze == item.cloze
-        refute String.contains?(before, item.cloze)
+        assert before <> cloze <> rest == item.korean
       end
     end
   end

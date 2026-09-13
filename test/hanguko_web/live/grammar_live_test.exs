@@ -155,5 +155,13 @@ defmodule HangukoWeb.GrammarLiveTest do
       assert {:error, {:live_redirect, %{to: "/users/log-in"}}} =
                view |> element("#toggle-learned") |> render_click()
     end
+
+    test "an anonymous unmark asks for a log in too, rather than crashing", %{conn: conn} do
+      point_with_examples()
+      {:ok, view, _html} = live(conn, ~p"/grammar/ieyo-yeyo")
+
+      assert {:error, {:live_redirect, %{to: "/users/log-in"}}} =
+               render_click(view, "unmark_learned", %{})
+    end
   end
 end

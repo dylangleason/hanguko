@@ -164,8 +164,9 @@ defmodule Hanguko.Content do
   end
 
   @doc """
-  Undoes `mark_grammar_learned/3`. Cards already introduced keep their
-  history; they simply stop being studied.
+  Undoes `mark_grammar_learned/3`. The point's sentences leave the study
+  queue; cards already introduced keep their history and come back where
+  they left off if the point is marked as learned again.
   """
   def unmark_grammar_learned(%Scope{user: user}, %GrammarPoint{id: point_id}) do
     {count, _} =

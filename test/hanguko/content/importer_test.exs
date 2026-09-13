@@ -241,6 +241,59 @@ defmodule Hanguko.Content.ImporterTest do
   end
 
   @tag :tmp_dir
+  test "an example moved out of a grammar point stops being one", %{tmp_dir: dir} do
+    write_packs(dir, %{"grammar.yml" => @grammar})
+    {:ok, _} = Importer.import_dir(dir)
+    assert items_by_key()["grammar-basics/한국에 가고 싶어요."].grammar_point_id
+
+    # The same sentence, now a plain item of the deck.
+    write_packs(dir, %{
+      "grammar.yml" => """
+      deck: {slug: grammar-basics, title: Sentence basics, kind: sentences}
+      items:
+        - kind: sentence
+          korean: 한국에 가고 싶어요.
+          meaning: I want to go to Korea.
+      """
+    })
+
+    assert {:ok, _} = Importer.import_dir(dir)
+    item = items_by_key()["grammar-basics/한국에 가고 싶어요."]
+    assert is_nil(item.grammar_point_id)
+    assert is_nil(item.cloze)
+    refute item.retired
+  end
+
+  @tag :tmp_dir
+  test "a grammar point keeps the position its pack gives it", %{tmp_dir: dir} do
+    write_packs(dir, %{
+      "grammar.yml" =>
+        String.replace(
+          @grammar,
+          "  - slug: want-go-sipda",
+          "  - slug: want-go-sipda\n    position: 7\n    level: 3"
+        )
+    })
+
+    assert {:ok, _} = Importer.import_dir(dir)
+    point = Repo.get_by!(GrammarPoint, slug: "want-go-sipda")
+    assert point.position == 7
+    assert point.level == 3
+  end
+
+  @tag :tmp_dir
+  test "reports a pack whose items aren't a list", %{tmp_dir: dir} do
+    write_packs(dir, %{
+      "bad.yml" => """
+      deck: {slug: bad, title: Bad, kind: vocab}
+      items: 사과
+      """
+    })
+
+    assert {:error, ["bad.yml: `items` must be a list"]} = Importer.import_dir(dir)
+  end
+
+  @tag :tmp_dir
   test "rejects a cloze that isn't in its sentence", %{tmp_dir: dir} do
     write_packs(dir, %{
       "grammar.yml" => String.replace(@grammar, "cloze: 고 싶어요\n", "cloze: 고 있어요\n", global: false)

@@ -39,7 +39,10 @@ defmodule HangukoWeb.DeckLiveTest do
       sentences = deck_fixture(kind: :sentences, title: "Sentence basics")
 
       {:ok, view, _html} = live(conn, ~p"/decks")
+      refute has_element?(view, "#decks-#{sentences.id}")
 
+      # Not even by asking for them directly.
+      {:ok, view, _html} = live(conn, ~p"/decks?kind=sentences")
       refute has_element?(view, "#decks-#{sentences.id}")
     end
 

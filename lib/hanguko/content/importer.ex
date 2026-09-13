@@ -68,6 +68,7 @@ defmodule Hanguko.Content.Importer do
     "part_of_speech" => nil,
     "hint" => nil,
     "notes" => nil,
+    "cloze" => nil,
     "tags" => [],
     "metadata" => %{}
   }
@@ -110,34 +111,41 @@ defmodule Hanguko.Content.Importer do
         raw_items = Map.get(doc, "items") || []
         raw_grammar = Map.get(doc, "grammar") || []
 
-        errors =
-          unknown_keys(doc, @top_level_keys, name) ++
-            unknown_keys(deck, @deck_keys, "#{name}: deck") ++
-            unknown_keys(defaults, @item_keys, "#{name}: defaults") ++
-            shape_errors(name, raw_items, raw_grammar)
-
-        deck_attrs = @deck_defaults |> Map.merge(deck) |> Map.put("retired", false)
-        slug = to_string(deck["slug"])
-
-        items =
-          raw_items
-          |> Enum.with_index(1)
-          |> Enum.map(fn {raw, i} ->
-            build_item(raw, i, "#{name}: item #{i}", defaults, slug)
-          end)
-
-        grammar =
-          build_grammar(raw_grammar, defaults, slug, name, length(items), deck_attrs["level"])
-
-        item_errors =
-          Enum.flat_map(items, &elem(&1, 2)) ++
-            Enum.flat_map(grammar, fn point ->
-              point.errors ++ Enum.flat_map(point.examples, &elem(&1, 2))
-            end)
-
-        case errors ++ item_errors do
+        # Anything that isn't shaped like a pack is reported on its own:
+        # there is nothing to walk through afterwards.
+        case shape_errors(name, raw_items, raw_grammar) do
           [] ->
-            {:ok, %{file: name, slug: slug, deck: deck_attrs, items: items, grammar: grammar}}
+            errors =
+              unknown_keys(doc, @top_level_keys, name) ++
+                unknown_keys(deck, @deck_keys, "#{name}: deck") ++
+                unknown_keys(defaults, @item_keys, "#{name}: defaults")
+
+            deck_attrs = @deck_defaults |> Map.merge(deck) |> Map.put("retired", false)
+            slug = to_string(deck["slug"])
+
+            items =
+              raw_items
+              |> Enum.with_index(1)
+              |> Enum.map(fn {raw, i} ->
+                build_item(raw, i, "#{name}: item #{i}", defaults, slug)
+              end)
+
+            grammar =
+              build_grammar(raw_grammar, defaults, slug, name, length(items), deck_attrs["level"])
+
+            item_errors =
+              Enum.flat_map(items, &elem(&1, 2)) ++
+                Enum.flat_map(grammar, fn point ->
+                  point.errors ++ Enum.flat_map(point.examples, &elem(&1, 2))
+                end)
+
+            case errors ++ item_errors do
+              [] ->
+                {:ok, %{file: name, slug: slug, deck: deck_attrs, items: items, grammar: grammar}}
+
+              errors ->
+                {:error, errors}
+            end
 
           errors ->
             {:error, errors}
@@ -199,9 +207,11 @@ defmodule Hanguko.Content.Importer do
     attrs =
       raw
       |> Map.delete("examples")
-      |> Map.merge(%{"position" => index, "retired" => false})
-      # A point sits at its deck's level unless it says otherwise.
+      |> Map.put("retired", false)
+      # A point sits at its deck's level, in file order, unless it says
+      # otherwise.
       |> Map.put_new("level", deck_level)
+      |> Map.put_new("position", index)
 
     built =
       examples
@@ -348,7 +358,14 @@ defmodule Hanguko.Content.Importer do
 
           stats =
             Enum.reduce(pack.items, stats, fn {_label, cs}, stats ->
-              {item_result, _item} = save(Changeset.put_change(cs, :deck_id, deck.id))
+              {item_result, _item} =
+                cs
+                |> Changeset.put_change(:deck_id, deck.id)
+                # An item outside a `grammar:` block belongs to no point,
+                # even if it was one of its examples before.
+                |> Changeset.put_change(:grammar_point_id, nil)
+                |> save()
+
               bump(stats, :items, item_result)
             end)
 

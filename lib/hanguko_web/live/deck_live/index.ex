@@ -4,7 +4,6 @@ defmodule HangukoWeb.DeckLive.Index do
   import HangukoWeb.DeckLive.Components
 
   alias Hanguko.{Content, SRS}
-  alias Hanguko.Content.Deck
 
   @filters [nil, :hangeul, :vocab, :phrases]
   @browsable [:hangeul, :vocab, :phrases]
@@ -121,7 +120,7 @@ defmodule HangukoWeb.DeckLive.Index do
   end
 
   defp parse_kind(kind) when is_binary(kind) do
-    Enum.find(Deck.kinds(), &(Atom.to_string(&1) == kind))
+    Enum.find(@browsable, &(Atom.to_string(&1) == kind))
   end
 
   defp parse_kind(_), do: nil
