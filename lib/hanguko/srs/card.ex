@@ -9,12 +9,13 @@ defmodule Hanguko.SRS.Card do
 
     * `:recognition` - see the Korean, recall the meaning (for letters: the sound)
     * `:recall` - see the meaning, produce the Korean
+    * `:cloze` - see a sentence with its grammar blanked out, fill in the gap
   """
   use Ecto.Schema
 
   alias Hanguko.Content.Item
 
-  @templates [:recognition, :recall]
+  @templates [:recognition, :recall, :cloze]
   @states [:learning, :review, :relearning]
 
   schema "cards" do
@@ -41,9 +42,11 @@ defmodule Hanguko.SRS.Card do
 
   @doc """
   The templates studied for an item, in the order they are introduced.
-  Letters are only studied in the recognition direction.
+  Letters are only studied in the recognition direction, and example
+  sentences only as cloze deletions of the grammar they demonstrate.
   """
   def templates_for(%Item{kind: :jamo}), do: [:recognition]
   def templates_for(%Item{kind: kind}) when kind in [:word, :phrase], do: [:recognition, :recall]
+  def templates_for(%Item{kind: :sentence, cloze: cloze}) when is_binary(cloze), do: [:cloze]
   def templates_for(%Item{}), do: []
 end

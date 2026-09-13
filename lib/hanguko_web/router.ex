@@ -78,6 +78,8 @@ defmodule HangukoWeb.Router do
       live "/hangeul", HangeulLive, :index
       live "/decks", DeckLive.Index, :index
       live "/decks/:slug", DeckLive.Show, :show
+      live "/grammar", GrammarLive.Index, :index
+      live "/grammar/:slug", GrammarLive.Show, :show
     end
 
     post "/users/log-in", UserSessionController, :create

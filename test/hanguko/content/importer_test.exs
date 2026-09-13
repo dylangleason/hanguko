@@ -1,7 +1,7 @@
 defmodule Hanguko.Content.ImporterTest do
   use Hanguko.DataCase, async: true
 
-  alias Hanguko.Content.{Deck, Importer, Item}
+  alias Hanguko.Content.{Deck, GrammarPoint, Importer, Item}
 
   @food """
   deck:
@@ -37,6 +37,35 @@ defmodule Hanguko.Content.ImporterTest do
       meaning: hello
       metadata:
         politeness: polite
+  """
+
+  @grammar """
+  deck:
+    slug: grammar-basics
+    title: Sentence basics
+    kind: sentences
+  items:
+    - kind: sentence
+      korean: 안녕히 계세요.
+      meaning: Goodbye.
+  grammar:
+    - slug: want-go-sipda
+      title: -고 싶다
+      pattern: 동사 어간 + 고 싶어요
+      summary: Saying what you want to do.
+      explanation: |
+        Attach **-고 싶어요** to a verb stem.
+      formation:
+        - when: Any verb stem
+          form: -고 싶어요
+          example: 먹다 → 먹고 싶어요
+      examples:
+        - korean: 한국에 가고 싶어요.
+          meaning: I want to go to Korea.
+          cloze: 고 싶어요
+        - korean: 김치찌개를 먹고 싶어요.
+          meaning: I want to eat kimchi stew.
+          cloze: 고 싶어요
   """
 
   defp write_packs(dir, packs) do
@@ -167,6 +196,80 @@ defmodule Hanguko.Content.ImporterTest do
 
     assert {:ok, %{items: %{created: 1}}} = Importer.import_dir(dir)
     assert %{korean: ^sentence, meaning: ^meaning} = items_by_key()["sentences/#{sentence}"]
+  end
+
+  @tag :tmp_dir
+  test "imports grammar points with their example sentences", %{tmp_dir: dir} do
+    write_packs(dir, %{"grammar.yml" => @grammar})
+
+    assert {:ok, stats} = Importer.import_dir(dir)
+    assert stats.grammar_points == %{created: 1, updated: 0, unchanged: 0, retired: 0}
+    assert stats.items == %{created: 3, updated: 0, unchanged: 0, retired: 0}
+
+    point = Repo.get_by!(GrammarPoint, slug: "want-go-sipda")
+    assert point.title == "-고 싶다"
+    assert point.explanation =~ "**-고 싶어요**"
+    assert [%{"when" => "Any verb stem", "form" => "-고 싶어요"}] = point.formation
+
+    items = items_by_key()
+    example = items["grammar-basics/한국에 가고 싶어요."]
+    assert example.kind == :sentence
+    assert example.cloze == "고 싶어요"
+    assert example.grammar_point_id == point.id
+    # Examples are numbered after the pack's own items.
+    assert items["grammar-basics/안녕히 계세요."].position == 1
+    assert example.position == 2
+    assert is_nil(items["grammar-basics/안녕히 계세요."].grammar_point_id)
+
+    assert {:ok, %{grammar_points: %{unchanged: 1}, items: %{unchanged: 3}}} =
+             Importer.import_dir(dir)
+  end
+
+  @tag :tmp_dir
+  test "retires grammar points that leave the packs", %{tmp_dir: dir} do
+    write_packs(dir, %{"grammar.yml" => @grammar})
+    {:ok, _} = Importer.import_dir(dir)
+    point = Repo.get_by!(GrammarPoint, slug: "want-go-sipda")
+
+    write_packs(dir, %{"grammar.yml" => @food})
+    assert {:ok, %{grammar_points: %{retired: 1}}} = Importer.import_dir(dir)
+
+    reloaded = Repo.get!(GrammarPoint, point.id)
+    assert reloaded.retired
+    # The sentences keep pointing at it, so users' cards survive.
+    assert items_by_key()["grammar-basics/한국에 가고 싶어요."].grammar_point_id == point.id
+  end
+
+  @tag :tmp_dir
+  test "rejects a cloze that isn't in its sentence", %{tmp_dir: dir} do
+    write_packs(dir, %{
+      "grammar.yml" => String.replace(@grammar, "cloze: 고 싶어요\n", "cloze: 고 있어요\n", global: false)
+    })
+
+    assert {:error, errors} = Importer.import_dir(dir)
+
+    assert ("grammar.yml: grammar 1 (want-go-sipda) example 1 (한국에 가고 싶어요.): " <>
+              "cloze \"고 있어요\" does not appear in \"한국에 가고 싶어요.\"") in errors
+
+    assert Repo.aggregate(GrammarPoint, :count) == 0
+  end
+
+  @tag :tmp_dir
+  test "rejects a grammar point with no examples", %{tmp_dir: dir} do
+    write_packs(dir, %{
+      "empty.yml" => """
+      deck: {slug: empty, title: Empty, kind: sentences}
+      grammar:
+        - slug: no-examples
+          title: -지만
+          pattern: 어간 + 지만
+          explanation: But.
+      """
+    })
+
+    assert {:error, errors} = Importer.import_dir(dir)
+    assert "empty.yml: grammar 1 (no-examples): needs at least one example" in errors
+    assert Repo.aggregate(GrammarPoint, :count) == 0
   end
 
   @tag :tmp_dir

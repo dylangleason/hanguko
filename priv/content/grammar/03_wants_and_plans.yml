@@ -1,0 +1,112 @@
+deck:
+  slug: grammar-wants-plans
+  title: Wants, plans and requests
+  title_ko: 희망과 계획
+  kind: sentences
+  level: 2
+  position: 3
+  description: Example sentences for saying what you want, what you will do, and what you'd like someone else to do.
+
+grammar:
+  - slug: want-go-sipda
+    title: -고 싶다
+    pattern: 동사 어간 + 고 싶어요
+    summary: Saying what you want to do.
+    explanation: |
+      Attach **-고 싶어요** to a verb stem to say you want to do something.
+      The stem never changes shape, so this is one of the easiest endings in
+      Korean.
+
+      It describes your own wishes. Talking about what someone else wants
+      takes 고 싶어하다, which is why you hear 동생은 가고 싶어해요 rather than
+      동생은 가고 싶어요.
+    formation:
+      - when: Any verb stem, consonant or vowel
+        form: -고 싶어요
+        example: 먹다 → 먹고 싶어요
+      - when: Talking about someone else
+        form: -고 싶어해요
+        example: 가다 → 가고 싶어해요
+    examples:
+      - korean: 한국에 가고 싶어요.
+        meaning: I want to go to Korea.
+        cloze: 고 싶어요
+      - korean: 김치찌개를 먹고 싶어요.
+        meaning: I want to eat kimchi stew.
+        cloze: 고 싶어요
+      - korean: 한국 영화를 보고 싶어요.
+        meaning: I want to watch a Korean film.
+        cloze: 고 싶어요
+      - korean: 오늘은 집에서 쉬고 싶어요.
+        meaning: Today I want to rest at home.
+        cloze: 고 싶어요
+
+  - slug: future-eul-geoyeyo
+    title: -(으)ㄹ 거예요
+    pattern: 동사 어간 + -(으)ㄹ 거예요
+    summary: Talking about plans and what will happen.
+    explanation: |
+      **-(으)ㄹ 거예요** is the everyday future. It covers both a decided plan
+      ("I'm going to meet a friend") and a guess about what will happen
+      ("it'll probably rain").
+
+      The ㄹ attaches straight onto a stem that ends in a vowel, and takes a
+      helping 을 after a consonant.
+    formation:
+      - when: The stem ends in a vowel
+        batchim: false
+        form: -ㄹ 거예요
+        example: 가다 → 갈 거예요
+      - when: The stem ends in a consonant
+        batchim: true
+        form: -을 거예요
+        example: 먹다 → 먹을 거예요
+    examples:
+      - korean: 내일 학교에 갈 거예요.
+        meaning: I'll go to school tomorrow.
+        cloze: 갈 거예요
+      - korean: 주말에 영화를 볼 거예요.
+        meaning: I'm going to watch a film at the weekend.
+        cloze: 볼 거예요
+      - korean: 저녁에 밥을 먹을 거예요.
+        meaning: I'll eat dinner in the evening.
+        cloze: 먹을 거예요
+      - korean: 다음 주에 친구를 만날 거예요.
+        meaning: I'm meeting a friend next week.
+        cloze: 만날 거예요
+
+  - slug: request-euseyo
+    title: -(으)세요
+    pattern: 동사 어간 + -(으)세요
+    summary: Asking politely, and speaking respectfully about others.
+    explanation: |
+      **-(으)세요** does two jobs. As a request it is the polite "please do
+      this" you hear all day in shops and cafés. As a statement it is the
+      honorific present tense, used about someone you respect — never about
+      yourself.
+
+      So 앉으세요 means "please sit down", and 할머니가 주무세요 means "my
+      grandmother is sleeping", with the respect built into the verb.
+    formation:
+      - when: The stem ends in a vowel
+        batchim: false
+        form: -세요
+        example: 가다 → 가세요
+      - when: The stem ends in a consonant
+        batchim: true
+        form: -으세요
+        example: 앉다 → 앉으세요
+    examples:
+      - korean: 여기 앉으세요.
+        meaning: Please sit here.
+        cloze: 앉으세요
+      - korean: 조금만 기다리세요.
+        meaning: Please wait a moment.
+        cloze: 기다리세요
+      - korean: 이 책을 읽으세요.
+        meaning: Please read this book.
+        cloze: 읽으세요
+      - korean: 안녕히 가세요.
+        meaning: Goodbye. (to someone leaving)
+        cloze: 가세요
+        notes: Literally "go peacefully" — the honorific ending is why it sounds polite.

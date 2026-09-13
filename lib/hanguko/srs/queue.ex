@@ -11,6 +11,8 @@ defmodule Hanguko.SRS.Queue do
     * Learning cards (in their minute-long learning steps) come first when due.
     * Review cards due before the end of the study day come next, oldest
       first, up to the daily review limit.
+    * Example sentences are only introduced once the learner has marked
+      their grammar point as learned.
     * Then new cards, up to the daily new limit. The limit is shared by all
       enrolled decks, which take turns (one card from each, in curriculum
       order); within a deck, items come in position order. Recognition cards
@@ -26,7 +28,7 @@ defmodule Hanguko.SRS.Queue do
   import Ecto.Query, warn: false
 
   alias Hanguko.Repo
-  alias Hanguko.Content.{Deck, Item}
+  alias Hanguko.Content.{Deck, GrammarProgress, Item}
   alias Hanguko.SRS.{Card, Day, DeckEnrollment, ReviewLog, Settings}
 
   @learn_ahead_seconds 20 * 60
@@ -209,7 +211,8 @@ defmodule Hanguko.SRS.Queue do
     {Enum.take(candidates, budget), budget == 0 and candidates != []}
   end
 
-  # Up to `count` new entries, taking one from each deck in turn.
+  # Up to `count` new entries, taking one from each deck in turn. Example
+  # sentences wait until their grammar point has been marked as learned.
   defp find_new_entries(user_id, deck_ids, day_start, busy_items, count) do
     kinds = Enum.map(Deck.kinds(), &Atom.to_string/1)
 
@@ -217,7 +220,10 @@ defmodule Hanguko.SRS.Queue do
       Repo.all(
         from i in Item,
           join: d in assoc(i, :deck),
+          left_join: p in GrammarProgress,
+          on: p.grammar_point_id == i.grammar_point_id and p.user_id == ^user_id,
           where: i.deck_id in ^deck_ids and not i.retired,
+          where: is_nil(i.grammar_point_id) or not is_nil(p.id),
           order_by: [
             fragment("array_position(?::text[], ?::text)", ^kinds, d.kind),
             d.level,
@@ -247,15 +253,19 @@ defmodule Hanguko.SRS.Queue do
   end
 
   # One deck's new entries in position order, alternating between items'
-  # recognition cards and (from the day after) their recall cards.
+  # first cards (recognition, or cloze for example sentences) and, from the
+  # day after, their recall cards.
   defp deck_new_entries(items, existing, busy_items, day_start, count) do
-    recognition =
-      Stream.filter(
-        items,
-        &(:recognition in Card.templates_for(&1) and
-            not Map.has_key?(existing, {&1.id, :recognition}))
-      )
-      |> Stream.map(&%{card: nil, item: &1, template: :recognition})
+    first =
+      items
+      |> Stream.flat_map(fn item ->
+        case Card.templates_for(item) do
+          [template | _] -> [{item, template}]
+          [] -> []
+        end
+      end)
+      |> Stream.reject(fn {item, template} -> Map.has_key?(existing, {item.id, template}) end)
+      |> Stream.map(fn {item, template} -> %{card: nil, item: item, template: template} end)
 
     recall =
       items
@@ -266,7 +276,7 @@ defmodule Hanguko.SRS.Queue do
       end)
       |> Stream.map(&%{card: nil, item: &1, template: :recall})
 
-    interleave(Enum.take(recognition, count), Enum.take(recall, count))
+    interleave(Enum.take(first, count), Enum.take(recall, count))
   end
 
   # [[a1, a2, a3], [b1]] -> [a1, b1, a2, a3]

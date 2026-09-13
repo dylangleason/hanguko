@@ -1,0 +1,176 @@
+deck:
+  slug: grammar-joining
+  title: Joining ideas
+  title_ko: 문장 연결
+  kind: sentences
+  level: 2
+  position: 4
+  description: Example sentences for linking clauses, marking places, and counting things.
+
+grammar:
+  - slug: and-go
+    title: -고
+    pattern: 동사/형용사 어간 + 고
+    summary: Joining two clauses with "and".
+    explanation: |
+      **-고** links two clauses in order or simply lists them. Attach it to
+      the first verb's stem and leave the tense to the final verb — Korean
+      marks tense once, at the end.
+
+      So 밥을 먹고 학교에 갔어요 is "I ate and went to school"; the past only
+      appears on 갔어요.
+    formation:
+      - when: Any stem, listing or sequence
+        form: -고
+        example: 먹다 → 먹고
+      - when: Tense
+        form: only on the final verb
+        example: 먹고 갔어요
+    examples:
+      - korean: 저는 밥을 먹고 학교에 가요.
+        meaning: I eat and then go to school.
+        cloze: 먹고
+      - korean: 동생은 키가 크고 저는 작아요.
+        meaning: My sibling is tall and I'm short.
+        cloze: 크고
+      - korean: 주말에는 청소하고 쉬어요.
+        meaning: At the weekend I clean and rest.
+        cloze: 청소하고
+      - korean: 한국어를 배우고 한국 친구를 만나요.
+        meaning: I learn Korean and meet Korean friends.
+        cloze: 배우고
+
+  - slug: but-jiman
+    title: -지만
+    pattern: 동사/형용사 어간 + 지만
+    summary: Setting one thing against another.
+    explanation: |
+      **-지만** is "but". It attaches to the stem of the first clause, and
+      works with verbs and adjectives alike.
+
+      Past tense goes before it when the first half already happened —
+      먹었지만 is "I ate, but…".
+    formation:
+      - when: Any stem
+        form: -지만
+        example: 어렵다 → 어렵지만
+      - when: The first clause is in the past
+        form: -았/었지만
+        example: 먹다 → 먹었지만
+    examples:
+      - korean: 한국어는 어렵지만 재미있어요.
+        meaning: Korean is hard but fun.
+        cloze: 어렵지만
+      - korean: 비가 오지만 나가요.
+        meaning: It's raining, but I'm going out.
+        cloze: 오지만
+      - korean: 저는 커피를 좋아하지만 동생은 싫어해요.
+        meaning: I like coffee, but my sibling hates it.
+        cloze: 좋아하지만
+      - korean: 조금 피곤하지만 공부할 거예요.
+        meaning: I'm a bit tired, but I'm going to study.
+        cloze: 피곤하지만
+
+  - slug: place-e-eseo
+    title: 에 / 에서
+    pattern: 장소 + 에 · 장소 + 에서
+    summary: Where you are going, and where you are doing something.
+    explanation: |
+      Both particles mark places, and mixing them up is the classic beginner
+      slip.
+
+      **에** marks a destination or where something simply *is*, with verbs
+      like 가다, 오다 and 있다. **에서** marks where an action takes place,
+      with verbs like 공부하다, 먹다 and 만나다.
+
+      에 also marks time — 아침에, 주말에 — where 에서 never does.
+    formation:
+      - when: Destination, or where something exists
+        form: 에
+        example: 학교에 가요
+      - when: Where an action happens
+        form: 에서
+        example: 학교에서 공부해요
+    examples:
+      - korean: 학교에 가요.
+        meaning: I'm going to school.
+        cloze: 에
+      - korean: 집에 있어요.
+        meaning: I'm at home.
+        cloze: 에
+      - korean: 카페에서 커피를 마셔요.
+        meaning: I drink coffee at a café.
+        cloze: 에서
+      - korean: 도서관에서 책을 읽어요.
+        meaning: I read books at the library.
+        cloze: 에서
+
+  - slug: go-to-do-eureo
+    title: -(으)러 가다
+    pattern: 동사 어간 + -(으)러 가다/오다
+    summary: Going somewhere in order to do something.
+    explanation: |
+      **-(으)러** states the purpose of going or coming, and is followed by a
+      movement verb such as 가다, 오다 or 다니다.
+
+      The place, if you mention it, sits between the purpose and the verb —
+      밥을 먹으러 식당에 가요.
+    formation:
+      - when: The stem ends in a vowel
+        batchim: false
+        form: -러
+        example: 보다 → 보러 가요
+      - when: The stem ends in a consonant
+        batchim: true
+        form: -으러
+        example: 먹다 → 먹으러 가요
+    examples:
+      - korean: 친구를 만나러 가요.
+        meaning: I'm going to meet a friend.
+        cloze: 만나러
+      - korean: 점심을 먹으러 식당에 가요.
+        meaning: I'm going to the restaurant to eat lunch.
+        cloze: 먹으러
+      - korean: 영화를 보러 극장에 가요.
+        meaning: I'm going to the cinema to watch a film.
+        cloze: 보러
+      - korean: 책을 빌리러 도서관에 가요.
+        meaning: I'm going to the library to borrow a book.
+        cloze: 빌리러
+
+  - slug: counters
+    title: 개 · 명 · 마리
+    pattern: 명사 + 숫자 + 단위 명사
+    summary: Counting things, people and animals.
+    explanation: |
+      Korean counts with a unit word, like "two *cups* of coffee" in English.
+      The order is noun, then number, then counter — 사과 두 개.
+
+      Counters take the native Korean numbers, and 하나, 둘, 셋, 넷 shorten to
+      한, 두, 세, 네 in front of the counter.
+    formation:
+      - when: Things
+        form: 개
+        example: 사과 두 개
+      - when: People
+        form: 명
+        example: 학생 세 명
+      - when: Animals
+        form: 마리
+        example: 고양이 한 마리
+      - when: Drinks in cups or glasses
+        form: 잔
+        example: 커피 네 잔
+    examples:
+      - korean: 사과 두 개 주세요.
+        meaning: Two apples, please.
+        cloze: 두 개
+      - korean: 학생 세 명이 있어요.
+        meaning: There are three students.
+        cloze: 세 명
+      - korean: 고양이 한 마리를 키워요.
+        meaning: I have (keep) one cat.
+        cloze: 한 마리
+      - korean: 커피 네 잔 주세요.
+        meaning: Four coffees, please.
+        cloze: 네 잔

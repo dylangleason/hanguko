@@ -69,6 +69,7 @@ defmodule Hanguko.MixProject do
       {:swoosh, "~> 1.16"},
       {:req, "~> 0.5"},
       {:yaml_elixir, "~> 2.12"},
+      {:mdex, "~> 0.9"},
       {:fsrs_ex, "~> 0.1.2"},
       {:tz, "~> 0.28.2"},
       {:stream_data, "~> 1.4", only: [:dev, :test]},

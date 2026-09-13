@@ -152,6 +152,20 @@ defmodule Hanguko.SRS.QueueTest do
       refute queue(scope).new_limit_reached
     end
 
+    test "example sentences wait until their grammar point is learned", %{scope: scope} do
+      sentences = deck_fixture(kind: :sentences, position: 1)
+      SRS.enroll_deck(scope, sentences)
+      point = grammar_point_fixture()
+      example = example_fixture(sentences, point, position: 1)
+
+      assert queue(scope).new == []
+
+      {:ok, _} = Hanguko.Content.mark_grammar_learned(scope, point)
+
+      assert [%{item: item, template: :cloze, card: nil}] = queue(scope).new
+      assert item.id == example.id
+    end
+
     test "letters only have a recognition card", %{scope: scope, user: user} do
       letters = deck_fixture(kind: :hangeul, position: 1)
       SRS.enroll_deck(scope, letters)

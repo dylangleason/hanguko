@@ -23,8 +23,26 @@ defmodule Hanguko.Content.Importer do
           korean: 배       # item's identity when fixing a typo in `korean`
           meaning: pear
 
+  A pack may also teach grammar. Each point's `examples` become sentence
+  items in the pack's deck, tied to the point and blanked at `cloze`:
+
+      grammar:
+        - slug: ieyo
+          title: 이에요 / 예요
+          pattern: N + 이에요/예요
+          explanation: |
+            Markdown explaining when to use it.
+          formation:
+            - when: after a consonant
+              form: 이에요
+              example: 학생이에요
+          examples:
+            - korean: 저는 학생이에요.
+              meaning: I am a student.
+              cloze: 이에요
+
   An item's identity is `"<deck slug>/<key>"`, where `key` defaults to its
-  Korean text. Its position is its order in the file.
+  Korean text. Its position is its order in the file, examples last.
 
   Importing is idempotent and non-destructive:
 
@@ -37,11 +55,12 @@ defmodule Hanguko.Content.Importer do
 
   alias Ecto.Changeset
   alias Hanguko.Repo
-  alias Hanguko.Content.{Deck, Item}
+  alias Hanguko.Content.{Deck, GrammarPoint, Item}
 
-  @top_level_keys ~w(deck defaults items)
+  @top_level_keys ~w(deck defaults items grammar)
   @deck_keys ~w(slug title title_ko kind level position description)
-  @item_keys ~w(key kind korean romanization meaning part_of_speech hint notes tags metadata)
+  @item_keys ~w(key kind korean romanization meaning part_of_speech hint notes tags metadata cloze)
+  @grammar_keys ~w(slug title pattern summary level position explanation formation examples)
 
   @deck_defaults %{"title_ko" => nil, "description" => nil, "level" => 1, "position" => 0}
   @item_defaults %{
@@ -86,25 +105,46 @@ defmodule Hanguko.Content.Importer do
     name = Path.relative_to(file, root)
 
     case YamlElixir.read_from_file(file) do
-      {:ok, %{"deck" => deck, "items" => items} = doc} when is_map(deck) and is_list(items) ->
+      {:ok, %{"deck" => deck} = doc} when is_map(deck) ->
         defaults = Map.get(doc, "defaults") || %{}
+        raw_items = Map.get(doc, "items") || []
+        raw_grammar = Map.get(doc, "grammar") || []
 
         errors =
           unknown_keys(doc, @top_level_keys, name) ++
             unknown_keys(deck, @deck_keys, "#{name}: deck") ++
-            unknown_keys(defaults, @item_keys, "#{name}: defaults")
+            unknown_keys(defaults, @item_keys, "#{name}: defaults") ++
+            shape_errors(name, raw_items, raw_grammar)
 
         deck_attrs = @deck_defaults |> Map.merge(deck) |> Map.put("retired", false)
         slug = to_string(deck["slug"])
-        items = items |> Enum.with_index(1) |> Enum.map(&build_item(&1, defaults, slug, name))
 
-        case errors ++ Enum.flat_map(items, &elem(&1, 2)) do
-          [] -> {:ok, %{file: name, slug: slug, deck: deck_attrs, items: items}}
-          errors -> {:error, errors}
+        items =
+          raw_items
+          |> Enum.with_index(1)
+          |> Enum.map(fn {raw, i} ->
+            build_item(raw, i, "#{name}: item #{i}", defaults, slug)
+          end)
+
+        grammar =
+          build_grammar(raw_grammar, defaults, slug, name, length(items), deck_attrs["level"])
+
+        item_errors =
+          Enum.flat_map(items, &elem(&1, 2)) ++
+            Enum.flat_map(grammar, fn point ->
+              point.errors ++ Enum.flat_map(point.examples, &elem(&1, 2))
+            end)
+
+        case errors ++ item_errors do
+          [] ->
+            {:ok, %{file: name, slug: slug, deck: deck_attrs, items: items, grammar: grammar}}
+
+          errors ->
+            {:error, errors}
         end
 
       {:ok, _} ->
-        {:error, ["#{name}: expected a top-level `deck` map and an `items` list"]}
+        {:error, ["#{name}: expected a top-level `deck` map"]}
 
       {:error, %YamlElixir.ParsingError{line: line, column: column, message: message}}
       when is_integer(line) ->
@@ -115,22 +155,88 @@ defmodule Hanguko.Content.Importer do
     end
   end
 
-  defp build_item({raw, index}, defaults, slug, file) when is_map(raw) do
+  defp build_item(raw, position, what, defaults, slug) when is_map(raw) do
     attrs = @item_defaults |> Map.merge(defaults) |> Map.merge(raw)
     key = attrs["key"] || attrs["korean"]
-    source_key = if key, do: "#{slug}/#{key}", else: "#{slug}/##{index}"
-    label = "#{file}: item #{index} (#{key || "no key"})"
+    source_key = if key, do: "#{slug}/#{key}", else: "#{slug}/##{position}"
+    label = "#{what} (#{key || "no key"})"
 
     attrs =
       attrs
       |> Map.delete("key")
-      |> Map.merge(%{"source_key" => source_key, "position" => index, "retired" => false})
+      |> Map.merge(%{"source_key" => source_key, "position" => position, "retired" => false})
 
     {label, attrs, unknown_keys(raw, @item_keys, label)}
   end
 
-  defp build_item({_raw, index}, _defaults, _slug, file),
-    do: {nil, nil, ["#{file}: item #{index} must be a map"]}
+  defp build_item(_raw, _position, what, _defaults, _slug),
+    do: {nil, nil, ["#{what} must be a map"]}
+
+  defp shape_errors(file, items, grammar) do
+    cond do
+      not is_list(items) -> ["#{file}: `items` must be a list"]
+      not is_list(grammar) -> ["#{file}: `grammar` must be a list"]
+      items == [] and grammar == [] -> ["#{file}: needs `items`, `grammar`, or both"]
+      true -> []
+    end
+  end
+
+  # Each grammar point becomes a lesson plus, from its `examples`, sentence
+  # items in the same deck. Their positions continue after the plain items.
+  defp build_grammar(raw_grammar, defaults, slug, file, item_count, deck_level) do
+    {points, _} =
+      Enum.map_reduce(Enum.with_index(raw_grammar, 1), item_count, fn {raw, index}, position ->
+        build_point(raw, index, position, defaults, slug, file, deck_level)
+      end)
+
+    points
+  end
+
+  defp build_point(raw, index, position, defaults, slug, file, deck_level) when is_map(raw) do
+    label = "#{file}: grammar #{index} (#{raw["slug"] || "no slug"})"
+    examples = List.wrap(raw["examples"])
+
+    attrs =
+      raw
+      |> Map.delete("examples")
+      |> Map.merge(%{"position" => index, "retired" => false})
+      # A point sits at its deck's level unless it says otherwise.
+      |> Map.put_new("level", deck_level)
+
+    built =
+      examples
+      |> Enum.with_index(1)
+      |> Enum.map(fn {example, i} ->
+        example = if is_map(example), do: Map.put_new(example, "kind", "sentence"), else: example
+        build_item(example, position + i, "#{label} example #{i}", defaults, slug)
+      end)
+
+    errors =
+      unknown_keys(raw, @grammar_keys, label) ++
+        if examples == [], do: ["#{label}: needs at least one example"], else: []
+
+    point = %{
+      label: label,
+      slug: to_string(raw["slug"]),
+      attrs: attrs,
+      examples: built,
+      errors: errors
+    }
+
+    {point, position + length(examples)}
+  end
+
+  defp build_point(_raw, index, position, _defaults, _slug, file, _deck_level) do
+    point = %{
+      label: nil,
+      slug: nil,
+      attrs: nil,
+      examples: [],
+      errors: ["#{file}: grammar #{index} must be a map"]
+    }
+
+    {point, position}
+  end
 
   defp unknown_keys(map, allowed, label) do
     case Map.keys(map) -- allowed do
@@ -144,35 +250,63 @@ defmodule Hanguko.Content.Importer do
   defp plan(packs) do
     existing_decks = Deck |> Repo.all() |> Map.new(&{&1.slug, &1})
     existing_items = Item |> Repo.all() |> Map.new(&{&1.source_key, &1})
+    existing_points = GrammarPoint |> Repo.all() |> Map.new(&{&1.slug, &1})
+
+    item_changesets = fn built ->
+      for {label, attrs, []} <- built do
+        {label, Item.import_changeset(existing_items[attrs["source_key"]] || %Item{}, attrs)}
+      end
+    end
 
     planned =
       Enum.map(packs, fn pack ->
         deck = Deck.import_changeset(existing_decks[pack.slug] || %Deck{}, pack.deck)
 
-        items =
-          for {label, attrs, []} <- pack.items do
-            existing = existing_items[attrs["source_key"]] || %Item{}
-            {label, Item.import_changeset(existing, attrs)}
+        grammar =
+          for point <- pack.grammar, point.attrs do
+            existing = existing_points[point.slug] || %GrammarPoint{}
+
+            %{
+              label: point.label,
+              slug: point.slug,
+              point: GrammarPoint.import_changeset(existing, point.attrs),
+              examples: item_changesets.(point.examples)
+            }
           end
 
-        %{file: pack.file, slug: pack.slug, deck: deck, items: items}
+        %{
+          file: pack.file,
+          slug: pack.slug,
+          deck: deck,
+          items: item_changesets.(pack.items),
+          grammar: grammar
+        }
       end)
 
     errors =
       duplicates(Enum.map(packs, & &1.slug), "deck slug") ++
-        duplicates(
-          for(pack <- packs, {_, attrs, _} <- pack.items, do: attrs["source_key"]),
-          "item key"
-        ) ++
+        duplicates(for(pack <- packs, point <- pack.grammar, do: point.slug), "grammar slug") ++
+        duplicates(all_source_keys(packs), "item key") ++
         Enum.flat_map(planned, fn pack ->
           changeset_errors(pack.deck, "#{pack.file}: deck") ++
-            Enum.flat_map(pack.items, fn {label, cs} -> changeset_errors(cs, label) end)
+            Enum.flat_map(pack.items, fn {label, cs} -> changeset_errors(cs, label) end) ++
+            Enum.flat_map(pack.grammar, fn point ->
+              changeset_errors(point.point, point.label) ++
+                Enum.flat_map(point.examples, fn {label, cs} -> changeset_errors(cs, label) end)
+            end)
         end)
 
     case errors do
       [] -> {:ok, planned}
       errors -> {:error, errors}
     end
+  end
+
+  defp all_source_keys(packs) do
+    for pack <- packs,
+        built <- [pack.items | Enum.map(pack.grammar, & &1.examples)],
+        {_label, attrs, _errors} <- built,
+        do: attrs["source_key"]
   end
 
   defp duplicates(values, what) do
@@ -205,18 +339,44 @@ defmodule Hanguko.Content.Importer do
 
   defp apply_plan(planned) do
     Repo.transact(fn ->
-      stats =
-        Enum.reduce(planned, %{decks: @empty_stats, items: @empty_stats}, fn pack, stats ->
-          {deck_result, deck} = save(pack.deck)
+      empty = %{decks: @empty_stats, items: @empty_stats, grammar_points: @empty_stats}
 
-          Enum.reduce(pack.items, bump(stats, :decks, deck_result), fn {_label, cs}, stats ->
-            {item_result, _item} = save(Changeset.put_change(cs, :deck_id, deck.id))
-            bump(stats, :items, item_result)
+      stats =
+        Enum.reduce(planned, empty, fn pack, stats ->
+          {deck_result, deck} = save(pack.deck)
+          stats = bump(stats, :decks, deck_result)
+
+          stats =
+            Enum.reduce(pack.items, stats, fn {_label, cs}, stats ->
+              {item_result, _item} = save(Changeset.put_change(cs, :deck_id, deck.id))
+              bump(stats, :items, item_result)
+            end)
+
+          Enum.reduce(pack.grammar, stats, fn point, stats ->
+            {point_result, saved} = save(Changeset.put_change(point.point, :deck_id, deck.id))
+            stats = bump(stats, :grammar_points, point_result)
+
+            Enum.reduce(point.examples, stats, fn {_label, cs}, stats ->
+              {item_result, _item} =
+                cs
+                |> Changeset.put_change(:deck_id, deck.id)
+                |> Changeset.put_change(:grammar_point_id, saved.id)
+                |> save()
+
+              bump(stats, :items, item_result)
+            end)
           end)
         end)
 
       slugs = Enum.map(planned, & &1.slug)
-      keys = for pack <- planned, {_, cs} <- pack.items, do: Changeset.get_field(cs, :source_key)
+      point_slugs = for pack <- planned, point <- pack.grammar, do: point.slug
+
+      keys =
+        for pack <- planned,
+            changesets <- [pack.items | Enum.map(pack.grammar, & &1.examples)],
+            {_label, cs} <- changesets,
+            do: Changeset.get_field(cs, :source_key)
+
       now = DateTime.utc_now(:second)
 
       {retired_decks, _} =
@@ -229,10 +389,17 @@ defmodule Hanguko.Content.Importer do
           set: [retired: true, updated_at: now]
         )
 
+      {retired_points, _} =
+        Repo.update_all(
+          from(g in GrammarPoint, where: g.slug not in ^point_slugs and not g.retired),
+          set: [retired: true, updated_at: now]
+        )
+
       {:ok,
        stats
        |> put_in([:decks, :retired], retired_decks)
-       |> put_in([:items, :retired], retired_items)}
+       |> put_in([:items, :retired], retired_items)
+       |> put_in([:grammar_points, :retired], retired_points)}
     end)
   end
 

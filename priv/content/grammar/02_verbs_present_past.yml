@@ -1,0 +1,115 @@
+deck:
+  slug: grammar-verbs
+  title: Verbs, present and past
+  title_ko: 동사의 현재와 과거
+  kind: sentences
+  level: 1
+  position: 2
+  description: Example sentences for polite verb endings and how to say no.
+
+grammar:
+  - slug: present-ayo-eoyo
+    title: -아요 / -어요
+    pattern: 동사 어간 + 아요/어요
+    summary: The everyday polite present tense.
+    explanation: |
+      Korean verbs are listed in the dictionary as stem + 다, such as 먹다.
+      Drop the 다 and add **아요** or **어요** to get the polite present tense
+      you will use in almost every conversation.
+
+      Which ending you take depends on the last vowel of the stem. Verbs
+      built on 하다 have their own contracted form, 해요.
+
+      The same ending works as a question — just raise your voice at the end.
+    formation:
+      - when: The stem's last vowel is ㅏ or ㅗ
+        form: -아요
+        example: 닫다 → 닫아요
+      - when: Any other vowel
+        form: -어요
+        example: 읽다 → 읽어요
+      - when: The verb ends in 하다
+        form: -해요
+        example: 공부하다 → 공부해요
+    examples:
+      - korean: 매일 한국어를 공부해요.
+        meaning: I study Korean every day.
+        cloze: 공부해요
+      - korean: 동생이 책을 읽어요.
+        meaning: My younger sibling is reading a book.
+        cloze: 읽어요
+      - korean: 아침에 빵을 먹어요.
+        meaning: I eat bread in the morning.
+        cloze: 먹어요
+      - korean: 창문을 닫아요.
+        meaning: I close the window.
+        cloze: 닫아요
+
+  - slug: past-asseoyo-eosseoyo
+    title: -았어요 / -었어요
+    pattern: 동사 어간 + 았어요/었어요
+    summary: Talking about what already happened.
+    explanation: |
+      The past tense follows the same vowel rule as the present: take the
+      stem, add **았어요** or **었어요**, and 하다 verbs become 했어요.
+
+      Korean does not distinguish "I ate" from "I have eaten" — one past form
+      covers both. Time words such as 어제 or 지난주 carry the detail.
+    formation:
+      - when: The stem's last vowel is ㅏ or ㅗ
+        form: -았어요
+        example: 받다 → 받았어요
+      - when: Any other vowel
+        form: -었어요
+        example: 먹다 → 먹었어요
+      - when: The verb ends in 하다
+        form: -했어요
+        example: 공부하다 → 공부했어요
+    examples:
+      - korean: 어제 책을 읽었어요.
+        meaning: I read a book yesterday.
+        cloze: 읽었어요
+      - korean: 점심을 먹었어요.
+        meaning: I ate lunch.
+        cloze: 먹었어요
+      - korean: 생일에 선물을 받았어요.
+        meaning: I got a present on my birthday.
+        cloze: 받았어요
+      - korean: 어제 도서관에서 공부했어요.
+        meaning: I studied at the library yesterday.
+        cloze: 공부했어요
+
+  - slug: negation-an-ji-anta
+    title: 안 / -지 않다
+    pattern: 안 + 동사 · 동사 어간 + 지 않아요
+    summary: The two ways to say no.
+    explanation: |
+      There are two negatives and they mean the same thing. The short one
+      puts **안** directly in front of the verb. The long one attaches
+      **-지 않아요** to the stem and sounds slightly more formal or written.
+
+      With 하다 verbs the 안 goes between the noun and 하다, so 공부해요 becomes
+      공부 안 해요 — a common mistake is to say 안 공부해요.
+    formation:
+      - when: Short form, in speech
+        form: 안 + verb
+        example: 안 가요
+      - when: Long form, slightly more formal
+        form: stem + 지 않아요
+        example: 가지 않아요
+      - when: 하다 verbs, short form
+        form: noun + 안 하다
+        example: 공부 안 해요
+    examples:
+      - korean: 저는 커피를 안 마셔요.
+        meaning: I don't drink coffee.
+        cloze: 안
+      - korean: 오늘은 학교에 안 가요.
+        meaning: I'm not going to school today.
+        cloze: 안
+      - korean: 동생은 고기를 먹지 않아요.
+        meaning: My younger sibling doesn't eat meat.
+        cloze: 지 않아요
+      - korean: 저는 매운 음식을 좋아하지 않아요.
+        meaning: I don't like spicy food.
+        cloze: 지 않아요
