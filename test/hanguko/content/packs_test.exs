@@ -96,6 +96,49 @@ defmodule Hanguko.Content.PacksTest do
     end
   end
 
+  test "phrases are grouped into situations and each has a speech level" do
+    decks = Content.list_decks_with_items(:phrases)
+    phrases = Enum.flat_map(decks, & &1.items)
+
+    assert length(decks) >= 9
+    assert length(phrases) >= 150
+
+    for deck <- decks do
+      assert deck.title_ko && deck.description,
+             "#{deck.slug} needs a Korean title and description"
+    end
+
+    for item <- phrases do
+      assert item.kind == :phrase, item.source_key
+      assert item.metadata["politeness"] in Item.politeness_levels(), item.source_key
+      # The deck is the situation; a second one inside it would drift.
+      refute Map.has_key?(item.metadata, "situation"), item.source_key
+    end
+  end
+
+  test "a phrase's variant is the same phrase at another speech level" do
+    phrases =
+      for deck <- Content.list_decks_with_items(:phrases),
+          item <- deck.items,
+          into: %{},
+          do: {item.source_key, item}
+
+    pairs =
+      for {_key, item} <- phrases,
+          target when is_binary(target) <- [item.metadata["variant_of"]],
+          do: {item, phrases[target]}
+
+    assert length(pairs) >= 5
+
+    for {item, other} <- pairs do
+      assert other, "#{item.source_key} is a variant of a phrase that doesn't exist"
+      assert other.deck_id == item.deck_id
+
+      refute item.metadata["politeness"] == other.metadata["politeness"],
+             "#{item.korean} and #{other.korean} are at the same speech level"
+    end
+  end
+
   test "vocabulary and phrases have romanization and valid politeness levels" do
     for kind <- [:vocab, :phrases],
         deck <- Content.list_decks_with_items(kind),

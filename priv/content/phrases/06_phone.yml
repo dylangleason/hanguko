@@ -1,0 +1,111 @@
+deck:
+  slug: phrases-phone
+  title: On the phone
+  title_ko: 전화
+  kind: phrases
+  level: 2
+  position: 6
+  description: >-
+    Answering and making calls, asking for someone, and dealing with a bad
+    line or a wrong number.
+
+defaults:
+  kind: phrase
+  tags: [phone]
+
+items:
+  - korean: 여보세요
+    romanization: yeoboseyo
+    meaning: hello? (on the phone)
+    notes: Only for phone calls, never to greet someone in person.
+    metadata:
+      politeness: polite
+
+  - korean: 누구세요?
+    romanization: nuguseyo
+    meaning: who is this?; who's there?
+    notes: Also what you ask when someone knocks at the door.
+    metadata:
+      politeness: polite
+
+  - korean: 김민수 씨 계세요?
+    romanization: gim minsu ssi gyeseyo
+    meaning: is Kim Minsu there?
+    notes: 씨 after a full name is polite, and 계세요 is the respectful form of 있어요.
+    metadata:
+      politeness: polite
+
+  - korean: 저는 사라인데요
+    romanization: jeoneun saraindeyo
+    meaning: this is Sarah
+    notes: The -인데요 ending softens the sentence and invites the other person to go on.
+    metadata:
+      politeness: polite
+      context: Saying who is calling.
+
+  - korean: 지금 통화 괜찮으세요?
+    romanization: jigeum tonghwa gwaenchaneuseyo
+    meaning: is now a good time to talk?
+    metadata:
+      politeness: polite
+      literal: Is a call okay now?
+
+  - korean: 잠깐만 기다려 주세요
+    romanization: jamkkanman gidaryeo juseyo
+    meaning: please hold on a moment
+    metadata:
+      politeness: polite
+
+  - korean: 잘 안 들려요
+    romanization: jal an deullyeoyo
+    meaning: I can't hear you very well
+    metadata:
+      politeness: polite
+      literal: It isn't heard well.
+
+  - korean: 전화 잘못 거셨어요
+    romanization: jeonhwa jalmot geosyeosseoyo
+    meaning: you have the wrong number
+    metadata:
+      politeness: polite
+      literal: You dialled wrongly.
+
+  - korean: 메시지 남겨 주세요
+    romanization: mesiji namgyeo juseyo
+    meaning: please leave a message
+    metadata:
+      politeness: polite
+
+  - korean: 다시 전화할게요
+    romanization: dasi jeonhwahalgeyo
+    meaning: I'll call you back
+    metadata:
+      politeness: polite
+
+  - korean: 전화번호가 어떻게 되세요?
+    romanization: jeonhwabeonhoga eotteoke doeseyo
+    meaning: what's your phone number?
+    notes: A polite roundabout way of asking; 어떻게 되세요? also works for names and ages.
+    metadata:
+      politeness: polite
+      literal: How does your phone number go?
+
+  - korean: 문자 보낼게요
+    romanization: munja bonaelgeyo
+    meaning: I'll send you a text
+    metadata:
+      politeness: polite
+
+  - korean: 전화 주셔서 감사합니다
+    romanization: jeonhwa jusyeoseo gamsahamnida
+    meaning: thank you for calling
+    metadata:
+      politeness: formal
+
+  - korean: 끊을게요
+    romanization: kkeuneulgeyo
+    meaning: I'm going to hang up now; bye
+    notes: A normal, friendly way to end a call, not a rude one.
+    metadata:
+      politeness: polite
+      literal: I'll cut (the line).

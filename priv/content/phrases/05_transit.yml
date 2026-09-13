@@ -1,0 +1,122 @@
+deck:
+  slug: phrases-transit
+  title: Transit and directions
+  title_ko: 교통과 길 찾기
+  kind: phrases
+  level: 1
+  position: 5
+  description: >-
+    Finding your way on foot, riding the subway and buses, and taking taxis.
+
+defaults:
+  kind: phrase
+  tags: [transit]
+
+items:
+  - korean: 역이 어디예요?
+    romanization: yeogi eodiyeyo
+    meaning: where is the station?
+    notes: A subway station is 지하철역.
+    metadata:
+      politeness: polite
+
+  - korean: 여기에서 멀어요?
+    romanization: yeogieseo meoreoyo
+    meaning: is it far from here?
+    metadata:
+      politeness: polite
+
+  - korean: 걸어서 갈 수 있어요?
+    romanization: georeoseo gal su isseoyo
+    meaning: can I walk there?
+    metadata:
+      politeness: polite
+      literal: Can I go by walking?
+
+  - korean: 쭉 가세요
+    romanization: jjuk gaseyo
+    meaning: go straight ahead
+    metadata:
+      politeness: polite
+
+  - korean: 오른쪽으로 가세요
+    romanization: oreunjjogeuro gaseyo
+    meaning: go right
+    notes: Left is 왼쪽, so "go left" is 왼쪽으로 가세요.
+    metadata:
+      politeness: polite
+
+  - korean: 지도에서 보여 주세요
+    romanization: jidoeseo boyeo juseyo
+    meaning: please show me on the map
+    metadata:
+      politeness: polite
+
+  - korean: 길을 잃었어요
+    romanization: gireul ireosseoyo
+    meaning: I'm lost
+    metadata:
+      politeness: polite
+      literal: I lost the road.
+
+  - korean: 이 버스 명동에 가요?
+    romanization: i beoseu myeongdonge gayo
+    meaning: does this bus go to Myeongdong?
+    notes: Put your own destination in place of 명동.
+    metadata:
+      politeness: polite
+
+  - korean: 표 한 장 주세요
+    romanization: pyo han jang juseyo
+    meaning: one ticket, please
+    notes: 장 counts flat things like tickets and paper; two tickets is 두 장.
+    metadata:
+      politeness: polite
+
+  - korean: 어디에서 갈아타요?
+    romanization: eodieseo garatayo
+    meaning: where do I transfer?
+    metadata:
+      politeness: polite
+
+  - korean: 다음 역은 어디예요?
+    romanization: daeum yeogeun eodiyeyo
+    meaning: what is the next station?
+    metadata:
+      politeness: polite
+
+  - korean: 몇 번 출구예요?
+    romanization: myeot beon chulguyeyo
+    meaning: which exit number is it?
+    notes: Subway exits are numbered, and directions are often given from an exit.
+    metadata:
+      politeness: polite
+
+  - korean: 택시 어디에서 타요?
+    romanization: taeksi eodieseo tayo
+    meaning: where can I get a taxi?
+    metadata:
+      politeness: polite
+      literal: Where do I ride a taxi?
+
+  - korean: 이 주소로 가 주세요
+    romanization: i jusoro ga juseyo
+    meaning: please take me to this address
+    notes: Show the address on your phone as you say it.
+    metadata:
+      politeness: polite
+      context: Telling a taxi driver where to go.
+
+  - korean: 공항까지 얼마나 걸려요?
+    romanization: gonghangkkaji eolmana geollyeoyo
+    meaning: how long does it take to get to the airport?
+    metadata:
+      politeness: polite
+
+  - korean: 여기서 내려 주세요
+    romanization: yeogiseo naeryeo juseyo
+    meaning: please let me out here
+    metadata:
+      politeness: polite
+      context: Asking a taxi driver to stop.
+      literal: Please let me get off here.

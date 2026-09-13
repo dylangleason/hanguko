@@ -13,6 +13,7 @@ defmodule HangukoWeb.NavigationTest do
       assert has_element?(view, "#mobile-menu #mobile-nav-#{id}")
     end
 
+    assert has_element?(view, "#nav-phrases[href='/phrases']")
     refute has_element?(view, "#mobile-nav-log-out")
     refute has_element?(view, "#nav-study")
   end

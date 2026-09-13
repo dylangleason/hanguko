@@ -1,0 +1,113 @@
+deck:
+  slug: phrases-emergencies
+  title: Emergencies
+  title_ko: 긴급 상황
+  kind: phrases
+  level: 1
+  position: 8
+  description: >-
+    Getting help fast: calling for help, describing pain, and dealing with
+    lost belongings. In Korea, dial 112 for the police and 119 for an
+    ambulance or the fire service.
+
+defaults:
+  kind: phrase
+  tags: [emergencies]
+
+items:
+  - korean: 도와주세요!
+    romanization: dowajuseyo
+    meaning: help!; please help me
+    metadata:
+      politeness: polite
+
+  - korean: 조심하세요!
+    romanization: josimhaseyo
+    meaning: be careful!; watch out!
+    metadata:
+      politeness: polite
+
+  - korean: 불이야!
+    romanization: buriya
+    meaning: fire!
+    notes: Shouted as a warning, where casual speech is normal with anyone.
+    metadata:
+      politeness: casual
+
+  - korean: 경찰을 불러 주세요
+    romanization: gyeongchareul bulleo juseyo
+    meaning: please call the police
+    notes: The police number in Korea is 112.
+    metadata:
+      politeness: polite
+
+  - korean: 구급차를 불러 주세요
+    romanization: gugeupchareul bulleo juseyo
+    meaning: please call an ambulance
+    notes: Ambulances and the fire service are both 119.
+    metadata:
+      politeness: polite
+
+  - korean: 병원이 어디예요?
+    romanization: byeongwoni eodiyeyo
+    meaning: where is the hospital?
+    metadata:
+      politeness: polite
+
+  - korean: 약국이 어디예요?
+    romanization: yakgugi eodiyeyo
+    meaning: where is the pharmacy?
+    metadata:
+      politeness: polite
+
+  - korean: 아파요
+    romanization: apayo
+    meaning: it hurts; I'm sick
+    metadata:
+      politeness: polite
+
+  - korean: 여기가 아파요
+    romanization: yeogiga apayo
+    meaning: it hurts here
+    notes: Point to where it hurts.
+    metadata:
+      politeness: polite
+
+  - korean: 머리가 아파요
+    romanization: meoriga apayo
+    meaning: I have a headache
+    notes: Swap in another body part, e.g. 배 (stomach) or 이 (tooth).
+    metadata:
+      politeness: polite
+      literal: My head hurts.
+
+  - korean: 알레르기가 있어요
+    romanization: allereugiga isseoyo
+    meaning: I have an allergy
+    metadata:
+      politeness: polite
+
+  - korean: 지갑을 잃어버렸어요
+    romanization: jigabeul ireobeoryeosseoyo
+    meaning: I lost my wallet
+    metadata:
+      politeness: polite
+
+  - korean: 여권을 잃어버렸어요
+    romanization: yeogwoneul ireobeoryeosseoyo
+    meaning: I lost my passport
+    metadata:
+      politeness: polite
+
+  - korean: 대사관에 연락해 주세요
+    romanization: daesagwane yeollakae juseyo
+    meaning: please contact my embassy
+    metadata:
+      politeness: polite
+
+  - korean: 영어 할 줄 아는 사람 있어요?
+    romanization: yeongeo hal jul aneun saram isseoyo
+    meaning: does anyone here speak English?
+    metadata:
+      politeness: polite
+      literal: Is there a person who knows how to speak English?

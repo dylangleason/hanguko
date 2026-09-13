@@ -6,6 +6,12 @@ defmodule Hanguko.Content.Item do
   `source_key` (`"<deck-slug>/<key>"`) is the stable identity used by the
   importer, so that edits to an item keep users' review history intact.
   `meaning` may list alternative answers separated by `;`.
+
+  `metadata` carries what only some kinds need. Letters have `name` and
+  `example_syllable`; phrases have `politeness` (one of
+  `politeness_levels/0`, checked on import), and optionally `context`,
+  `literal` and `variant_of` — the source key of the same phrase at another
+  speech level.
   """
   use Ecto.Schema
   import Ecto.Changeset
@@ -13,6 +19,7 @@ defmodule Hanguko.Content.Item do
   @type t :: %__MODULE__{}
 
   @kinds [:jamo, :syllable, :word, :phrase, :sentence]
+  @politeness_levels ~w(formal polite casual)
 
   schema "items" do
     field :source_key, :string
@@ -61,7 +68,27 @@ defmodule Hanguko.Content.Item do
     |> validate_required([:source_key, :kind, :korean, :meaning, :position])
     |> validate_format(:korean, ~r/\p{Hangul}/u, message: "must contain Hangul")
     |> validate_cloze()
+    |> validate_politeness()
     |> unique_constraint(:source_key)
+  end
+
+  @doc "The speech levels a phrase's `metadata.politeness` may name, most formal first."
+  def politeness_levels, do: @politeness_levels
+
+  # Badges, filters and study cards all key off the level, so a typo in a
+  # pack would silently drop a phrase from every one of them.
+  defp validate_politeness(changeset) do
+    case get_field(changeset, :metadata) do
+      %{"politeness" => level} when not is_nil(level) and level not in @politeness_levels ->
+        add_error(
+          changeset,
+          :metadata,
+          "politeness #{inspect(level)} is not one of #{Enum.join(@politeness_levels, ", ")}"
+        )
+
+      _ ->
+        changeset
+    end
   end
 
   # A sentence is studied by blanking out the grammar it demonstrates, so the

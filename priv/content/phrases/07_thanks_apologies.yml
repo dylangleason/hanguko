@@ -1,0 +1,127 @@
+deck:
+  slug: phrases-thanks-apologies
+  title: Thanks and apologies
+  title_ko: 감사와 사과
+  kind: phrases
+  level: 1
+  position: 7
+  description: >-
+    Thanking people properly, answering thanks, apologizing, and brushing off
+    an apology, beyond the basic 감사합니다 and 죄송합니다.
+
+defaults:
+  kind: phrase
+  tags: [thanks, apologies]
+
+items:
+  - korean: 정말 감사합니다
+    romanization: jeongmal gamsahamnida
+    meaning: thank you so much
+    metadata:
+      politeness: formal
+      literal: Truly, thank you.
+
+  - korean: 정말 고마워요
+    romanization: jeongmal gomawoyo
+    meaning: thank you so much
+    metadata:
+      politeness: polite
+      variant_of: 정말 감사합니다
+
+  - korean: 고마워
+    romanization: gomawo
+    meaning: thanks
+    notes: Only with close friends, younger siblings and children.
+    metadata:
+      politeness: casual
+
+  - korean: 도와주셔서 감사합니다
+    romanization: dowajusyeoseo gamsahamnida
+    meaning: thank you for your help
+    metadata:
+      politeness: formal
+
+  - korean: 아니에요
+    romanization: anieyo
+    meaning: not at all; you're welcome
+    notes: The most common reply to thanks or to a compliment.
+    metadata:
+      politeness: polite
+      literal: It's nothing.
+
+  - korean: 천만에요
+    romanization: cheonmaneyo
+    meaning: you're welcome
+    notes: Found in textbooks, but a little stiff; 아니에요 is more common in conversation.
+    metadata:
+      politeness: polite
+
+  - korean: 별말씀을요
+    romanization: byeolmalsseumeullyo
+    meaning: don't mention it
+    metadata:
+      politeness: polite
+      literal: What special words.
+
+  - korean: 수고하셨습니다
+    romanization: sugohasyeotseumnida
+    meaning: thank you for your hard work
+    notes: Said to colleagues at the end of the day, or to anyone who has done something for you.
+    metadata:
+      politeness: formal
+      literal: You went to a lot of trouble.
+
+  - korean: 수고하세요
+    romanization: sugohaseyo
+    meaning: take care; keep up the good work
+    metadata:
+      politeness: polite
+      context: Said as you leave a shop or office, to the people still working.
+
+  - korean: 실례합니다
+    romanization: sillyehamnida
+    meaning: excuse me
+    notes: Before interrupting someone, squeezing past, or entering a room.
+    metadata:
+      politeness: formal
+      literal: I am being rude.
+
+  - korean: 늦어서 죄송합니다
+    romanization: neujeoseo joesonghamnida
+    meaning: sorry I'm late
+    metadata:
+      politeness: formal
+
+  - korean: 늦어서 미안해
+    romanization: neujeoseo mianhae
+    meaning: sorry I'm late
+    metadata:
+      politeness: casual
+      variant_of: 늦어서 죄송합니다
+
+  - korean: 미안해
+    romanization: mianhae
+    meaning: sorry
+    notes: Only with close friends, younger siblings and children.
+    metadata:
+      politeness: casual
+
+  - korean: 제 잘못이에요
+    romanization: je jalmosieyo
+    meaning: it's my fault
+    metadata:
+      politeness: polite
+      literal: It is my mistake.
+
+  - korean: 신경 쓰지 마세요
+    romanization: singyeong sseuji maseyo
+    meaning: don't worry about it
+    metadata:
+      politeness: polite
+      literal: Don't use your nerves on it.
+
+  - korean: 괜찮아
+    romanization: gwaenchana
+    meaning: it's okay; no worries
+    metadata:
+      politeness: casual

@@ -177,7 +177,7 @@ defmodule HangukoWeb.Layouts do
         {"Hangeul", ~p"/hangeul", "hangeul"},
         {"Vocabulary", ~p"/decks?kind=vocab", "vocab"},
         {"Grammar", ~p"/grammar", "grammar"},
-        {"Phrases", ~p"/decks?kind=phrases", "phrases"}
+        {"Phrases", ~p"/phrases", "phrases"}
       ]
   end
 

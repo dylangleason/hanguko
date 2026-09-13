@@ -379,6 +379,75 @@ defmodule Hanguko.Content.ImporterTest do
     assert error =~ ~s(duplicate item key "dupes/배")
   end
 
+  @variants """
+  deck:
+    slug: greetings
+    title: Greetings
+    kind: phrases
+  defaults:
+    kind: phrase
+  items:
+    - korean: 잘 지냈어요?
+      meaning: how have you been?
+      metadata:
+        politeness: polite
+    - korean: 잘 지냈어?
+      meaning: how have you been?
+      metadata:
+        politeness: casual
+        variant_of: 잘 지냈어요?
+  """
+
+  @tag :tmp_dir
+  test "links a phrase to its variant by the variant's full key", %{tmp_dir: dir} do
+    write_packs(dir, %{"greetings.yml" => @variants})
+
+    assert {:ok, _} = Importer.import_dir(dir)
+    casual = items_by_key()["greetings/잘 지냈어?"]
+    assert casual.metadata["variant_of"] == "greetings/잘 지냈어요?"
+
+    assert {:ok, %{items: %{created: 0, updated: 0, unchanged: 2}}} = Importer.import_dir(dir)
+  end
+
+  @tag :tmp_dir
+  test "rejects a variant that isn't another item in the deck", %{tmp_dir: dir} do
+    write_packs(dir, %{
+      "greetings.yml" => """
+      deck:
+        slug: greetings
+        title: Greetings
+        kind: phrases
+      defaults:
+        kind: phrase
+      items:
+        - korean: 안녕
+          meaning: hi
+          metadata:
+            variant_of: 안녕하세요
+        - korean: 잘 자
+          meaning: good night
+          metadata:
+            variant_of: 잘 자
+      """
+    })
+
+    assert {:error, errors} = Importer.import_dir(dir)
+
+    assert ~s[greetings.yml: item 1 (안녕): variant_of "안녕하세요" is not an item in this deck] in errors
+
+    assert "greetings.yml: item 2 (잘 자): variant_of can't point at the item itself" in errors
+    assert Repo.aggregate(Item, :count) == 0
+  end
+
+  @tag :tmp_dir
+  test "rejects a speech level that doesn't exist", %{tmp_dir: dir} do
+    write_packs(dir, %{"greetings.yml" => String.replace(@variants, "casual", "informal")})
+
+    assert {:error, errors} = Importer.import_dir(dir)
+
+    assert ~s[greetings.yml: item 2 (잘 지냈어?): metadata politeness "informal" is not one of formal, polite, casual] in errors
+  end
+
   @tag :tmp_dir
   test "fails when there are no packs", %{tmp_dir: dir} do
     assert {:error, [error]} = Importer.import_dir(dir)

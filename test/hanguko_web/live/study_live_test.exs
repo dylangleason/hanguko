@@ -149,6 +149,43 @@ defmodule HangukoWeb.StudyLiveTest do
       assert has_element?(view, "#limit-notice-new")
     end
 
+    test "phrase cards give the speech level and the situation", %{
+      conn: conn,
+      user: user,
+      scope: scope
+    } do
+      restaurant = deck_fixture(slug: "study-restaurant", title: "Restaurant", kind: :phrases)
+      SRS.enroll_deck(scope, restaurant)
+
+      request =
+        item_fixture(restaurant,
+          kind: :phrase,
+          korean: "물 좀 주세요",
+          meaning: "could I have some water?",
+          metadata: %{"politeness" => "polite", "context" => "Asking a server for water."}
+        )
+
+      {:ok, view, _html} = live(conn, ~p"/study?deck=study-restaurant")
+      assert has_element?(view, "#card-front", "물 좀 주세요")
+      render_hook(view, "flip", %{})
+      assert has_element?(view, "#card-answer", "Polite")
+      assert has_element?(view, "#card-answer #card-context", "Asking a server for water.")
+
+      # The next day brings the recall direction, where the situation is the
+      # only thing telling this "water" apart from the word for water.
+      two_days_ago = DateTime.add(DateTime.utc_now(:second), -2, :day)
+
+      card_fixture(user, request,
+        introduced_at: two_days_ago,
+        due: DateTime.add(two_days_ago, 30, :day)
+      )
+
+      {:ok, view, _html} = live(conn, ~p"/study?deck=study-restaurant")
+      assert has_element?(view, "#card-front", "could I have some water?")
+      assert has_element?(view, "#card-front #card-context", "Asking a server for water.")
+      assert has_element?(view, "#card-front", "Polite")
+    end
+
     test "recall cards show the meaning first", %{
       conn: conn,
       user: user,
