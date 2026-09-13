@@ -142,6 +142,40 @@ defmodule HangukoWeb.PhraseLiveTest do
     refute has_element?(view, "#study-situation")
   end
 
+  test "lists a variant once even if a pair is linked from both sides", %{conn: conn} do
+    deck = deck_fixture(kind: :phrases, slug: "pl-both-ways", title: "Both ways", position: 3)
+
+    polite =
+      item_fixture(deck,
+        kind: :phrase,
+        position: 1,
+        korean: "맞아요",
+        meaning: "that's right",
+        metadata: %{"politeness" => "polite"}
+      )
+
+    casual =
+      item_fixture(deck,
+        kind: :phrase,
+        position: 2,
+        korean: "맞아",
+        meaning: "right",
+        metadata: %{"politeness" => "casual", "variant_of" => polite.source_key}
+      )
+
+    polite
+    |> Ecto.Changeset.change(metadata: Map.put(polite.metadata, "variant_of", casual.source_key))
+    |> Hanguko.Repo.update!()
+
+    {:ok, view, _html} = live(conn, ~p"/phrases?#{[situation: deck.slug]}")
+    html = render(view)
+
+    for {item, variant} <- [{polite, casual}, {casual, polite}] do
+      id = "phrases-#{item.id}-variant-#{variant.id}"
+      assert length(String.split(html, ~s(id="#{id}"))) == 2, "#{id} is not listed exactly once"
+    end
+  end
+
   describe "logged in" do
     setup :register_and_log_in_user
 

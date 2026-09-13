@@ -152,7 +152,7 @@ defmodule Hanguko.Content.Importer do
 
             item_errors =
               Enum.flat_map(items, &elem(&1, 2)) ++
-                variant_errors(items, slug) ++
+                variant_errors(items ++ Enum.flat_map(grammar, & &1.examples), slug) ++
                 Enum.flat_map(grammar, fn point ->
                   point.errors ++ Enum.flat_map(point.examples, &elem(&1, 2))
                 end)
@@ -209,9 +209,22 @@ defmodule Hanguko.Content.Importer do
   defp qualify_variant(attrs, _slug), do: attrs
 
   # Variants are shown next to each other, so each must name a different
-  # item in the same pack.
+  # item in the same pack: one of its plain items or grammar examples. A
+  # pair is linked from one side only; linked from both, each form would be
+  # listed twice.
   defp variant_errors(items, slug) do
     keys = for {_label, %{"source_key" => key}, _errors} <- items, into: MapSet.new(), do: key
+
+    order =
+      for {{_label, %{"source_key" => key}, _errors}, index} <- Enum.with_index(items),
+          into: %{},
+          do: {key, index}
+
+    targets =
+      for {_label, %{"source_key" => key, "metadata" => %{"variant_of" => target}}, _errors} <-
+            items,
+          into: %{},
+          do: {key, target}
 
     Enum.flat_map(items, fn
       {label, %{"source_key" => key, "metadata" => %{"variant_of" => target}}, _errors}
@@ -219,6 +232,15 @@ defmodule Hanguko.Content.Importer do
         cond do
           target == key ->
             ["#{label}: variant_of can't point at the item itself"]
+
+          # Reported once, on the later item of the pair.
+          targets[target] == key and order[target] < order[key] ->
+            other = String.replace_prefix(target, slug <> "/", "")
+
+            [
+              "#{label}: variant_of #{inspect(other)} already names this item as its variant; " <>
+                "link the pair from one side only"
+            ]
 
           MapSet.member?(keys, target) ->
             []
