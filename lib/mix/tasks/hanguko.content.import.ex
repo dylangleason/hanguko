@@ -27,6 +27,7 @@ defmodule Mix.Tasks.Hanguko.Content.Import do
         Mix.shell().info("Imported content from #{opts[:path] || "priv/content"}")
         Mix.shell().info(format_stats("decks", stats.decks))
         Mix.shell().info(format_stats("items", stats.items))
+        Mix.shell().info(format_stats("grammar", stats.grammar_points))
 
       {:error, errors} ->
         Enum.each(errors, &Mix.shell().error("  " <> &1))

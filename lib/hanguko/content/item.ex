@@ -24,9 +24,11 @@ defmodule Hanguko.Content.Item do
     field :tags, {:array, :string}, default: []
     field :position, :integer
     field :metadata, :map, default: %{}
+    field :cloze, :string
     field :retired, :boolean, default: false
 
     belongs_to :deck, Hanguko.Content.Deck
+    belongs_to :grammar_point, Hanguko.Content.GrammarPoint
 
     timestamps(type: :utc_datetime)
   end
@@ -48,6 +50,7 @@ defmodule Hanguko.Content.Item do
       :tags,
       :position,
       :metadata,
+      :cloze,
       :retired
     ])
     # An empty `tags:` or `metadata:` in a content pack means "none", not NULL.
@@ -55,7 +58,20 @@ defmodule Hanguko.Content.Item do
     |> update_change(:metadata, &(&1 || %{}))
     |> validate_required([:source_key, :kind, :korean, :meaning, :position])
     |> validate_format(:korean, ~r/\p{Hangul}/u, message: "must contain Hangul")
+    |> validate_cloze()
     |> unique_constraint(:source_key)
+  end
+
+  # A sentence is studied by blanking out the grammar it demonstrates, so the
+  # cloze has to be text that actually appears in the sentence.
+  defp validate_cloze(changeset) do
+    korean = get_field(changeset, :korean) || ""
+
+    validate_change(changeset, :cloze, fn :cloze, cloze ->
+      if String.contains?(korean, cloze),
+        do: [],
+        else: [cloze: "#{inspect(cloze)} does not appear in #{inspect(korean)}"]
+    end)
   end
 
   @doc """
@@ -66,6 +82,19 @@ defmodule Hanguko.Content.Item do
     do: syllable
 
   def speech_text(%__MODULE__{korean: korean}), do: korean
+
+  @doc """
+  Splits a sentence around the grammar it demonstrates, as
+  `{before, target, after}`. Returns `nil` when the item has no cloze.
+  """
+  def cloze_parts(%__MODULE__{cloze: nil}), do: nil
+
+  def cloze_parts(%__MODULE__{cloze: cloze, korean: korean}) do
+    case String.split(korean, cloze, parts: 2) do
+      [before, rest] -> {before, cloze, rest}
+      _ -> nil
+    end
+  end
 
   @doc "The accepted meanings, split on `;`."
   def meanings(%__MODULE__{meaning: meaning}) do

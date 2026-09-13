@@ -178,6 +178,30 @@ defmodule HangukoWeb.StudyLiveTest do
       assert has_element?(view, "#card-answer [data-primary-speak][data-text='사과']")
     end
 
+    test "cloze cards blank out the grammar and reveal it on the answer", %{
+      conn: conn,
+      scope: scope,
+      deck: deck
+    } do
+      SRS.unenroll_deck(scope, deck)
+      sentences = deck_fixture(slug: "grammar-basics", title: "Basics", kind: :sentences)
+      SRS.enroll_deck(scope, sentences)
+      point = grammar_point_fixture()
+      example_fixture(sentences, point)
+      {:ok, _} = Hanguko.Content.mark_grammar_learned(scope, point)
+
+      {:ok, view, _html} = live(conn, ~p"/study")
+
+      assert has_element?(view, "#flashcard", "Which grammar fills the gap?")
+      assert has_element?(view, "#card-front", "한국에 가")
+      assert has_element?(view, "#card-front", "I want to go to Korea.")
+      refute has_element?(view, "#card-front", "가고 싶어요")
+
+      render_hook(view, "flip", %{})
+      assert has_element?(view, "#card-answer mark", "고 싶어요")
+      assert has_element?(view, "#card-answer [data-primary-speak][data-text='한국에 가고 싶어요.']")
+    end
+
     test "can study a single deck", %{conn: conn, scope: scope} do
       places = deck_fixture(slug: "places", title: "Places", position: 99)
       SRS.enroll_deck(scope, places)

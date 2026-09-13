@@ -7,6 +7,7 @@ defmodule HangukoWeb.DeckLive.Index do
   alias Hanguko.Content.Deck
 
   @filters [nil, :hangeul, :vocab, :phrases]
+  @browsable [:hangeul, :vocab, :phrases]
 
   @impl true
   def render(assigns) do
@@ -92,7 +93,9 @@ defmodule HangukoWeb.DeckLive.Index do
      socket
      |> assign(:kind, kind)
      |> assign(:page_title, if(kind, do: deck_kind_label(kind), else: "All decks"))
-     |> stream(:decks, Content.list_decks(kind: kind), reset: true)}
+     # Sentence decks are browsed through the grammar lessons that unlock
+     # them, not here.
+     |> stream(:decks, Content.list_decks(kind: kind || @browsable), reset: true)}
   end
 
   @impl true

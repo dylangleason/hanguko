@@ -1,0 +1,149 @@
+deck:
+  slug: grammar-basics
+  title: Sentence basics
+  title_ko: 문장의 기초
+  kind: sentences
+  level: 1
+  position: 1
+  description: Example sentences for the particles that hold a Korean sentence together.
+
+grammar:
+  - slug: ieyo-yeyo
+    title: 이에요 / 예요
+    pattern: 명사 + 이에요/예요
+    summary: Saying what something is.
+    explanation: |
+      Korean has no verb "to be" in the English sense. To say *A is B*, you
+      attach **이에요** or **예요** to the noun at the end of the sentence.
+
+      Which one you use depends on the noun's last letter, not on who is
+      speaking. Both are the polite 해요체 style you will use with most
+      people.
+
+      The sentence order is *topic — description — verb*, and the verb always
+      comes last.
+    formation:
+      - when: The noun ends in a consonant (batchim)
+        batchim: true
+        form: 이에요
+        example: 학생이에요
+      - when: The noun ends in a vowel
+        batchim: false
+        form: 예요
+        example: 의사예요
+    examples:
+      - korean: 저는 학생이에요.
+        meaning: I am a student.
+        cloze: 이에요
+        notes: 학생 ends in ㅇ, so it takes 이에요.
+      - korean: 이것은 책이에요.
+        meaning: This is a book.
+        cloze: 이에요
+      - korean: 그 사람은 의사예요.
+        meaning: That person is a doctor.
+        cloze: 예요
+        notes: 의사 ends in a vowel, so it takes 예요.
+      - korean: 여기는 학교예요.
+        meaning: This place is a school.
+        cloze: 예요
+
+  - slug: topic-eun-neun
+    title: 은 / 는
+    pattern: 명사 + 은/는
+    summary: Marking what the sentence is about.
+    explanation: |
+      **은/는** marks the topic — what you are talking about, or what you are
+      contrasting with something else. English often hides this in word order
+      or stress; Korean marks it with a particle.
+
+      Use it when introducing yourself, changing subject, or setting one
+      thing against another, as in "I like coffee, but my brother hates it".
+    formation:
+      - when: The noun ends in a consonant (batchim)
+        batchim: true
+        form: 은
+        example: 선생님은
+      - when: The noun ends in a vowel
+        batchim: false
+        form: 는
+        example: 저는
+    examples:
+      - korean: 제 이름은 민수예요.
+        meaning: My name is Minsu.
+        cloze: 은
+      - korean: 선생님은 한국 사람이에요.
+        meaning: The teacher is Korean.
+        cloze: 은
+      - korean: 오늘은 날씨가 좋아요.
+        meaning: Today the weather is nice.
+        cloze: 은
+      - korean: 저는 커피를 좋아해요.
+        meaning: I like coffee.
+        cloze: 는
+
+  - slug: subject-i-ga
+    title: 이 / 가
+    pattern: 명사 + 이/가
+    summary: Marking who or what does something.
+    explanation: |
+      **이/가** marks the subject — the one doing the action or being
+      described. Where 은/는 says "as for this", 이/가 simply points at who or
+      what.
+
+      New information usually takes 이/가, and it is also what you use with
+      있어요, 없어요 and adjectives like 좋아요.
+    formation:
+      - when: The noun ends in a consonant (batchim)
+        batchim: true
+        form: 이
+        example: 시간이
+      - when: The noun ends in a vowel
+        batchim: false
+        form: 가
+        example: 친구가
+    examples:
+      - korean: 친구가 왔어요.
+        meaning: My friend came.
+        cloze: 가
+      - korean: 날씨가 좋아요.
+        meaning: The weather is nice.
+        cloze: 가
+      - korean: 그 책이 재미있어요.
+        meaning: That book is interesting.
+        cloze: 이
+      - korean: 시간이 없어요.
+        meaning: I don't have time.
+        cloze: 이
+
+  - slug: object-eul-reul
+    title: 을 / 를
+    pattern: 명사 + 을/를
+    summary: Marking what the action is done to.
+    explanation: |
+      **을/를** marks the object — the thing the verb acts on. It comes right
+      after the noun, and the verb still goes at the end of the sentence.
+
+      In casual speech this particle is often dropped, but write it while you
+      are learning: it makes the sentence structure obvious.
+    formation:
+      - when: The noun ends in a consonant (batchim)
+        batchim: true
+        form: 을
+        example: 밥을
+      - when: The noun ends in a vowel
+        batchim: false
+        form: 를
+        example: 커피를
+    examples:
+      - korean: 저는 커피를 마셔요.
+        meaning: I drink coffee.
+        cloze: 를
+      - korean: 밥을 먹어요.
+        meaning: I'm eating.
+        cloze: 을
+      - korean: 한국어를 배워요.
+        meaning: I'm learning Korean.
+        cloze: 를
+      - korean: 음악을 들어요.
+        meaning: I listen to music.
+        cloze: 을

@@ -66,7 +66,12 @@ defmodule Hanguko.SRS do
 
   ## Settings
 
-  @doc "Returns the scope's study settings, or unsaved defaults."
+  @doc """
+  Returns the scope's study settings, or unsaved defaults. Anonymous
+  visitors (a `nil` scope) get the defaults too.
+  """
+  def get_settings(nil), do: %Settings{}
+
   def get_settings(%Scope{user: user}) do
     Repo.get_by(Settings, user_id: user.id) || %Settings{user_id: user.id}
   end

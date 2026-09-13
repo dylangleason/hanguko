@@ -112,28 +112,32 @@ defmodule HangukoWeb.StudyLive do
         id="card-front"
         class="flex min-h-48 flex-col items-center justify-center px-6 py-8 text-center"
       >
-        <%= if @entry.template == :recall do %>
-          <p class="text-3xl font-semibold text-balance">
-            {Enum.join(Item.meanings(@entry.item), ", ")}
-          </p>
-          <div class="mt-3 flex flex-wrap items-center justify-center gap-2 text-sm text-base-content/50">
-            <span :if={@entry.item.part_of_speech}>{@entry.item.part_of_speech}</span>
-            <.politeness_badge
-              :if={@entry.item.metadata["politeness"]}
-              level={@entry.item.metadata["politeness"]}
-            />
-          </div>
-        <% else %>
-          <div class="flex items-center gap-2">
-            <.korean class="text-6xl leading-tight font-medium">{@entry.item.korean}</.korean>
-            <.speak_button
-              id="study-speak"
-              text={Item.speech_text(@entry.item)}
-              rate={@settings.tts_rate}
-              size="lg"
-              data-primary-speak
-            />
-          </div>
+        <%= cond do %>
+          <% @entry.template == :cloze -> %>
+            <.cloze_sentence item={@entry.item} />
+            <p class="mt-4 text-base-content/70">{@entry.item.meaning}</p>
+          <% @entry.template == :recall -> %>
+            <p class="text-3xl font-semibold text-balance">
+              {Enum.join(Item.meanings(@entry.item), ", ")}
+            </p>
+            <div class="mt-3 flex flex-wrap items-center justify-center gap-2 text-sm text-base-content/50">
+              <span :if={@entry.item.part_of_speech}>{@entry.item.part_of_speech}</span>
+              <.politeness_badge
+                :if={@entry.item.metadata["politeness"]}
+                level={@entry.item.metadata["politeness"]}
+              />
+            </div>
+          <% true -> %>
+            <div class="flex items-center gap-2">
+              <.korean class="text-6xl leading-tight font-medium">{@entry.item.korean}</.korean>
+              <.speak_button
+                id="study-speak"
+                text={Item.speech_text(@entry.item)}
+                rate={@settings.tts_rate}
+                size="lg"
+                data-primary-speak
+              />
+            </div>
         <% end %>
       </div>
 
@@ -143,6 +147,17 @@ defmodule HangukoWeb.StudyLive do
         class="border-t border-base-300 bg-base-200/40 px-6 py-6 text-center"
       >
         <%= cond do %>
+          <% @entry.template == :cloze -> %>
+            <div class="flex items-center justify-center gap-2">
+              <.cloze_sentence item={@entry.item} reveal />
+              <.speak_button
+                id="study-speak"
+                text={@entry.item.korean}
+                rate={@settings.tts_rate}
+                size="lg"
+                data-primary-speak
+              />
+            </div>
           <% @entry.template == :recall -> %>
             <div class="flex items-center justify-center gap-2">
               <.korean class="text-5xl leading-tight font-medium">{@entry.item.korean}</.korean>
@@ -194,6 +209,28 @@ defmodule HangukoWeb.StudyLive do
         </div>
       </div>
     </section>
+    """
+  end
+
+  attr :item, :any, required: true
+  attr :reveal, :boolean, default: false
+
+  defp cloze_sentence(assigns) do
+    {before, target, rest} =
+      Item.cloze_parts(assigns.item) || {assigns.item.korean, "", ""}
+
+    assigns = assign(assigns, before: before, target: target, rest: rest)
+
+    ~H"""
+    <.korean class="text-3xl leading-snug font-medium text-balance">
+      {@before}
+      <%= if @reveal do %>
+        <mark class="rounded bg-primary/15 px-1 text-primary">{@target}</mark>
+      <% else %>
+        <span class="mx-1 inline-block w-20 border-b-2 border-primary align-baseline"></span>
+      <% end %>
+      {@rest}
+    </.korean>
     """
   end
 
@@ -434,6 +471,7 @@ defmodule HangukoWeb.StudyLive do
   defp entry_kind(%{card: %{state: :review}}), do: :review
   defp entry_kind(%{card: _}), do: :learning
 
+  defp prompt(%{template: :cloze}), do: "Which grammar fills the gap?"
   defp prompt(%{template: :recall}), do: "How do you say this in Korean?"
   defp prompt(%{item: %Item{kind: :jamo}}), do: "What sound does this letter make?"
   defp prompt(_entry), do: "What does this mean?"

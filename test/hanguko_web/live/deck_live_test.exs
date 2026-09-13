@@ -35,6 +35,14 @@ defmodule HangukoWeb.DeckLiveTest do
       assert has_element?(view, "#decks-#{phrases.id}")
     end
 
+    test "leaves grammar sentence decks to the grammar lessons", %{conn: conn} do
+      sentences = deck_fixture(kind: :sentences, title: "Sentence basics")
+
+      {:ok, view, _html} = live(conn, ~p"/decks")
+
+      refute has_element?(view, "#decks-#{sentences.id}")
+    end
+
     test "asks anonymous visitors to log in to study", %{conn: conn, food: food} do
       {:ok, view, _html} = live(conn, ~p"/decks")
       assert has_element?(view, "a#enroll-#{food.id}[href='/users/log-in']")
