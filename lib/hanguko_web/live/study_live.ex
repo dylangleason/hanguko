@@ -127,6 +127,14 @@ defmodule HangukoWeb.StudyLive do
                 level={@entry.item.metadata["politeness"]}
               />
             </div>
+            <%!-- "Thank you" alone doesn't say which phrase; the situation does --%>
+            <p
+              :if={@entry.item.metadata["context"]}
+              id="card-context"
+              class="mt-3 text-sm text-base-content/60"
+            >
+              {@entry.item.metadata["context"]}
+            </p>
           <% true -> %>
             <div class="flex items-center gap-2">
               <.korean class="text-6xl leading-tight font-medium">{@entry.item.korean}</.korean>
@@ -184,6 +192,16 @@ defmodule HangukoWeb.StudyLive do
           <% true -> %>
             <p class="text-2xl font-semibold text-balance">
               {Enum.join(Item.meanings(@entry.item), ", ")}
+            </p>
+            <div :if={@entry.item.metadata["politeness"]} class="mt-2">
+              <.politeness_badge level={@entry.item.metadata["politeness"]} />
+            </div>
+            <p
+              :if={@entry.item.metadata["context"]}
+              id="card-context"
+              class="mt-2 text-sm text-base-content/60"
+            >
+              {@entry.item.metadata["context"]}
             </p>
             <p
               :if={@settings.show_romanization && @entry.item.romanization}

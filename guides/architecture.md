@@ -82,6 +82,17 @@ ends in a consonant. The grammar page uses those rows to offer a "try it"
 box, joining a typed word to the right form — including writing a lone
 consonant into the last syllable, so 가 + `-ㄹ 거예요` shows 갈 거예요.
 
+A `phrases` pack is one **situation** — greetings, the restaurant, the
+phone — so enrolling in a situation is just enrolling in its deck, and the
+queue, limits and burying need nothing new. Each phrase names its speech
+level (`metadata.politeness`: `formal`, `polite` or `casual`), which the
+importer validates because badges, the politeness filter and study cards all
+key off it. A phrase may name the same phrase at another level with
+`variant_of`; the importer stores it as the full source key and rejects a
+variant that isn't another item in the same pack. Variants are separate items
+on purpose: the casual form is worth studying too, and the badge on a recall
+card says which level is being asked for.
+
 ## The study loop
 
 ```
@@ -154,7 +165,7 @@ numbers don't jitter between renders.
 ## Web layer
 
 Routes divide along the same line as the data. Browsing the curriculum
-(`/hangeul`, `/decks`, `/grammar`) is public; anything per-user
+(`/hangeul`, `/decks`, `/grammar`, `/phrases`) is public; anything per-user
 (`/dashboard`, `/study`, `/study/settings`) requires a login. Public pages
 that offer a per-user action — enrol, mark as learned — send anonymous
 visitors to the log-in page rather than failing.
@@ -190,7 +201,7 @@ Two JS hooks carry the behaviour that has to be client-side:
 ## What comes next
 
 The remaining phases lean on what's already here rather than changing it:
-phrases by situation (content plus a browsing page), progress statistics
-(computed from `review_logs`, which is why it stores both sides of every
-review), typed answers and a card browser, and listening comprehension
-(pre-generated audio, which `Speak` already prefers when an item has it).
+progress statistics (computed from `review_logs`, which is why it stores both
+sides of every review), typed answers and a card browser, production audio
+(cloud neural TTS clips that `Speak` already prefers over browser speech when
+a page passes one), and listening comprehension built on that audio.

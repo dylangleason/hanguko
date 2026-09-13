@@ -1,0 +1,123 @@
+deck:
+  slug: phrases-shopping
+  title: Shopping
+  title_ko: 쇼핑
+  kind: phrases
+  level: 1
+  position: 4
+  description: >-
+    Browsing, asking about sizes and colours, paying, and returning things,
+    from markets to department stores.
+
+defaults:
+  kind: phrase
+  tags: [shopping]
+
+items:
+  - korean: 어서 오세요
+    romanization: eoseo oseyo
+    meaning: welcome
+    notes: You don't need to reply; a nod or a smile is enough.
+    metadata:
+      politeness: polite
+      context: What staff say as you walk into a shop or restaurant.
+      literal: Come quickly.
+
+  - korean: 그냥 구경하는 거예요
+    romanization: geunyang gugyeonghaneun geoyeyo
+    meaning: I'm just looking
+    metadata:
+      politeness: polite
+
+  - korean: 이거 있어요?
+    romanization: igeo isseoyo
+    meaning: do you have this?
+    notes: Show a photo or point at the item.
+    metadata:
+      politeness: polite
+
+  - korean: 다른 색 있어요?
+    romanization: dareun saek isseoyo
+    meaning: do you have another colour?
+    metadata:
+      politeness: polite
+
+  - korean: 더 큰 사이즈 있어요?
+    romanization: deo keun saijeu isseoyo
+    meaning: do you have a bigger size?
+    notes: For a smaller size, say 더 작은 사이즈.
+    metadata:
+      politeness: polite
+
+  - korean: 입어 봐도 돼요?
+    romanization: ibeo bwado dwaeyo
+    meaning: can I try it on?
+    notes: For shoes, use 신어 봐도 돼요?
+    metadata:
+      politeness: polite
+
+  - korean: 너무 비싸요
+    romanization: neomu bissayo
+    meaning: it's too expensive
+    metadata:
+      politeness: polite
+
+  - korean: 좀 깎아 주세요
+    romanization: jom kkakka juseyo
+    meaning: could you give me a discount?
+    notes: Haggling works at traditional markets, not in department stores or chains.
+    metadata:
+      politeness: polite
+      literal: Please cut (the price) a little.
+
+  - korean: 전부 얼마예요?
+    romanization: jeonbu eolmayeyo
+    meaning: how much is it altogether?
+    metadata:
+      politeness: polite
+
+  - korean: 이걸로 할게요
+    romanization: igeollo halgeyo
+    meaning: I'll take this one
+    metadata:
+      politeness: polite
+      literal: I'll go with this.
+
+  - korean: 카드 돼요?
+    romanization: kadeu dwaeyo
+    meaning: can I pay by card?
+    metadata:
+      politeness: polite
+      literal: Does a card work?
+
+  - korean: 현금으로 할게요
+    romanization: hyeongeumeuro halgeyo
+    meaning: I'll pay in cash
+    metadata:
+      politeness: polite
+
+  - korean: 봉투 필요하세요?
+    romanization: bongtu piryohaseyo
+    meaning: do you need a bag?
+    notes: Bags usually cost a little extra.
+    metadata:
+      politeness: polite
+      context: Asked at the checkout.
+
+  - korean: 영수증 주세요
+    romanization: yeongsujeung juseyo
+    meaning: a receipt, please
+    metadata:
+      politeness: polite
+
+  - korean: 교환할 수 있어요?
+    romanization: gyohwanhal su isseoyo
+    meaning: can I exchange this?
+    metadata:
+      politeness: polite
+
+  - korean: 환불해 주세요
+    romanization: hwanbulhae juseyo
+    meaning: I'd like a refund, please
+    metadata:
+      politeness: polite

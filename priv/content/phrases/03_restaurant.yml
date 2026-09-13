@@ -1,0 +1,140 @@
+deck:
+  slug: phrases-restaurant
+  title: Restaurant and café
+  title_ko: 식당과 카페
+  kind: phrases
+  level: 1
+  position: 3
+  description: >-
+    Getting a table, ordering, asking for changes, and paying, in restaurants
+    and cafés.
+
+defaults:
+  kind: phrase
+  tags: [restaurant]
+
+items:
+  - korean: 몇 분이세요?
+    romanization: myeot buniseyo
+    meaning: how many people?
+    notes: Answer with a native Korean number, e.g. 두 명이요.
+    metadata:
+      politeness: polite
+      context: What staff ask as you walk in.
+
+  - korean: 두 명이요
+    romanization: du myeongiyo
+    meaning: two people, please
+    notes: 한 명, 세 명 and 네 명 are one, three and four people.
+    metadata:
+      politeness: polite
+
+  - korean: 메뉴판 주세요
+    romanization: menyupan juseyo
+    meaning: the menu, please
+    metadata:
+      politeness: polite
+
+  - korean: 뭐가 맛있어요?
+    romanization: mwoga masisseoyo
+    meaning: what's good here?
+    metadata:
+      politeness: polite
+      literal: What is tasty?
+
+  - korean: 추천해 주세요
+    romanization: chucheonhae juseyo
+    meaning: what do you recommend?
+    metadata:
+      politeness: polite
+      literal: Please recommend something.
+
+  - korean: 이거 주세요
+    romanization: igeo juseyo
+    meaning: I'll have this, please
+    notes: Point at the menu as you say it.
+    metadata:
+      politeness: polite
+      literal: Please give me this.
+
+  - korean: 안 맵게 해 주세요
+    romanization: an maepge hae juseyo
+    meaning: not spicy, please
+    metadata:
+      politeness: polite
+      literal: Please make it not spicy.
+
+  - korean: 물 좀 주세요
+    romanization: mul jom juseyo
+    meaning: could I have some water?
+    notes: Water is usually free, and often self-service.
+    metadata:
+      politeness: polite
+
+  - korean: 여기요
+    romanization: yeogiyo
+    meaning: excuse me (to call staff over)
+    notes: Like 저기요, and just as polite.
+    metadata:
+      politeness: polite
+      context: Calling a server to your table.
+      literal: Over here!
+
+  - korean: 맛있게 드세요
+    romanization: masitge deuseyo
+    meaning: enjoy your meal
+    metadata:
+      politeness: polite
+      context: What staff or a host say as they serve food.
+      literal: Eat deliciously.
+
+  - korean: 맛있어요
+    romanization: masisseoyo
+    meaning: it's delicious
+    metadata:
+      politeness: polite
+
+  - korean: 계산해 주세요
+    romanization: gyesanhae juseyo
+    meaning: I'd like to pay, please
+    notes: In many restaurants you pay at the counter by the door rather than at the table.
+    metadata:
+      politeness: polite
+      literal: Please calculate (the bill).
+
+  - korean: 따로 계산할게요
+    romanization: ttaro gyesanhalgeyo
+    meaning: we'll pay separately
+    metadata:
+      politeness: polite
+
+  - korean: 포장해 주세요
+    romanization: pojanghae juseyo
+    meaning: to go, please; could you wrap this up?
+    notes: Also works for taking leftovers home.
+    metadata:
+      politeness: polite
+      literal: Please pack it.
+
+  - korean: 여기서 먹을게요
+    romanization: yeogiseo meogeulgeyo
+    meaning: for here, please
+    metadata:
+      politeness: polite
+      context: Answering whether your order is to eat in or take away.
+      literal: I'll eat here.
+
+  - korean: 아이스 아메리카노 한 잔 주세요
+    romanization: aiseu amerikano han jan juseyo
+    meaning: one iced americano, please
+    notes: 잔 counts cups and glasses; two is 두 잔.
+    metadata:
+      politeness: polite
+
+  - korean: 따뜻한 걸로 주세요
+    romanization: ttatteutan geollo juseyo
+    meaning: a hot one, please
+    metadata:
+      politeness: polite
+      context: Choosing between a hot and an iced drink.
+      literal: Please give me the warm one.

@@ -41,6 +41,23 @@ defmodule Hanguko.Content.Importer do
               meaning: I am a student.
               cloze: 이에요
 
+  A `phrases` pack is one situation. Its phrases say how polite they are,
+  and may point at the same phrase at another speech level, which must be
+  another item in the same pack:
+
+      items:
+        - korean: 잘 지냈어요?
+          meaning: how have you been?
+          metadata:
+            politeness: polite     # formal | polite | casual
+            context: Meeting someone you haven't seen for a while.
+            literal: Did you live well?
+        - korean: 잘 지냈어?
+          meaning: how have you been?
+          metadata:
+            politeness: casual
+            variant_of: 잘 지냈어요?   # stored as "<deck slug>/잘 지냈어요?"
+
   An item's identity is `"<deck slug>/<key>"`, where `key` defaults to its
   Korean text. Its position is its order in the file, examples last.
 
@@ -135,6 +152,7 @@ defmodule Hanguko.Content.Importer do
 
             item_errors =
               Enum.flat_map(items, &elem(&1, 2)) ++
+                variant_errors(items, slug) ++
                 Enum.flat_map(grammar, fn point ->
                   point.errors ++ Enum.flat_map(point.examples, &elem(&1, 2))
                 end)
@@ -173,12 +191,50 @@ defmodule Hanguko.Content.Importer do
       attrs
       |> Map.delete("key")
       |> Map.merge(%{"source_key" => source_key, "position" => position, "retired" => false})
+      |> qualify_variant(slug)
 
     {label, attrs, unknown_keys(raw, @item_keys, label)}
   end
 
   defp build_item(_raw, _position, what, _defaults, _slug),
     do: {nil, nil, ["#{what} must be a map"]}
+
+  # A pack names a variant by the other item's key; it is stored as that
+  # item's full source key, so it stays unambiguous across decks.
+  defp qualify_variant(%{"metadata" => %{"variant_of" => key} = metadata} = attrs, slug)
+       when is_binary(key) or is_integer(key) do
+    %{attrs | "metadata" => %{metadata | "variant_of" => "#{slug}/#{key}"}}
+  end
+
+  defp qualify_variant(attrs, _slug), do: attrs
+
+  # Variants are shown next to each other, so each must name a different
+  # item in the same pack.
+  defp variant_errors(items, slug) do
+    keys = for {_label, %{"source_key" => key}, _errors} <- items, into: MapSet.new(), do: key
+
+    Enum.flat_map(items, fn
+      {label, %{"source_key" => key, "metadata" => %{"variant_of" => target}}, _errors}
+      when is_binary(target) ->
+        cond do
+          target == key ->
+            ["#{label}: variant_of can't point at the item itself"]
+
+          MapSet.member?(keys, target) ->
+            []
+
+          true ->
+            key = String.replace_prefix(target, slug <> "/", "")
+            ["#{label}: variant_of #{inspect(key)} is not an item in this deck"]
+        end
+
+      {label, %{"metadata" => %{"variant_of" => target}}, _errors} when not is_nil(target) ->
+        ["#{label}: variant_of must be the key of another item"]
+
+      _ ->
+        []
+    end)
+  end
 
   defp shape_errors(file, items, grammar) do
     cond do

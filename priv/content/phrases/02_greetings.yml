@@ -1,0 +1,145 @@
+deck:
+  slug: phrases-greetings
+  title: Greetings and introductions
+  title_ko: 인사와 소개
+  kind: phrases
+  level: 1
+  position: 2
+  description: >-
+    Saying hello and goodbye at every level of politeness, catching up with
+    people you know, and introducing yourself.
+
+defaults:
+  kind: phrase
+  tags: [greetings]
+
+items:
+  - korean: 안녕하십니까
+    romanization: annyeonghasimnikka
+    meaning: hello (formal)
+    notes: Heard in announcements, at work, and from staff greeting customers.
+    metadata:
+      politeness: formal
+
+  - korean: 안녕
+    romanization: annyeong
+    meaning: hi; bye
+    notes: Both hello and goodbye, between close friends or to children.
+    metadata:
+      politeness: casual
+
+  - korean: 반갑습니다
+    romanization: bangapseumnida
+    meaning: pleased to meet you; good to see you
+    metadata:
+      politeness: formal
+
+  - korean: 제 이름은 민수예요
+    romanization: je ireumeun minsuyeyo
+    meaning: my name is Minsu
+    notes: Put your own name in place of 민수. After a name ending in a consonant, use 이에요.
+    metadata:
+      politeness: polite
+
+  - korean: 저는 미국 사람이에요
+    romanization: jeoneun miguk saramieyo
+    meaning: I'm American
+    notes: Swap in your country, e.g. 영국 (UK), 캐나다 (Canada), 호주 (Australia).
+    metadata:
+      politeness: polite
+      literal: I am a USA person.
+
+  - korean: 어디에서 왔어요?
+    romanization: eodieseo wasseoyo
+    meaning: where are you from?
+    metadata:
+      politeness: polite
+      literal: Where did you come from?
+
+  - korean: 잘 부탁드립니다
+    romanization: jal butakdeurimnida
+    meaning: I look forward to working with you
+    notes: >-
+      Said after introducing yourself at work, at school or to a new
+      neighbour. English has no exact equivalent.
+    metadata:
+      politeness: formal
+      literal: I ask for your kind favour.
+
+  - korean: 잘 부탁해요
+    romanization: jal butakaeyo
+    meaning: I look forward to getting along with you
+    metadata:
+      politeness: polite
+      variant_of: 잘 부탁드립니다
+
+  - korean: 잘 지냈어요?
+    romanization: jal jinaesseoyo
+    meaning: how have you been?
+    metadata:
+      politeness: polite
+      context: Meeting someone you haven't seen for a while.
+      literal: Did you live well?
+
+  - korean: 잘 지냈어?
+    romanization: jal jinaesseo
+    meaning: how have you been?
+    metadata:
+      politeness: casual
+      variant_of: 잘 지냈어요?
+      context: Catching up with a close friend.
+
+  - korean: 오랜만이에요
+    romanization: oraenmanieyo
+    meaning: long time no see
+    metadata:
+      politeness: polite
+      literal: It has been a long time.
+
+  - korean: 오랜만이야
+    romanization: oraenmaniya
+    meaning: long time no see
+    metadata:
+      politeness: casual
+      variant_of: 오랜만이에요
+
+  - korean: 또 만나요
+    romanization: tto mannayo
+    meaning: see you again
+    metadata:
+      politeness: polite
+      literal: Let's meet again.
+
+  - korean: 내일 봐요
+    romanization: naeil bwayo
+    meaning: see you tomorrow
+    metadata:
+      politeness: polite
+
+  - korean: 나중에 봐
+    romanization: najunge bwa
+    meaning: see you later
+    metadata:
+      politeness: casual
+
+  - korean: 좋은 하루 보내세요
+    romanization: joeun haru bonaeseyo
+    meaning: have a nice day
+    metadata:
+      politeness: polite
+      literal: Spend a good day.
+
+  - korean: 안녕히 주무세요
+    romanization: annyeonghi jumuseyo
+    meaning: good night; sleep well
+    notes: Respectful, e.g. to parents, grandparents or a host.
+    metadata:
+      politeness: polite
+      literal: Sleep in peace.
+
+  - korean: 잘 자
+    romanization: jal ja
+    meaning: good night; sleep well
+    metadata:
+      politeness: casual
+      variant_of: 안녕히 주무세요

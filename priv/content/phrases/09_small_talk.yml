@@ -1,0 +1,138 @@
+deck:
+  slug: phrases-small-talk
+  title: Small talk
+  title_ko: 일상 대화
+  kind: phrases
+  level: 2
+  position: 9
+  description: >-
+    Keeping a conversation going: the weather, weekends, work and hobbies,
+    reacting to what people say, and taking a compliment on your Korean.
+
+defaults:
+  kind: phrase
+  tags: [small-talk]
+
+items:
+  - korean: 날씨가 좋네요
+    romanization: nalssiga jonneyo
+    meaning: nice weather, isn't it?
+    notes: The -네요 ending shares something you've just noticed.
+    metadata:
+      politeness: polite
+      literal: The weather is good, I see.
+
+  - korean: 요즘 어떻게 지내요?
+    romanization: yojeum eotteoke jinaeyo
+    meaning: how are you doing these days?
+    metadata:
+      politeness: polite
+
+  - korean: 요즘 어떻게 지내?
+    romanization: yojeum eotteoke jinae
+    meaning: how are you doing these days?
+    metadata:
+      politeness: casual
+      variant_of: 요즘 어떻게 지내요?
+
+  - korean: 그냥 그래요
+    romanization: geunyang geuraeyo
+    meaning: so-so; nothing special
+    metadata:
+      politeness: polite
+      literal: It's just like that.
+
+  - korean: 주말에 뭐 했어요?
+    romanization: jumare mwo haesseoyo
+    meaning: what did you do at the weekend?
+    metadata:
+      politeness: polite
+
+  - korean: 무슨 일 하세요?
+    romanization: museun il haseyo
+    meaning: what do you do for work?
+    metadata:
+      politeness: polite
+      literal: What work do you do?
+
+  - korean: 취미가 뭐예요?
+    romanization: chwimiga mwoyeyo
+    meaning: what are your hobbies?
+    metadata:
+      politeness: polite
+
+  - korean: 한국 음식 좋아해요?
+    romanization: hanguk eumsik joahaeyo
+    meaning: do you like Korean food?
+    metadata:
+      politeness: polite
+
+  - korean: 한국에 처음 왔어요
+    romanization: hanguge cheoeum wasseoyo
+    meaning: this is my first time in Korea
+    metadata:
+      politeness: polite
+      literal: I came to Korea for the first time.
+
+  - korean: 한국어 공부한 지 얼마나 됐어요?
+    romanization: hangugeo gongbuhan ji eolmana dwaesseoyo
+    meaning: how long have you been studying Korean?
+    metadata:
+      politeness: polite
+
+  - korean: 한국어 잘하시네요
+    romanization: hangugeo jalhasineyo
+    meaning: your Korean is good
+    metadata:
+      politeness: polite
+      context: A compliment you will hear often, even after a single word.
+
+  - korean: 아직 멀었어요
+    romanization: ajik meoreosseoyo
+    meaning: I still have a long way to go
+    notes: The modest reply to a compliment on your Korean.
+    metadata:
+      politeness: polite
+      literal: It's still far.
+
+  - korean: 진짜요?
+    romanization: jinjjayo
+    meaning: really?
+    metadata:
+      politeness: polite
+
+  - korean: 진짜?
+    romanization: jinjja
+    meaning: really?
+    metadata:
+      politeness: casual
+      variant_of: 진짜요?
+
+  - korean: 맞아요
+    romanization: majayo
+    meaning: that's right
+    metadata:
+      politeness: polite
+
+  - korean: 맞아
+    romanization: maja
+    meaning: right; exactly
+    metadata:
+      politeness: casual
+      variant_of: 맞아요
+
+  - korean: 대박
+    romanization: daebak
+    meaning: awesome; no way
+    notes: Slang for anything amazing or shocking; fine among friends, odd with your boss.
+    metadata:
+      politeness: casual
+      literal: A big win.
+
+  - korean: 다음에 같이 밥 먹어요
+    romanization: daeume gachi bap meogeoyo
+    meaning: let's grab a meal together sometime
+    notes: Often a friendly way to end a conversation rather than a firm plan.
+    metadata:
+      politeness: polite
+      literal: Next time, let's eat rice together.
