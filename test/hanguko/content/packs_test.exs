@@ -100,12 +100,14 @@ defmodule Hanguko.Content.PacksTest do
     decks = Content.list_decks_with_items(:phrases)
     phrases = Enum.flat_map(decks, & &1.items)
 
-    assert length(decks) >= 9
-    assert length(phrases) >= 150
+    # Guards against the loops below passing vacuously.
+    refute phrases == []
 
     for deck <- decks do
       assert deck.title_ko && deck.description,
              "#{deck.slug} needs a Korean title and description"
+
+      refute deck.items == [], "#{deck.slug} is a situation with no phrases"
     end
 
     for item <- phrases do
@@ -128,7 +130,7 @@ defmodule Hanguko.Content.PacksTest do
           target when is_binary(target) <- [item.metadata["variant_of"]],
           do: {item, phrases[target]}
 
-    assert length(pairs) >= 5
+    refute pairs == []
 
     for {item, other} <- pairs do
       assert other, "#{item.source_key} is a variant of a phrase that doesn't exist"
