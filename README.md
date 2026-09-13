@@ -1,18 +1,98 @@
 # Hanguko
 
-To start your Phoenix server:
+A Phoenix LiveView app for learning Korean: Hangeul, vocabulary, everyday
+phrases and grammar, studied with spaced repetition (FSRS).
 
-* Run `mix setup` to install and setup dependencies
-* Start Phoenix endpoint with `mix phx.server` or inside IEx with `iex -S mix phx.server`
+The curriculum lives in the repo as YAML content packs under `priv/content`
+and is loaded into the database by an importer, so lessons are reviewed the
+same way as code. Everything a learner does — enrolments, cards, review
+history — is per user and separate from that content.
 
-Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
+## Requirements
 
-Ready to run in production? Please [check our deployment guides](https://phoenix.hexdocs.pm/deployment.html).
+* Elixir 1.17 or newer (developed on 1.20 / OTP 29)
+* PostgreSQL 18 (a `docker-compose.yml` is included; podman works too)
+* Node is *not* required — assets are built with esbuild and Tailwind
+  binaries fetched by Mix
 
-## Learn more
+## Getting started
 
-* Official website: https://www.phoenixframework.org/
-* Guides: https://phoenix.hexdocs.pm/overview.html
-* Docs: https://phoenix.hexdocs.pm
-* Forum: https://elixirforum.com/c/phoenix-forum
-* Source: https://github.com/phoenixframework/phoenix
+```sh
+podman-compose up -d          # or: docker compose up -d
+mix setup                     # deps, database, seed content, assets
+mix phx.server                # http://localhost:4000
+```
+
+`mix setup` runs `ecto.create`, `ecto.migrate` and `priv/repo/seeds.exs`,
+which imports the content packs.
+
+Sign-in is by magic link. In development the mail is not sent anywhere: open
+[`/dev/mailbox`](http://localhost:4000/dev/mailbox) and follow the link.
+
+## Common tasks
+
+| Command | What it does |
+| --- | --- |
+| `mix setup` | Install dependencies, set up the database, build assets |
+| `mix phx.server` | Run the app on port 4000 (`PORT=4001 mix phx.server` to move it) |
+| `iex -S mix phx.server` | The same, with a shell attached |
+| `mix precommit` | Compile with warnings as errors, drop unused deps, format, test — run this before committing |
+| `mix test` | Run the test suite (creates and migrates the test database first) |
+| `mix test path/to/test.exs:42` | Run one test or file |
+| `mix hanguko.content.import` | Load `priv/content` into the database; safe to re-run |
+| `mix hanguko.content.import --path tmp/packs` | Import from somewhere else |
+| `mix ecto.migrate` / `mix ecto.rollback` | Apply or undo migrations |
+| `mix ecto.gen.migration name` | Start a new migration |
+| `mix ecto.reset` | Drop, recreate, migrate and re-seed — **deletes all study progress** |
+| `mix assets.build` | Rebuild CSS and JS once |
+| `mix assets.deploy` | Minified assets plus a digest, for releases |
+
+Restart the server after adding a dependency; the running app won't pick it
+up on its own.
+
+## Editing the curriculum
+
+Content packs are YAML files under `priv/content/{hangeul,vocab,phrases,grammar}`.
+Edit a pack, then:
+
+```sh
+mix hanguko.content.import
+```
+
+The importer validates every pack before writing anything, reports errors
+with the file and item they came from, and is idempotent: re-running it with
+no edits changes no rows. Content that disappears from the packs is marked
+retired rather than deleted, so review history survives an edit. The format
+is documented in `Hanguko.Content.Importer` and in
+[guides/architecture.md](guides/architecture.md#content-packs).
+
+## Tests
+
+```sh
+mix test                                   # everything
+mix test test/hanguko/srs                  # the scheduler and queue
+mix test test/hanguko/content/packs_test.exs   # sanity checks on the real content
+```
+
+Scheduling is deterministic in tests: interval fuzz is off, and every
+function that depends on the time takes `now` as an argument.
+
+## Where things live
+
+```
+lib/hanguko/          contexts: Accounts, Content, SRS, plus the Korean language helpers
+lib/hanguko_web/      LiveViews, components and the router
+priv/content/         the curriculum, as YAML packs
+priv/repo/migrations/ schema history
+assets/js/hooks/      speech synthesis and study keyboard shortcuts
+guides/               architecture and domain model
+test/                 mirrors lib/
+```
+
+## Documentation
+
+* [guides/architecture.md](guides/architecture.md) — how the pieces fit: contexts,
+  the content pipeline, the study loop, and why it's shaped this way
+* [guides/domain-model.md](guides/domain-model.md) — the tables, what they mean and
+  the rules they enforce
+* `AGENTS.md` — Phoenix 1.8 and LiveView conventions this codebase follows
