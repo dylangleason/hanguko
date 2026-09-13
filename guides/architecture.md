@@ -89,7 +89,8 @@ level (`metadata.politeness`: `formal`, `polite` or `casual`), which the
 importer validates because badges, the politeness filter and study cards all
 key off it. A phrase may name the same phrase at another level with
 `variant_of`; the importer stores it as the full source key and rejects a
-variant that isn't another item in the same pack. Variants are separate items
+variant that isn't another item in the same pack (a phrase or a grammar
+example), or a pair linked from both sides, which would list each form twice. Variants are separate items
 on purpose: the casual form is worth studying too, and the badge on a recall
 card says which level is being asked for.
 

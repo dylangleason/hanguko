@@ -261,8 +261,10 @@ defmodule HangukoWeb.PhraseLive do
 
         other ->
           acc
-          |> Map.update(item.id, [other], &(&1 ++ [other]))
-          |> Map.update(other.id, [item], &(&1 ++ [item]))
+          # The importer rejects a pair linked from both sides; this keeps
+          # such a pair from being listed twice if one ever gets through.
+          |> Map.update(item.id, [other], &Enum.uniq(&1 ++ [other]))
+          |> Map.update(other.id, [item], &Enum.uniq(&1 ++ [item]))
       end
     end)
   end

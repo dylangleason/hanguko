@@ -440,6 +440,71 @@ defmodule Hanguko.Content.ImporterTest do
   end
 
   @tag :tmp_dir
+  test "rejects a pair of variants linked from both sides", %{tmp_dir: dir} do
+    both_ways =
+      String.replace(
+        @variants,
+        "      politeness: polite\n",
+        "      politeness: polite\n      variant_of: 잘 지냈어?\n"
+      )
+
+    write_packs(dir, %{"greetings.yml" => both_ways})
+
+    assert {:error, errors} = Importer.import_dir(dir)
+
+    assert errors == [
+             ~s[greetings.yml: item 2 (잘 지냈어?): variant_of "잘 지냈어요?" already names this item as its variant; link the pair from one side only]
+           ]
+  end
+
+  @sentence_variants """
+  deck: {slug: grammar-basics, title: Sentence basics, kind: sentences}
+  items:
+    - kind: sentence
+      korean: 학생이에요.
+      meaning: I'm a student.
+      metadata:
+        politeness: polite
+        variant_of: 학생입니다.
+  grammar:
+    - slug: ieyo
+      title: 이에요 / 예요
+      pattern: N + 이에요/예요
+      explanation: Attach it to the noun.
+      examples:
+        - korean: 학생입니다.
+          meaning: I am a student.
+          cloze: 입니다
+          metadata:
+            politeness: formal
+  """
+
+  @tag :tmp_dir
+  test "a variant may be one of the pack's grammar examples", %{tmp_dir: dir} do
+    write_packs(dir, %{"grammar.yml" => @sentence_variants})
+
+    assert {:ok, _} = Importer.import_dir(dir)
+    item = items_by_key()["grammar-basics/학생이에요."]
+    assert item.metadata["variant_of"] == "grammar-basics/학생입니다."
+  end
+
+  @tag :tmp_dir
+  test "checks the variants of grammar examples too", %{tmp_dir: dir} do
+    broken =
+      String.replace(
+        @sentence_variants,
+        "          politeness: formal\n",
+        "          politeness: formal\n          variant_of: 학생이야.\n"
+      )
+
+    write_packs(dir, %{"grammar.yml" => broken})
+
+    assert {:error, errors} = Importer.import_dir(dir)
+
+    assert ~s[grammar.yml: grammar 1 (ieyo) example 1 (학생입니다.): variant_of "학생이야." is not an item in this deck] in errors
+  end
+
+  @tag :tmp_dir
   test "rejects a speech level that doesn't exist", %{tmp_dir: dir} do
     write_packs(dir, %{"greetings.yml" => String.replace(@variants, "casual", "informal")})
 
