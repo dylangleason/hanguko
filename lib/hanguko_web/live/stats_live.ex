@@ -254,7 +254,7 @@ defmodule HangukoWeb.StatsLive do
       </div>
 
       <div></div>
-      <div class="mt-1.5 flex gap-[2px] text-[11px] text-base-content/50" aria-hidden="true">
+      <div class="mt-1.5 flex h-4 gap-[2px] text-[11px] text-base-content/50" aria-hidden="true">
         <span
           :for={{day, index} <- Enum.with_index(@forecast)}
           class="relative min-w-0 flex-1 whitespace-nowrap"
@@ -307,7 +307,9 @@ defmodule HangukoWeb.StatsLive do
     do: "You've studied today — #{days(current)} in a row."
 
   defp streak_message(%{current: 0}), do: "Study today to start a new streak."
-  defp streak_message(%{current: current}), do: "Study today to keep your #{days(current)} going."
+
+  defp streak_message(%{current: current}),
+    do: "Study today to keep your #{current}-day streak going."
 
   defp retention_note(%{rate: nil}), do: "Shown once you review cards you've learned"
 
