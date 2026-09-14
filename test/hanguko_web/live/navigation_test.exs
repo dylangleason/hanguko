@@ -22,7 +22,7 @@ defmodule HangukoWeb.NavigationTest do
     %{conn: conn, user: user} = register_and_log_in_user(%{conn: conn})
     {:ok, view, _html} = live(conn, ~p"/hangeul")
 
-    for id <- ~w(study settings log-out) do
+    for id <- ~w(study progress settings log-out) do
       assert has_element?(view, "#nav-#{id}")
       assert has_element?(view, "#mobile-menu #mobile-nav-#{id}")
     end

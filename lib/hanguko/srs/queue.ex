@@ -111,6 +111,19 @@ defmodule Hanguko.SRS.Queue do
   def entries(%__MODULE__{} = queue),
     do: queue.learning ++ queue.review ++ queue.new ++ queue.learning_ahead
 
+  @doc """
+  A query for the user's cards that study sessions draw from: cards of active
+  items in enrolled decks, not suspended, and not set aside because their
+  grammar point isn't marked as learned. Unordered, for counting (e.g. the
+  forecast in `Hanguko.Progress`), so it agrees with what the queue shows.
+  """
+  def studied_cards_query(user_id) do
+    user_id
+    |> cards_query(deck_ids(user_id, nil))
+    |> exclude(:order_by)
+    |> exclude(:preload)
+  end
+
   ## Cards already being studied
 
   defp deck_ids(user_id, deck_id) do

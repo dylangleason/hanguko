@@ -170,7 +170,10 @@ defmodule HangukoWeb.Layouts do
   end
 
   defp nav_items(current_scope) do
-    study = if current_scope, do: [{"Study", ~p"/dashboard", "study"}], else: []
+    study =
+      if current_scope,
+        do: [{"Study", ~p"/dashboard", "study"}, {"Progress", ~p"/stats", "progress"}],
+        else: []
 
     study ++
       [
