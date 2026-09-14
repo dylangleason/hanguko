@@ -64,6 +64,7 @@ defmodule Hanguko.MixProject do
           Hanguko.SRS.Scheduler,
           Hanguko.SRS.Settings
         ],
+        Progress: [Hanguko.Progress],
         Korean: [Hanguko.Korean],
         Accounts: [
           Hanguko.Accounts,
