@@ -70,7 +70,14 @@ if config_env() == :prod do
       You can generate one by calling: mix phx.gen.secret
       """
 
-  host = System.get_env("PHX_HOST") || "example.com"
+  # The host the app is served from. It builds generated URLs and is the origin
+  # LiveView's websocket check accepts, so a wrong value breaks the app quietly.
+  host =
+    System.get_env("PHX_HOST") ||
+      raise """
+      environment variable PHX_HOST is missing.
+      Set it to the domain the app is served from, e.g. hanguko.example.com
+      """
 
   config :hanguko, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
