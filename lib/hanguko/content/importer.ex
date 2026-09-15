@@ -68,11 +68,9 @@ defmodule Hanguko.Content.Importer do
     * decks and items that disappeared from the packs are marked `retired`
       instead of being deleted, so users' review history survives.
   """
-  import Ecto.Query, warn: false
-
   alias Ecto.Changeset
   alias Hanguko.Repo
-  alias Hanguko.Content.{Deck, GrammarPoint, Item}
+  alias Hanguko.Content.{Deck, GrammarPoint, Item, Queries}
 
   @top_level_keys ~w(deck defaults items grammar)
   @deck_keys ~w(slug title title_ko kind level position description)
@@ -474,21 +472,10 @@ defmodule Hanguko.Content.Importer do
 
       now = DateTime.utc_now(:second)
 
-      {retired_decks, _} =
-        Repo.update_all(from(d in Deck, where: d.slug not in ^slugs and not d.retired),
-          set: [retired: true, updated_at: now]
-        )
-
-      {retired_items, _} =
-        Repo.update_all(from(i in Item, where: i.source_key not in ^keys and not i.retired),
-          set: [retired: true, updated_at: now]
-        )
-
-      {retired_points, _} =
-        Repo.update_all(
-          from(g in GrammarPoint, where: g.slug not in ^point_slugs and not g.retired),
-          set: [retired: true, updated_at: now]
-        )
+      retire = [set: [retired: true, updated_at: now]]
+      {retired_decks, _} = Repo.update_all(Queries.missing_decks(slugs), retire)
+      {retired_items, _} = Repo.update_all(Queries.missing_items(keys), retire)
+      {retired_points, _} = Repo.update_all(Queries.missing_grammar_points(point_slugs), retire)
 
       {:ok,
        stats

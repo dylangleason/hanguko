@@ -3,12 +3,12 @@ defmodule Hanguko.Content do
   The global curriculum: decks and their items. Content is read-only at
   runtime; it is maintained as YAML packs in `priv/content` and loaded with
   `mix hanguko.content.import`.
-  """
-  import Ecto.Query, warn: false
 
+  Queries are built in `Hanguko.Content.Queries`.
+  """
   alias Hanguko.Accounts.Scope
   alias Hanguko.Repo
-  alias Hanguko.Content.{Deck, GrammarPoint, GrammarProgress, Item}
+  alias Hanguko.Content.{GrammarPoint, GrammarProgress, Queries}
 
   @doc """
   Lists active decks with `item_count` populated, in curriculum order: by
@@ -19,16 +19,9 @@ defmodule Hanguko.Content do
     * `:kind` - only return decks of this kind, or of any kind in this list
   """
   def list_decks(opts \\ []) do
-    kinds = Enum.map(Deck.kinds(), &Atom.to_string/1)
-
-    decks_with_counts_query()
-    |> filter_kind(opts[:kind])
-    |> order_by([d], [
-      fragment("array_position(?::text[], ?::text)", ^kinds, d.kind),
-      d.level,
-      d.position,
-      d.id
-    ])
+    Queries.active_decks_with_item_counts()
+    |> Queries.of_kind(opts[:kind])
+    |> Queries.in_curriculum_order()
     |> Repo.all()
   end
 
@@ -38,32 +31,17 @@ defmodule Hanguko.Content do
   Raises `Ecto.NoResultsError` if the deck does not exist.
   """
   def get_deck!(id) do
-    decks_with_counts_query() |> where([d], d.id == ^id) |> Repo.one!()
-  end
-
-  defp decks_with_counts_query do
-    item_counts =
-      from i in Item,
-        where: not i.retired,
-        group_by: i.deck_id,
-        select: %{deck_id: i.deck_id, count: count(i.id)}
-
-    from d in Deck,
-      where: not d.retired,
-      left_join: c in subquery(item_counts),
-      on: c.deck_id == d.id,
-      select_merge: %{item_count: coalesce(c.count, 0)}
+    Queries.active_decks_with_item_counts() |> Queries.by_id(id) |> Repo.one!()
   end
 
   @doc """
   Lists active decks of `kind` with their active items preloaded in order.
   """
   def list_decks_with_items(kind) do
-    Deck
-    |> where([d], not d.retired)
-    |> filter_kind(kind)
-    |> order_by([d], [d.level, d.position, d.id])
-    |> preload(items: ^active_items_query())
+    Queries.active_decks()
+    |> Queries.of_kind(kind)
+    |> Queries.in_curriculum_order()
+    |> Queries.with_active_items()
     |> Repo.all()
   end
 
@@ -73,24 +51,13 @@ defmodule Hanguko.Content do
   Raises `Ecto.NoResultsError` if the deck does not exist.
   """
   def get_deck_by_slug!(slug) do
-    Deck
-    |> where([d], d.slug == ^slug and not d.retired)
-    |> preload(items: ^active_items_query())
-    |> Repo.one!()
+    Queries.active_decks() |> Queries.by_slug(slug) |> Queries.with_active_items() |> Repo.one!()
   end
 
   @doc "Gets an active deck by slug, without its items. Returns `nil` if not found."
   def get_deck_by_slug(slug) when is_binary(slug) do
-    Repo.one(from d in Deck, where: d.slug == ^slug and not d.retired)
+    Queries.active_decks() |> Queries.by_slug(slug) |> Repo.one()
   end
-
-  defp active_items_query do
-    from i in Item, where: not i.retired, order_by: [i.position, i.id]
-  end
-
-  defp filter_kind(query, nil), do: query
-  defp filter_kind(query, kinds) when is_list(kinds), do: where(query, [d], d.kind in ^kinds)
-  defp filter_kind(query, kind), do: where(query, [d], d.kind == ^kind)
 
   ## Grammar
 
@@ -99,9 +66,10 @@ defmodule Hanguko.Content do
   set for the scope's user (`nil` for anonymous visitors).
   """
   def list_grammar_points(scope \\ nil) do
-    grammar_points_query(scope)
-    |> join(:left, [g], d in assoc(g, :deck), as: :deck)
-    |> order_by([g, deck: d], [g.level, d.position, g.position, g.id])
+    scope
+    |> user_id()
+    |> Queries.active_grammar_points()
+    |> Queries.in_lesson_order()
     |> Repo.all()
   end
 
@@ -112,26 +80,16 @@ defmodule Hanguko.Content do
   Raises `Ecto.NoResultsError` if the point does not exist.
   """
   def get_grammar_point_by_slug!(scope, slug) do
-    grammar_points_query(scope)
-    |> where([g], g.slug == ^slug)
-    |> preload([:deck, items: ^active_items_query()])
+    scope
+    |> user_id()
+    |> Queries.active_grammar_points()
+    |> Queries.by_slug(slug)
+    |> Queries.with_deck_and_examples()
     |> Repo.one!()
   end
 
-  defp grammar_points_query(scope) do
-    query = from g in GrammarPoint, where: not g.retired
-
-    case scope do
-      %Scope{user: user} ->
-        from g in query,
-          left_join: p in GrammarProgress,
-          on: p.grammar_point_id == g.id and p.user_id == ^user.id,
-          select_merge: %{learned_at: p.learned_at}
-
-      nil ->
-        query
-    end
-  end
+  defp user_id(%Scope{user: user}), do: user.id
+  defp user_id(nil), do: nil
 
   @doc """
   Returns the set of grammar point ids the scope's user has learned.
@@ -140,11 +98,7 @@ defmodule Hanguko.Content do
   def learned_grammar_point_ids(nil), do: MapSet.new()
 
   def learned_grammar_point_ids(%Scope{user: user}) do
-    GrammarProgress
-    |> where([p], p.user_id == ^user.id)
-    |> select([p], p.grammar_point_id)
-    |> Repo.all()
-    |> MapSet.new()
+    user.id |> Queries.learned_grammar_point_ids() |> Repo.all() |> MapSet.new()
   end
 
   @doc """
@@ -169,12 +123,7 @@ defmodule Hanguko.Content do
   they left off if the point is marked as learned again.
   """
   def unmark_grammar_learned(%Scope{user: user}, %GrammarPoint{id: point_id}) do
-    {count, _} =
-      Repo.delete_all(
-        from p in GrammarProgress,
-          where: p.user_id == ^user.id and p.grammar_point_id == ^point_id
-      )
-
+    {count, _} = Repo.delete_all(Queries.grammar_progress(user.id, point_id))
     {:ok, count}
   end
 end

@@ -52,19 +52,21 @@ defmodule Hanguko.MixProject do
           Hanguko.Content.GrammarPoint,
           Hanguko.Content.GrammarProgress,
           Hanguko.Content.Importer,
-          Hanguko.Content.Item
+          Hanguko.Content.Item,
+          Hanguko.Content.Queries
         ],
         "Spaced repetition": [
           Hanguko.SRS,
           Hanguko.SRS.Card,
           Hanguko.SRS.Day,
           Hanguko.SRS.DeckEnrollment,
+          Hanguko.SRS.Queries,
           Hanguko.SRS.Queue,
           Hanguko.SRS.ReviewLog,
           Hanguko.SRS.Scheduler,
           Hanguko.SRS.Settings
         ],
-        Progress: [Hanguko.Progress],
+        Progress: [Hanguko.Progress, Hanguko.Progress.Queries],
         Korean: [Hanguko.Korean],
         Accounts: [
           Hanguko.Accounts,
