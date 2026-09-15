@@ -108,6 +108,7 @@ defaults.
 | `day_rollover_hour` | 4 | When a study day starts. |
 | `show_romanization` | `true` | |
 | `tts_rate` | 0.9 | Speech speed. |
+| `typed_answers` | `false` | Recall cards ask for the Korean to be typed and checked before the answer is shown. The learner still rates the card. |
 
 ### `cards`
 

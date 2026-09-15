@@ -31,7 +31,7 @@ fixes a typo in a sentence) without touching anyone's review history.
 | `Hanguko.Content` | The curriculum: decks, items, grammar points, and the importer. Also grammar progress, since "have I learned this lesson" gates which content is available. |
 | `Hanguko.SRS` | Everything per-user about studying: enrolments, settings, the queue, reviewing a card, undo. |
 | `Hanguko.Progress` | Read-only views of a learner's history: streaks, daily activity, retention, the forecast and card counts. Computed from `review_logs` and `cards`; stores nothing. |
-| `Hanguko.Korean` | Pure Hangul utilities: compose/decompose syllables, batchim detection, romanization. No database, no dependencies. |
+| `Hanguko.Korean` | Pure Hangul utilities: compose/decompose syllables, batchim detection, romanization, checking typed answers. No database, no dependencies. |
 
 Public functions take a `%Scope{}` first, per Phoenix 1.8 convention. A `nil`
 scope means an anonymous visitor: they can browse the curriculum, have
@@ -172,6 +172,28 @@ holding the card's state *before* and *after*. The before-half is what makes
 undo exact: restore those fields, or delete the card outright if this was its
 first review.
 
+### Typed answers
+
+With `typed_answers` on in the study settings, a recall card asks for the
+Korean to be typed. `Korean.compare_answer/2` checks it after
+`Korean.normalize/1` (NFC, lowercase, no punctuation, single spaces). NFC
+matters because some input methods produce decomposed jamo that look the same
+but aren't equal as strings. An answer that only differs in spacing counts as
+correct, with a note: Korean word spacing is easy to get wrong and doesn't
+change what was said.
+
+A wrong answer is diffed character by character. Where one syllable was typed
+in place of another, the two are split into jamo, so the feedback says which
+letter was off (ㄷ for ㄸ, a missing final consonant) rather than only that
+the syllable was wrong.
+
+The check **suggests a rating but doesn't make it**: Again for a wrong
+answer, Good otherwise. The learner still presses the button (Enter or Space
+takes the suggestion). A typo in something they plainly knew shouldn't reset
+a card, and only the learner can tell a typo from a gap in memory. Only recall
+cards take typed answers: recognition answers are English meanings with
+several right phrasings, and a cloze has no single string to type.
+
 ## Time and the study day
 
 A "day" is per user: a timezone (detected from the browser's `Intl` API
@@ -257,7 +279,10 @@ Two JS hooks carry the behaviour that has to be client-side:
   item has pre-generated audio. The swap point for cloud TTS later.
 * **`StudyKeys`** — Space flips, 1–4 rate, S speaks, U undoes. It deliberately
   leaves Enter and Space alone when focus is on a button or link reached by
-  keyboard, so the rating buttons stay usable without a mouse.
+  keyboard, so the rating buttons stay usable without a mouse. It ignores keys
+  while the learner types in the answer box (Escape leaves the box). For a
+  moment after an answer is submitted, it also ignores Enter, because some
+  Korean input methods send a second Enter when committing the last syllable.
 
 ## Testing approach
 
@@ -277,6 +302,6 @@ Two JS hooks carry the behaviour that has to be client-side:
 ## What comes next
 
 The remaining phases lean on what's already here rather than changing it:
-typed answers and a card browser, production audio (cloud neural TTS clips
+a card browser, production audio (cloud neural TTS clips
 that `Speak` already prefers over browser speech when a page passes one), and
 listening comprehension built on that audio.

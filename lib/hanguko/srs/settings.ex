@@ -13,6 +13,8 @@ defmodule Hanguko.SRS.Settings do
     field :day_rollover_hour, :integer, default: 4
     field :show_romanization, :boolean, default: true
     field :tts_rate, :float, default: 0.9
+    # Recall cards ask for the Korean to be typed before the answer is shown.
+    field :typed_answers, :boolean, default: false
 
     belongs_to :user, Hanguko.Accounts.User
 
@@ -29,7 +31,8 @@ defmodule Hanguko.SRS.Settings do
       :timezone,
       :day_rollover_hour,
       :show_romanization,
-      :tts_rate
+      :tts_rate,
+      :typed_answers
     ])
     |> validate_required([
       :daily_new_limit,
@@ -37,7 +40,8 @@ defmodule Hanguko.SRS.Settings do
       :desired_retention,
       :day_rollover_hour,
       :show_romanization,
-      :tts_rate
+      :tts_rate,
+      :typed_answers
     ])
     |> validate_number(:daily_new_limit, greater_than_or_equal_to: 0, less_than_or_equal_to: 100)
     |> validate_number(:daily_review_limit,

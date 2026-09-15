@@ -21,13 +21,22 @@ defmodule HangukoWeb.StudySettingsLiveTest do
 
     view
     |> form("#study-settings-form",
-      settings: %{daily_new_limit: "15", desired_retention: "0.85", timezone: "Asia/Seoul"}
+      settings: %{
+        daily_new_limit: "15",
+        desired_retention: "0.85",
+        timezone: "Asia/Seoul",
+        typed_answers: "true"
+      }
     )
     |> render_submit()
 
     assert render(view) =~ "Study settings saved."
 
-    assert %{daily_new_limit: 15, desired_retention: 0.85, timezone: "Asia/Seoul"} =
-             SRS.get_settings(Scope.for_user(user))
+    assert %{
+             daily_new_limit: 15,
+             desired_retention: 0.85,
+             timezone: "Asia/Seoul",
+             typed_answers: true
+           } = SRS.get_settings(Scope.for_user(user))
   end
 end

@@ -54,4 +54,39 @@ defmodule Hanguko.KoreanTest do
     assert Korean.normalize(decomposed) == "한국어"
     assert Korean.normalize("Hello, World!") == "hello world"
   end
+
+  describe "compare_answer" do
+    test "ignores punctuation, case and extra whitespace" do
+      assert {:correct, _} = Korean.compare_answer(" 안녕하세요 ", "안녕하세요?")
+      assert {:correct, _} = Korean.compare_answer("물  좀 주세요", "물 좀 주세요.")
+
+      decomposed = :unicode.characters_to_nfd_binary("한국어")
+      assert {:correct, _} = Korean.compare_answer(decomposed, "한국어")
+    end
+
+    test "tells spacing mistakes apart from wrong answers" do
+      assert {:spacing, _} = Korean.compare_answer("물좀주세요", "물 좀 주세요")
+      assert {:wrong, _} = Korean.compare_answer("물좀주세여", "물 좀 주세요")
+      assert {:wrong, _} = Korean.compare_answer("", "물")
+    end
+
+    test "points at the letter that was wrong" do
+      assert {:wrong, [{:sub, "달", "딸", [{:initial, "ㄷ", "ㄸ"}]}]} =
+               Korean.compare_answer("달", "딸")
+
+      assert {:wrong, [{:eq, "학"}, {:sub, "생", "새", [{:final, "ㅇ", nil}]}]} =
+               Korean.compare_answer("학생", "학새")
+
+      assert {:wrong, [{:sub, "가", "강", [{:final, nil, "ㅇ"}]}]} =
+               Korean.compare_answer("가", "강")
+    end
+
+    test "reports missing and extra characters" do
+      assert {:wrong, [{:eq, "사"}, {:ins, "과"}]} = Korean.compare_answer("사", "사과")
+      assert {:wrong, [{:eq, "사"}, {:eq, "과"}, {:del, "요"}]} = Korean.compare_answer("사과요", "사과")
+
+      # Only the overlapping characters are compared letter by letter.
+      assert {:wrong, [{:sub, "a", "사", []}, {:ins, "과"}]} = Korean.compare_answer("a", "사과")
+    end
+  end
 end

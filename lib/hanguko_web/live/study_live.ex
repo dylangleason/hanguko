@@ -2,12 +2,17 @@ defmodule HangukoWeb.StudyLive do
   @moduledoc """
   A flashcard study session: shows the next card from the study queue,
   reveals the answer, and records the learner's rating.
+
+  With typed answers turned on in the study settings, recall cards ask for
+  the Korean to be typed. Checking it reveals the answer along with what was
+  wrong, letter by letter (see `Hanguko.Korean.compare_answer/2`), and
+  suggests a rating. The learner still picks the rating.
   """
   use HangukoWeb, :live_view
 
   import HangukoWeb.StudyComponents
 
-  alias Hanguko.{Content, SRS}
+  alias Hanguko.{Content, Korean, SRS}
   alias Hanguko.Content.Item
   alias Hanguko.SRS.Queue
 
@@ -26,6 +31,7 @@ defmodule HangukoWeb.StudyLive do
         data-revealed={to_string(@revealed)}
         data-key={@entry && card_key(@entry)}
         data-can-undo={to_string(!is_nil(@last_log))}
+        data-suggested={@answer && suggested_rating(@answer)}
         class="mx-auto max-w-xl"
       >
         <div class="flex items-center justify-between gap-3">
@@ -58,25 +64,56 @@ defmodule HangukoWeb.StudyLive do
             revealed={@revealed}
             settings={@settings}
             deck_title={@deck_titles[@entry.item.deck_id]}
+            typed={typed_answer?(assigns)}
+            answer={@answer}
+            answer_form={@answer_form}
           />
 
           <div class="mt-4">
-            <%= if @revealed do %>
-              <.rating_buttons intervals={@intervals} card_key={card_key(@entry)} />
-            <% else %>
-              <button
-                type="button"
-                id="show-answer"
-                phx-click="flip"
-                class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-box bg-base-content py-3.5 font-semibold text-base-100 transition hover:opacity-90 active:scale-[0.99]"
-              >
-                Show answer <kbd class="hidden text-xs font-normal opacity-60 sm:inline">Space</kbd>
-              </button>
+            <%= cond do %>
+              <% @revealed -> %>
+                <.rating_buttons
+                  intervals={@intervals}
+                  card_key={card_key(@entry)}
+                  suggested={@answer && suggested_rating(@answer)}
+                />
+              <% typed_answer?(assigns) -> %>
+                <div class="flex gap-2">
+                  <button
+                    type="submit"
+                    form="answer-form"
+                    id="check-answer"
+                    class="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-box bg-base-content py-3.5 font-semibold text-base-100 transition hover:opacity-90 active:scale-[0.99]"
+                  >
+                    Check <kbd class="hidden text-xs font-normal opacity-60 sm:inline">Enter</kbd>
+                  </button>
+                  <button
+                    type="button"
+                    id="show-answer"
+                    phx-click="flip"
+                    class="cursor-pointer rounded-box border border-base-300 px-5 py-3.5 font-semibold text-base-content/70 transition hover:bg-base-200 hover:text-base-content active:scale-[0.99]"
+                  >
+                    I don't know
+                  </button>
+                </div>
+              <% true -> %>
+                <button
+                  type="button"
+                  id="show-answer"
+                  phx-click="flip"
+                  class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-box bg-base-content py-3.5 font-semibold text-base-100 transition hover:opacity-90 active:scale-[0.99]"
+                >
+                  Show answer <kbd class="hidden text-xs font-normal opacity-60 sm:inline">Space</kbd>
+                </button>
             <% end %>
           </div>
 
           <p class="mt-4 hidden text-center text-xs text-base-content/40 sm:block">
-            Space shows the answer · 1–4 rate · S plays the sound · U undoes
+            <%= if typed_answer?(assigns) and not @revealed do %>
+              Enter checks your answer · Esc leaves the box for the shortcuts
+            <% else %>
+              Space shows the answer · 1–4 rate · S plays the sound · U undoes
+            <% end %>
           </p>
         <% else %>
           <.session_done
@@ -96,6 +133,9 @@ defmodule HangukoWeb.StudyLive do
   attr :revealed, :boolean, required: true
   attr :settings, :any, required: true
   attr :deck_title, :string, default: nil
+  attr :typed, :boolean, default: false, doc: "ask for the answer to be typed"
+  attr :answer, :map, default: nil, doc: "the checked typed answer, once submitted"
+  attr :answer_form, :any, default: nil
 
   defp flashcard(assigns) do
     ~H"""
@@ -135,6 +175,29 @@ defmodule HangukoWeb.StudyLive do
             >
               {@entry.item.metadata["context"]}
             </p>
+            <.form
+              :if={@typed and not @revealed}
+              for={@answer_form}
+              id="answer-form"
+              phx-submit="answer"
+              class="mt-6 w-full max-w-sm"
+            >
+              <input type="hidden" name="answer[key]" value={card_key(@entry)} />
+              <.input
+                field={@answer_form[:text]}
+                id="answer-input"
+                type="text"
+                lang="ko"
+                aria-label="Your answer in Korean"
+                placeholder="Type it in Korean"
+                autocomplete="off"
+                autocapitalize="off"
+                spellcheck="false"
+                enterkeyhint="done"
+                phx-mounted={JS.focus()}
+                class="w-full rounded-field border border-base-300 bg-base-100 px-4 py-3 text-center text-2xl transition outline-none placeholder:text-base placeholder:text-base-content/30 focus:border-primary focus:ring-2 focus:ring-primary/20"
+              />
+            </.form>
           <% true -> %>
             <div class="flex items-center gap-2">
               <.korean class="text-6xl leading-tight font-medium">{@entry.item.korean}</.korean>
@@ -154,6 +217,7 @@ defmodule HangukoWeb.StudyLive do
         id="card-answer"
         class="border-t border-base-300 bg-base-200/40 px-6 py-6 text-center"
       >
+        <.answer_result :if={@answer} answer={@answer} />
         <%= cond do %>
           <% @entry.template == :cloze -> %>
             <div class="flex items-center justify-center gap-2">
@@ -227,6 +291,56 @@ defmodule HangukoWeb.StudyLive do
         </div>
       </div>
     </section>
+    """
+  end
+
+  attr :answer, :map, required: true
+
+  # The learner's answer, marked up against the right one: extra characters
+  # struck out, missing ones filled in, wrong ones underlined, and for wrong
+  # syllables, which letter was off.
+  defp answer_result(assigns) do
+    assigns =
+      assign(assigns, :letters, for({:sub, _, _, [_ | _]} = sub <- assigns.answer.diff, do: sub))
+
+    ~H"""
+    <div id="answer-result" data-verdict={@answer.verdict} class="mb-6">
+      <%= if @answer.verdict == :wrong do %>
+        <p class="inline-flex items-center gap-1.5 text-sm font-semibold text-error">
+          <.icon name="hero-x-circle" class="size-5" /> Not quite
+        </p>
+        <p id="answer-diff" class="mt-2" aria-label={"You wrote #{@answer.typed}"}>
+          <%!-- One element per character, with no whitespace between them,
+               which would otherwise show as gaps inside the word --%>
+          <.korean class="text-3xl leading-snug font-medium">
+            <span :for={part <- @answer.diff} class={diff_class(part)}>{diff_text(part)}</span>
+          </.korean>
+        </p>
+        <ul
+          :if={@letters != []}
+          id="answer-letters"
+          class="mx-auto mt-3 max-w-sm space-y-1 text-sm text-base-content/70"
+        >
+          <li :for={{:sub, typed, expected, jamo} <- @letters}>
+            <.korean class="font-medium text-error">{typed}</.korean>
+            <.icon name="hero-arrow-right" class="size-3 text-base-content/40" />
+            <.korean class="font-medium text-success">{expected}</.korean>: {Enum.map_join(
+              jamo,
+              "; ",
+              &letter_note/1
+            )}
+          </li>
+        </ul>
+      <% else %>
+        <p class="inline-flex items-center gap-1.5 text-sm font-semibold text-success">
+          <.icon name="hero-check-circle" class="size-5" /> Correct
+        </p>
+        <p :if={@answer.verdict == :spacing} class="mt-1 text-sm text-base-content/60">
+          Mind the spacing: you wrote
+          <.korean class="font-medium">{@answer.typed}</.korean>
+        </p>
+      <% end %>
+    </div>
     """
   end
 
@@ -362,6 +476,27 @@ defmodule HangukoWeb.StudyLive do
     {:noreply, assign(socket, :revealed, socket.assigns.entry != nil)}
   end
 
+  def handle_event("answer", %{"answer" => params}, socket) do
+    %{entry: entry, revealed: revealed} = socket.assigns
+
+    # The key guards against an answer to a card that has since moved on,
+    # e.g. a repeated Enter from an input method.
+    if typed_answer?(socket.assigns) and not revealed and params["key"] == card_key(entry) do
+      text = params["text"] || ""
+
+      # An empty box is the same as "I don't know": nothing to mark.
+      answer =
+        if Korean.normalize(text) != "" do
+          {verdict, diff} = Korean.compare_answer(text, entry.item.korean)
+          %{typed: String.trim(text), verdict: verdict, diff: diff}
+        end
+
+      {:noreply, assign(socket, revealed: true, answer: answer)}
+    else
+      {:noreply, socket}
+    end
+  end
+
   def handle_event("rate", %{"rating" => rating, "key" => key}, socket) do
     %{entry: entry, revealed: revealed} = socket.assigns
 
@@ -450,7 +585,7 @@ defmodule HangukoWeb.StudyLive do
       |> assign(:limits, Map.take(queue, [:new_limit_reached, :review_limit_reached]))
 
     case Queue.next(queue) do
-      nil -> socket |> assign(entry: nil, revealed: false) |> schedule_refresh(queue)
+      nil -> socket |> assign(entry: nil, revealed: false, answer: nil) |> schedule_refresh(queue)
       entry -> show_entry(socket, entry)
     end
   end
@@ -459,6 +594,8 @@ defmodule HangukoWeb.StudyLive do
     socket
     |> assign(:entry, entry)
     |> assign(:revealed, false)
+    |> assign(:answer, nil)
+    |> assign(:answer_form, to_form(%{"text" => ""}, as: :answer))
     |> assign(
       :intervals,
       SRS.preview_intervals(socket.assigns.settings, entry, DateTime.utc_now())
@@ -488,6 +625,36 @@ defmodule HangukoWeb.StudyLive do
   defp entry_kind(%{card: nil}), do: :new
   defp entry_kind(%{card: %{state: :review}}), do: :review
   defp entry_kind(%{card: _}), do: :learning
+
+  defp typed_answer?(%{entry: %{template: :recall}, settings: %{typed_answers: true}}), do: true
+  defp typed_answer?(_assigns), do: false
+
+  defp suggested_rating(%{verdict: :wrong}), do: 1
+  defp suggested_rating(_answer), do: 3
+
+  # Extra characters struck out, missing ones filled in, wrong ones underlined.
+  defp diff_class({:eq, _char}), do: nil
+  defp diff_class({:del, _char}), do: "text-error/70 line-through decoration-2"
+  defp diff_class({:ins, _char}), do: "rounded bg-success/15 px-0.5 text-success"
+
+  defp diff_class({:sub, _typed, _expected, _jamo}),
+    do: "text-error underline decoration-wavy decoration-2 underline-offset-6"
+
+  # Only a space that is itself the mistake needs to be visible.
+  defp diff_text({:eq, char}), do: char
+  defp diff_text({:sub, typed, _expected, _jamo}), do: visible_space(typed)
+  defp diff_text({_op, char}), do: visible_space(char)
+
+  defp visible_space(" "), do: "␣"
+  defp visible_space(char), do: char
+
+  @positions %{initial: "first consonant", medial: "vowel", final: "final consonant"}
+
+  defp letter_note({:final, typed, nil}), do: "no final consonant, not #{typed}"
+  defp letter_note({:final, nil, expected}), do: "final consonant #{expected} is missing"
+
+  defp letter_note({position, typed, expected}),
+    do: "#{@positions[position]} #{expected}, not #{typed}"
 
   defp prompt(%{template: :cloze}), do: "Which grammar fills the gap?"
   defp prompt(%{template: :recall}), do: "How do you say this in Korean?"
