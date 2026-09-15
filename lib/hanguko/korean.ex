@@ -187,6 +187,86 @@ defmodule Hanguko.Korean do
     |> Enum.join(" ")
   end
 
+  @doc """
+  Checks a typed answer against the expected text. Both are compared after
+  `normalize/1`, so case, punctuation and repeated spaces don't count.
+
+  Returns `{verdict, diff}`, where `verdict` is:
+
+    * `:correct` - the answer matches
+    * `:spacing` - it matches once spaces are ignored (Korean word spacing
+      is easy to get wrong and doesn't change what was said)
+    * `:wrong` - anything else
+
+  `diff` walks the typed answer against the expected one, character by
+  character:
+
+    * `{:eq, char}` - typed correctly
+    * `{:del, char}` - typed but not expected
+    * `{:ins, char}` - expected but missing
+    * `{:sub, typed, expected, jamo}` - the wrong character in this place.
+      When both are Hangul syllables, `jamo` lists the letters that differ as
+      `{position, typed, expected}`, with `position` one of `:initial`,
+      `:medial` or `:final` and `nil` for a missing final consonant.
+
+  ```
+  iex> Hanguko.Korean.compare_answer("사과", "사과.")
+  {:correct, [{:eq, "사"}, {:eq, "과"}]}
+  iex> Hanguko.Korean.compare_answer("사가", "사과")
+  {:wrong, [{:eq, "사"}, {:sub, "가", "과", [{:medial, "ㅏ", "ㅘ"}]}]}
+  ```
+  """
+  def compare_answer(typed, expected) when is_binary(typed) and is_binary(expected) do
+    typed = normalize(typed)
+    expected = normalize(expected)
+
+    verdict =
+      cond do
+        typed == expected -> :correct
+        String.replace(typed, " ", "") == String.replace(expected, " ", "") -> :spacing
+        true -> :wrong
+      end
+
+    diff =
+      String.graphemes(typed)
+      |> List.myers_difference(String.graphemes(expected))
+      |> pair_changes()
+
+    {verdict, diff}
+  end
+
+  # A deletion next to an insertion is one character typed in place of
+  # another; pair them up so the jamo can be compared.
+  defp pair_changes([{:del, typed}, {:ins, expected} | rest]),
+    do: substitutions(typed, expected) ++ pair_changes(rest)
+
+  defp pair_changes([{:ins, expected}, {:del, typed} | rest]),
+    do: substitutions(typed, expected) ++ pair_changes(rest)
+
+  defp pair_changes([{op, chars} | rest]), do: Enum.map(chars, &{op, &1}) ++ pair_changes(rest)
+  defp pair_changes([]), do: []
+
+  defp substitutions(typed, expected) do
+    count = min(length(typed), length(expected))
+    {typed, extra_typed} = Enum.split(typed, count)
+    {expected, missing} = Enum.split(expected, count)
+
+    Enum.zip_with(typed, expected, &{:sub, &1, &2, jamo_changes(&1, &2)}) ++
+      Enum.map(extra_typed, &{:del, &1}) ++ Enum.map(missing, &{:ins, &1})
+  end
+
+  defp jamo_changes(typed, expected) do
+    with {_, _, _} = typed <- decompose(typed),
+         {_, _, _} = expected <- decompose(expected) do
+      [:initial, :medial, :final]
+      |> Enum.zip(Enum.zip(Tuple.to_list(typed), Tuple.to_list(expected)))
+      |> Enum.reject(fn {_position, {t, e}} -> t == e end)
+      |> Enum.map(fn {position, {t, e}} -> {position, t, e} end)
+    else
+      _ -> []
+    end
+  end
+
   defp indices(cp) do
     offset = cp - @syllable_base
     final = rem(offset, @final_count)

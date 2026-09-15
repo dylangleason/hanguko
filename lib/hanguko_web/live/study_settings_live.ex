@@ -97,6 +97,14 @@ defmodule HangukoWeb.StudySettingsLive do
               label="Show romanization on answers"
             />
             <.input
+              field={@form[:typed_answers]}
+              type="checkbox"
+              label="Type the Korean on recall cards"
+            />
+            <p class="text-sm text-base-content/60">
+              Instead of just thinking of the answer, type it and see which letters you got wrong.
+            </p>
+            <.input
               field={@form[:tts_rate]}
               type="select"
               label="Speech speed"

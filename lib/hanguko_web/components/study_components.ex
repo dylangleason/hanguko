@@ -62,6 +62,10 @@ defmodule HangukoWeb.StudyComponents do
   attr :intervals, :map, required: true
   attr :card_key, :string, required: true
 
+  attr :suggested, :integer,
+    default: nil,
+    doc: "a rating to highlight, e.g. from a checked typed answer"
+
   def rating_buttons(assigns) do
     assigns = assign(assigns, :ratings, @ratings)
 
@@ -74,9 +78,11 @@ defmodule HangukoWeb.StudyComponents do
         phx-click="rate"
         phx-value-rating={rating}
         phx-value-key={@card_key}
+        data-suggested={rating == @suggested}
         class={[
           "flex cursor-pointer flex-col items-center rounded-box px-2 py-3 transition active:scale-95",
           "focus-visible:ring-2 focus-visible:outline-none phx-click-loading:opacity-50",
+          rating == @suggested && "ring-2 ring-current/40",
           colors
         ]}
       >

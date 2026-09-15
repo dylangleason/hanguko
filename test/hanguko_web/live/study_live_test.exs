@@ -30,6 +30,10 @@ defmodule HangukoWeb.StudyLiveTest do
       %{scope: scope, deck: deck, apple: apple, water: water}
     end
 
+    setup context do
+      if context[:typed_answers], do: typed_recall_cards(context), else: :ok
+    end
+
     defp rate(view, rating) do
       key = view |> element("#study") |> render() |> data_key()
       render_hook(view, "rate", %{"rating" => to_string(rating), "key" => key})
@@ -213,6 +217,107 @@ defmodule HangukoWeb.StudyLiveTest do
       render_hook(view, "flip", %{})
       assert has_element?(view, "#card-answer", "사과")
       assert has_element?(view, "#card-answer [data-primary-speak][data-text='사과']")
+    end
+
+    # Tests tagged :typed_answers type their answers, with apple and water
+    # due as recall cards.
+    defp typed_recall_cards(%{scope: scope, user: user, apple: apple, water: water}) do
+      {:ok, _} = SRS.update_settings(scope, %{typed_answers: true})
+      two_days_ago = DateTime.add(DateTime.utc_now(:second), -2, :day)
+
+      for item <- [apple, water] do
+        card_fixture(user, item,
+          introduced_at: two_days_ago,
+          due: DateTime.add(two_days_ago, 30, :day)
+        )
+      end
+
+      :ok
+    end
+
+    @tag :typed_answers
+    test "typed answers mark the letter that was wrong and suggest Again", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/study")
+      assert has_element?(view, "#card-front", "apple")
+      refute has_element?(view, "#card-answer")
+
+      view |> form("#answer-form", answer: %{text: "사가"}) |> render_submit()
+
+      assert has_element?(view, "#answer-result[data-verdict='wrong']")
+      assert has_element?(view, "#answer-diff", "사가")
+      assert has_element?(view, "#answer-letters", "vowel ㅘ, not ㅏ")
+      assert has_element?(view, "#card-answer", "사과")
+      assert has_element?(view, "#study[data-suggested='1']")
+      assert has_element?(view, "#rate-1[data-suggested]")
+      refute has_element?(view, "#answer-form")
+    end
+
+    @tag :typed_answers
+    test "typed answers accept a correct answer and suggest Good", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/study")
+      view |> form("#answer-form", answer: %{text: " 사과. "}) |> render_submit()
+
+      assert has_element?(view, "#answer-result[data-verdict='correct']")
+      assert has_element?(view, "#study[data-suggested='3']")
+
+      # The next recall card starts with an empty box.
+      view |> element("#rate-3") |> render_click()
+      assert has_element?(view, "#card-front", "water")
+      assert has_element?(view, "#answer-input[value='']")
+    end
+
+    @tag :typed_answers
+    test "an empty typed answer or I don't know just shows the answer", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/study")
+      view |> form("#answer-form", answer: %{text: "  "}) |> render_submit()
+
+      assert has_element?(view, "#card-answer", "사과")
+      refute has_element?(view, "#answer-result")
+      refute has_element?(view, "#study[data-suggested]")
+
+      view |> element("#rate-3") |> render_click()
+      view |> element("#show-answer") |> render_click()
+      assert has_element?(view, "#card-answer", "물")
+      refute has_element?(view, "#answer-result")
+    end
+
+    @tag :typed_answers
+    test "ignores a typed answer for another card", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/study")
+      render_hook(view, "answer", %{"answer" => %{"text" => "사과", "key" => "0-recall"}})
+
+      refute has_element?(view, "#card-answer")
+      assert has_element?(view, "#answer-form")
+    end
+
+    @tag :typed_answers
+    test "typed answers only apply to recall cards", %{conn: conn, deck: deck} do
+      item_fixture(deck, position: 3, korean: "밥", meaning: "rice")
+      {:ok, view, _html} = live(conn, ~p"/study")
+
+      # A new recognition card is introduced ahead of the recall cards.
+      assert has_element?(view, "#card-front", "밥")
+      refute has_element?(view, "#answer-form")
+      assert has_element?(view, "#show-answer", "Show answer")
+    end
+
+    @tag :typed_answers
+    test "typed answers show correct spaces as spaces", %{conn: conn, scope: scope, user: user} do
+      greetings = deck_fixture(slug: "greetings", title: "Greetings", kind: :phrases)
+      SRS.enroll_deck(scope, greetings)
+      name = item_fixture(greetings, kind: :phrase, korean: "이름이 뭐예요?", meaning: "your name?")
+      two_days_ago = DateTime.add(DateTime.utc_now(:second), -2, :day)
+
+      card_fixture(user, name,
+        introduced_at: two_days_ago,
+        due: DateTime.add(two_days_ago, 30, :day)
+      )
+
+      {:ok, view, _html} = live(conn, ~p"/study?deck=greetings")
+      view |> form("#answer-form", answer: %{text: "이름이 머예요"}) |> render_submit()
+
+      assert has_element?(view, "#answer-diff", "이름이 머예요")
+      refute has_element?(view, "#answer-diff", "␣")
     end
 
     test "cloze cards blank out the grammar and reveal it on the answer", %{
