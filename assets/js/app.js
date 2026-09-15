@@ -47,6 +47,18 @@ window.addEventListener("phx:page-loading-start", _info => {
   }
 })
 
+// Escape closes a nav menu (see phx-window-keydown in layouts.ex). If focus
+// was inside it, hand focus back to the button that opened it, so keyboard
+// users don't lose their place when the focused link disappears.
+window.addEventListener("keydown", e => {
+  if (e.key !== "Escape") return
+  for (const menu of document.querySelectorAll("#site-header [data-close]")) {
+    if (menu.contains(document.activeElement)) {
+      document.querySelector(`[aria-controls="${menu.id}"]`)?.focus()
+    }
+  }
+})
+
 // connect if there are any LiveViews on the page
 liveSocket.connect()
 
