@@ -132,6 +132,81 @@ defmodule Hanguko.SRS.Queries do
     |> order_by([item: i], [i.position, i.id])
   end
 
+  ## Browsing
+
+  @doc """
+  The cards the card browser lists: every card of `user_id`'s whose item is
+  still active, in any deck, enrolled or not — a card the learner stopped
+  studying is exactly what they come to the browser to find.
+
+  Narrow it with the functions below, then order and preload it.
+  """
+  def browsable_cards(user_id) do
+    from [item: i] in active_cards(user_id), join: d in assoc(i, :deck), as: :deck
+  end
+
+  @doc "Preloads each card's item, and the item's deck, from the joins."
+  def with_item_and_deck(query), do: preload(query, [item: i, deck: d], item: {i, deck: d})
+
+  @doc """
+  Narrows a card query to items whose Korean, meaning or romanization
+  contains `term`. A blank term keeps every card.
+  """
+  def matching(query, term) when term in [nil, ""], do: query
+
+  def matching(query, term) do
+    pattern = "%" <> escape_like(term) <> "%"
+
+    where(
+      query,
+      [item: i],
+      ilike(i.korean, ^pattern) or ilike(i.meaning, ^pattern) or ilike(i.romanization, ^pattern)
+    )
+  end
+
+  # `%` and `_` are wildcards in LIKE, so without this a search for "_" would
+  # match every card rather than the cards containing an underscore.
+  defp escape_like(term) do
+    term
+    |> String.replace("\\", "\\\\")
+    |> String.replace("%", "\\%")
+    |> String.replace("_", "\\_")
+  end
+
+  @doc "Narrows a card query to the cards of one deck. `nil` keeps every deck."
+  def of_deck(query, nil), do: query
+  def of_deck(query, deck_id), do: where(query, [item: i], i.deck_id == ^deck_id)
+
+  @doc "Narrows a card query to one template. `nil` keeps every template."
+  def of_template(query, nil), do: query
+  def of_template(query, template), do: where(query, [card: c], c.template == ^template)
+
+  @doc """
+  Narrows a card query by the status the browser filters on: `:active` (in
+  the queue as usual), `:suspended`, `:leech` (see `Hanguko.SRS.Card.leech?/1`)
+  or `:all`.
+  """
+  def with_status(query, :all), do: query
+  def with_status(query, :active), do: where(query, [card: c], not c.suspended)
+  def with_status(query, :suspended), do: where(query, [card: c], c.suspended)
+  def with_status(query, :leech), do: where(query, [card: c], c.lapses >= ^Card.leech_lapses())
+
+  @doc "Orders a card query by when each card comes up next, soonest first."
+  def in_browse_order(query), do: order_by(query, [card: c], [c.due, c.id])
+
+  @doc "Limits a query to at most `count` rows."
+  def limit_to(query, count), do: limit(query, ^count)
+
+  @doc "One of `user_id`'s cards, with its item and that item's deck preloaded."
+  def card_with_content(user_id, card_id) do
+    user_id |> browsable_cards() |> where([card: c], c.id == ^card_id) |> with_item_and_deck()
+  end
+
+  @doc "The ids of the decks `user_id` has cards in, for the browser's deck filter."
+  def card_deck_ids(user_id) do
+    from [item: i] in active_cards(user_id), distinct: true, select: i.deck_id
+  end
+
   ## Review logs
 
   @doc "All of `user_id`'s reviews."

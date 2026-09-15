@@ -143,7 +143,9 @@ defmodule Hanguko.SRS do
           rating: rating,
           reviewed_at: now,
           duration_ms: opts[:duration_ms],
-          elapsed_days: before && DateTime.diff(now, before.last_review_at, :day),
+          # A card that was reset has a history but no review to measure from.
+          elapsed_days:
+            before && before.last_review_at && DateTime.diff(now, before.last_review_at, :day),
           scheduled_seconds: DateTime.diff(after_review.due, now),
           state_before: before && before.state,
           step_before: before && before.step,
@@ -187,13 +189,30 @@ defmodule Hanguko.SRS do
 
   defp save_card(_user, _entry, %Card{} = card, schedule, rating, _now) do
     lapsed? = card.state == :review and rating == 1
+    lapses = card.lapses + if(lapsed?, do: 1, else: 0)
 
     card
     |> Ecto.Changeset.change(schedule)
     |> Ecto.Changeset.put_change(:reps, card.reps + 1)
-    |> Ecto.Changeset.put_change(:lapses, card.lapses + if(lapsed?, do: 1, else: 0))
+    |> Ecto.Changeset.put_change(:lapses, lapses)
+    |> suspend_leech(lapsed?, lapses)
     |> Repo.update()
   end
+
+  # A card forgotten `Card.leech_lapses/0` times over is taken out of the
+  # queue: it is being memorized wrong, or the item needs rewording, and
+  # neither is fixed by showing it again tomorrow. It is suspended on every
+  # lapse from then on, so putting one back and failing it again sets it
+  # aside once more. The card browser is where they are dealt with.
+  defp suspend_leech(changeset, true, lapses) do
+    if lapses >= Card.leech_lapses() do
+      Ecto.Changeset.put_change(changeset, :suspended, true)
+    else
+      changeset
+    end
+  end
+
+  defp suspend_leech(changeset, false, _lapses), do: changeset
 
   defp stale_on_conflict({:error, %Ecto.Changeset{}}), do: {:error, :stale}
   defp stale_on_conflict(result), do: result
@@ -241,6 +260,123 @@ defmodule Hanguko.SRS do
           {:ok, %{card: card, item: log.card.item, template: card.template}}
       end
     end)
+  end
+
+  ## The card browser
+
+  @browse_limit 100
+
+  @doc "How many cards `browse_cards/2` returns at once."
+  def browse_limit, do: @browse_limit
+
+  @doc """
+  Lists the scope's cards for the card browser, the soonest due first.
+
+  Cards are listed whether or not their deck is still enrolled, because a
+  card the learner stopped studying is exactly what they come here to find.
+  Cards of retired content are left out: there is nothing left to show.
+
+  Returns `%{cards: cards, total: total}`. `total` counts every card that
+  matched; `cards` holds at most `browse_limit/0` of them, each with its
+  item and the item's deck preloaded.
+
+  ## Options
+
+    * `:search` - matches the item's Korean, meaning or romanization
+    * `:deck_id` - only cards of this deck
+    * `:template` - only cards of this template
+    * `:status` - `:all` (the default), `:active`, `:suspended` or `:leech`
+  """
+  def browse_cards(%Scope{user: user}, opts \\ []) do
+    query =
+      user.id
+      |> Queries.browsable_cards()
+      |> Queries.matching(opts[:search])
+      |> Queries.of_deck(opts[:deck_id])
+      |> Queries.of_template(opts[:template])
+      |> Queries.with_status(opts[:status] || :all)
+
+    cards =
+      query
+      |> Queries.in_browse_order()
+      |> Queries.limit_to(@browse_limit)
+      |> Queries.with_item_and_deck()
+      |> Repo.all()
+
+    %{cards: cards, total: Repo.aggregate(query, :count)}
+  end
+
+  @doc """
+  The decks the scope's user has cards in, in curriculum order, which is
+  what the browser's deck filter offers.
+  """
+  def list_card_decks(%Scope{user: user}) do
+    deck_ids = user.id |> Queries.card_deck_ids() |> Repo.all() |> MapSet.new()
+    Enum.filter(Content.list_decks(), &MapSet.member?(deck_ids, &1.id))
+  end
+
+  @doc """
+  Takes a card out of the study queue. Its history and scheduling are left
+  alone, so `unsuspend_card/2` puts it back where it was.
+
+  Returns `{:ok, card}` with the item and deck preloaded, or
+  `{:error, :not_found}` for a card the user doesn't have.
+  """
+  def suspend_card(scope, card_id), do: set_suspended(scope, card_id, true)
+
+  @doc "Puts a suspended card back into the study queue. See `suspend_card/2`."
+  def unsuspend_card(scope, card_id), do: set_suspended(scope, card_id, false)
+
+  defp set_suspended(%Scope{user: user}, card_id, suspended?) do
+    with {:ok, card} <- fetch_card(user, card_id) do
+      card |> Ecto.Changeset.change(suspended: suspended?) |> Repo.update()
+    end
+  end
+
+  @doc """
+  Forgets what FSRS knows about a card: it goes back to the first learning
+  step, due now, no longer suspended, with its `reps` and `lapses` cleared.
+
+  The row is kept rather than deleted, so the reviews pointing at it stay
+  valid and the card keeps its place in the statistics. `introduced_at`
+  moves to now, which counts the card against today's new-card limit —
+  relearning it from scratch is the work a new card would have been.
+  """
+  def reset_card(%Scope{user: user}, card_id, %DateTime{} = now \\ DateTime.utc_now()) do
+    now = DateTime.truncate(now, :second)
+
+    with {:ok, card} <- fetch_card(user, card_id) do
+      card
+      |> Ecto.Changeset.change(
+        state: :learning,
+        step: 0,
+        stability: nil,
+        difficulty: nil,
+        due: now,
+        last_review_at: nil,
+        reps: 0,
+        lapses: 0,
+        suspended: false,
+        introduced_at: now
+      )
+      |> Repo.update()
+    end
+  end
+
+  # Ids arrive from the browser as strings; anything else is a card the user
+  # doesn't have.
+  defp fetch_card(user, card_id) when is_binary(card_id) do
+    case Integer.parse(card_id) do
+      {id, ""} -> fetch_card(user, id)
+      _ -> {:error, :not_found}
+    end
+  end
+
+  defp fetch_card(user, card_id) do
+    case Repo.one(Queries.card_with_content(user.id, card_id)) do
+      %Card{} = card -> {:ok, card}
+      nil -> {:error, :not_found}
+    end
   end
 
   ## Dashboard

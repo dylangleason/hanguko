@@ -195,6 +195,41 @@ a card, and only the learner can tell a typo from a gap in memory. Only recall
 cards take typed answers: recognition answers are English meanings with
 several right phrasings, and a cloze has no single string to type.
 
+### The card browser
+
+`/cards` lists everything the learner has studied (`SRS.browse_cards/2`),
+whether or not its deck is still enrolled — a card they stopped studying is
+exactly what they come here to find. Cards of retired content are left out,
+because there is nothing left to show.
+
+Every filter — search, deck, template, status — lives in the query string,
+so a view of the cards (the leeches in one deck, say) can be linked to and
+comes back on reload. The list is capped at `SRS.browse_limit/0` rows and
+carries the full count beside it, which keeps a learner with thousands of
+cards from paying to render a page they wouldn't read.
+
+Two things can be done to a card:
+
+* **Suspend** takes it out of the queue and leaves its schedule untouched,
+  so unsuspending puts it back exactly where it was.
+* **Reset** forgets what FSRS knows: back to the first learning step, due
+  now, no longer suspended, with `reps` and `lapses` cleared. The row is
+  kept rather than deleted, so the reviews pointing at it stay valid and the
+  statistics keep their shape. `introduced_at` moves to now, which counts
+  the card against today's new-card limit, since relearning it from scratch
+  is the work a new card would have been. A reset card is the one case of a
+  card with a history but no `last_review_at`, which is why `elapsed_days`
+  on its next review is `nil`.
+
+**Leeches.** A card rated Again `Hanguko.SRS.Card.leech_lapses/0` times (8)
+is suspended by `review_card/5` as it lapses. A card forgotten eight times
+isn't being learned — it's usually a pair being confused with each other, or
+an item that needs rewording — and showing it again tomorrow only costs the
+rest of the day's reviews. Being a leech is derived from `lapses` rather
+than stored, so putting one back to try again doesn't quietly clear the
+label, and every later lapse sets it aside once more. Resetting is what
+clears the count.
+
 ## Time and the study day
 
 A "day" is per user: a timezone (detected from the browser's `Intl` API
@@ -254,11 +289,11 @@ stability of 21 days.
 
 Routes divide along the same line as the data. Browsing the curriculum
 (`/hangeul`, `/decks`, `/grammar`, `/phrases`) is public; anything per-user
-(`/dashboard`, `/study`, `/study/settings`, `/stats`) requires a login. Public pages
+(`/dashboard`, `/study`, `/study/settings`, `/stats`, `/cards`) requires a login. Public pages
 that offer a per-user action — enrol, mark as learned — send anonymous
 visitors to the log-in page rather than failing.
 
-The header puts the learner's own pages (Study, Progress) ahead of the
+The header puts the learner's own pages (Study, Cards, Progress) ahead of the
 curriculum, with everything about the account — settings, study settings,
 theme, log out — in one menu, so the bar stays readable as sections are
 added. It switches to a menu button below 1024px rather than squeezing. The
