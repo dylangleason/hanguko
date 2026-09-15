@@ -31,7 +31,7 @@ defmodule HangukoWeb.StudyLive do
         data-revealed={to_string(@revealed)}
         data-key={@entry && card_key(@entry)}
         data-can-undo={to_string(!is_nil(@last_log))}
-        data-suggested={@answer && suggested_rating(@answer)}
+        data-suggested={suggested_rating(assigns)}
         class="mx-auto max-w-xl"
       >
         <div class="flex items-center justify-between gap-3">
@@ -75,7 +75,7 @@ defmodule HangukoWeb.StudyLive do
                 <.rating_buttons
                   intervals={@intervals}
                   card_key={card_key(@entry)}
-                  suggested={@answer && suggested_rating(@answer)}
+                  suggested={suggested_rating(assigns)}
                 />
               <% typed_answer?(assigns) -> %>
                 <div class="flex gap-2">
@@ -629,8 +629,16 @@ defmodule HangukoWeb.StudyLive do
   defp typed_answer?(%{entry: %{template: :recall}, settings: %{typed_answers: true}}), do: true
   defp typed_answer?(_assigns), do: false
 
-  defp suggested_rating(%{verdict: :wrong}), do: 1
-  defp suggested_rating(_answer), do: 3
+  # A checked answer suggests Again when wrong and Good otherwise. A typed
+  # recall card revealed without an answer (an empty box, "I don't know")
+  # suggests Again too, so pressing Enter twice can't pass a forgotten card.
+  defp suggested_rating(%{answer: %{verdict: :wrong}}), do: 1
+  defp suggested_rating(%{answer: %{}}), do: 3
+
+  defp suggested_rating(%{revealed: true} = assigns),
+    do: if(typed_answer?(assigns), do: 1)
+
+  defp suggested_rating(_assigns), do: nil
 
   # Extra characters struck out, missing ones filled in, wrong ones underlined.
   defp diff_class({:eq, _char}), do: nil

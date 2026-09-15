@@ -273,12 +273,23 @@ defmodule HangukoWeb.StudyLiveTest do
 
       assert has_element?(view, "#card-answer", "사과")
       refute has_element?(view, "#answer-result")
-      refute has_element?(view, "#study[data-suggested]")
+      # Not knowing is a failed recall, so Enter must not pass the card.
+      assert has_element?(view, "#study[data-suggested='1']")
+      assert has_element?(view, "#rate-1[data-suggested]")
 
       view |> element("#rate-3") |> render_click()
       view |> element("#show-answer") |> render_click()
       assert has_element?(view, "#card-answer", "물")
       refute has_element?(view, "#answer-result")
+      assert has_element?(view, "#study[data-suggested='1']")
+    end
+
+    test "untyped cards suggest no rating", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/study")
+      view |> element("#show-answer") |> render_click()
+
+      refute has_element?(view, "#study[data-suggested]")
+      refute has_element?(view, "#rating-buttons [data-suggested]")
     end
 
     @tag :typed_answers
