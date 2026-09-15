@@ -188,7 +188,8 @@ letter was off (ㄷ for ㄸ, a missing final consonant) rather than only that
 the syllable was wrong.
 
 The check **suggests a rating but doesn't make it**: Again for a wrong
-answer, Good otherwise. The learner still presses the button (Enter or Space
+answer, or when the learner left the box empty or chose "I don't know", and
+Good otherwise. The learner still presses the button (Enter or Space
 takes the suggestion). A typo in something they plainly knew shouldn't reset
 a card, and only the learner can tell a typo from a gap in memory. Only recall
 cards take typed answers: recognition answers are English meanings with
@@ -280,7 +281,8 @@ Two JS hooks carry the behaviour that has to be client-side:
 * **`StudyKeys`** — Space flips, 1–4 rate, S speaks, U undoes. It deliberately
   leaves Enter and Space alone when focus is on a button or link reached by
   keyboard, so the rating buttons stay usable without a mouse. It ignores keys
-  while the learner types in the answer box (Escape leaves the box). For a
+  while the learner types in the answer box (Escape leaves the box, and Enter or
+Space still checks what was typed rather than skipping it). For a
   moment after an answer is submitted, it also ignores Enter, because some
   Korean input methods send a second Enter when committing the last syllable.
 

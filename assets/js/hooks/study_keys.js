@@ -1,7 +1,8 @@
 // Keyboard shortcuts for study sessions.
 //
-//   Space / Enter   show the answer, or rate once it is shown ("Good", or what
-//                   a typed answer suggests)
+//   Space / Enter   show the answer (or check what was typed in the answer
+//                   box), or rate once it is shown ("Good", or what a typed
+//                   answer suggests)
 //   1 2 3 4         rate Again / Hard / Good / Easy (once the answer is shown)
 //   S               play the pronunciation
 //   U, Ctrl/⌘+Z     undo the last rating
@@ -14,7 +15,7 @@
 //   data-key        identifies the current card, sent along with ratings so a
 //                   rating can never apply to a card the learner hasn't seen
 //   data-can-undo   "true" when there is a rating to undo
-//   data-suggested  the rating a checked typed answer suggests, if any
+//   data-suggested  the rating a typed recall card suggests, if any
 //
 // Space and Enter still activate a focused button or link, so keyboard users
 // can tab to "Again" or "Undo". The exception is a control the learner
@@ -71,9 +72,17 @@ const StudyKeys = {
 
       if (activates) {
         event.preventDefault()
-        shown
-          ? this.pushEvent("rate", {rating: suggested || "3", key})
-          : this.pushEvent("flip", {})
+        // After Escape leaves the answer box, check what was typed rather
+        // than skipping it.
+        const answer = this.el.querySelector("#answer-input")
+
+        if (shown) {
+          this.pushEvent("rate", {rating: suggested || "3", key})
+        } else if (answer && answer.value.trim() !== "") {
+          answer.form.requestSubmit()
+        } else {
+          this.pushEvent("flip", {})
+        }
       } else if (shown && ["1", "2", "3", "4"].includes(event.key)) {
         event.preventDefault()
         this.pushEvent("rate", {rating: event.key, key})
