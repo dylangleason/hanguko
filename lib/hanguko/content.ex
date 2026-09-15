@@ -31,7 +31,7 @@ defmodule Hanguko.Content do
   Raises `Ecto.NoResultsError` if the deck does not exist.
   """
   def get_deck!(id) do
-    Queries.active_decks_with_item_counts() |> Queries.by_id(id) |> Repo.one!()
+    Queries.active_decks_with_item_counts() |> Queries.deck_by_id(id) |> Repo.one!()
   end
 
   @doc """
@@ -51,12 +51,15 @@ defmodule Hanguko.Content do
   Raises `Ecto.NoResultsError` if the deck does not exist.
   """
   def get_deck_by_slug!(slug) do
-    Queries.active_decks() |> Queries.by_slug(slug) |> Queries.with_active_items() |> Repo.one!()
+    Queries.active_decks()
+    |> Queries.deck_by_slug(slug)
+    |> Queries.with_active_items()
+    |> Repo.one!()
   end
 
   @doc "Gets an active deck by slug, without its items. Returns `nil` if not found."
   def get_deck_by_slug(slug) when is_binary(slug) do
-    Queries.active_decks() |> Queries.by_slug(slug) |> Repo.one()
+    Queries.active_decks() |> Queries.deck_by_slug(slug) |> Repo.one()
   end
 
   ## Grammar
@@ -83,7 +86,7 @@ defmodule Hanguko.Content do
     scope
     |> user_id()
     |> Queries.active_grammar_points()
-    |> Queries.by_slug(slug)
+    |> Queries.grammar_point_by_slug(slug)
     |> Queries.with_deck_and_examples()
     |> Repo.one!()
   end
