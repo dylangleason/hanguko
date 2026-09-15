@@ -36,7 +36,7 @@ jobs:
           project=$(sed -nE 's/^[[:space:]]*version: "([^"]+)",?$/\1/p' mix.exs | head -n1)
 
           if [ "$tag" != "$project" ]; then
-            echo "::error::Tag $GITHUB_REF_NAME doesn't match version $project in mix.exs"
+            echo "::error::Tag $GITHUB_REF_NAME doesn't match version $project in mix.exs" >&2
             exit 1
           fi
 
