@@ -23,7 +23,7 @@ defmodule HangukoWeb.HangeulLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_scope={@current_scope}>
+    <Layouts.app flash={@flash} current_scope={@current_scope} current_path={@current_path}>
       <.header>
         Hangeul
         <.korean class="ml-1 font-medium text-base-content/50">한글</.korean>

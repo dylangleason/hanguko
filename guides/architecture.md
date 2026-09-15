@@ -235,6 +235,17 @@ Routes divide along the same line as the data. Browsing the curriculum
 that offer a per-user action — enrol, mark as learned — send anonymous
 visitors to the log-in page rather than failing.
 
+The header puts the learner's own pages (Study, Progress) ahead of the
+curriculum, with everything about the account — settings, study settings,
+theme, log out — in one menu, so the bar stays readable as sections are
+added. It switches to a menu button below 1024px rather than squeezing. The
+current section is marked with `aria-current`: every LiveView mounts
+`HangukoWeb.Nav`, which keeps `@current_path` up to date on each
+`handle_params`, and the layout maps a path to its section by its first
+segment, so inner pages (a lesson, study settings) mark their section too.
+Deck pages are the exception: `/decks` serves Hangeul, vocabulary and phrase
+decks alike, so they name their section from the deck's kind.
+
 Shared UI lives in three component modules: `CoreComponents` (generated),
 `KoreanComponents` (`<.korean>` for the font and line-breaking rules,
 `<.speak_button>`, `<.jamo_tile>`, politeness badges) and `StudyComponents`

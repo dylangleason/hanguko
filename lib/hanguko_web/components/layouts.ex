@@ -31,9 +31,22 @@ defmodule HangukoWeb.Layouts do
     default: nil,
     doc: "the current [scope](https://phoenix.hexdocs.pm/scopes.html)"
 
+  attr :current_path, :string,
+    default: nil,
+    doc: "the page's path, which marks its section in the nav (see `HangukoWeb.Nav`)"
+
+  attr :section, :string,
+    default: nil,
+    doc: """
+    the nav section to mark, for pages whose path doesn't say: deck pages
+    serve every kind of deck, so they pass the deck's kind
+    """
+
   slot :inner_block, required: true
 
   def app(assigns) do
+    assigns = assign(assigns, :section, assigns.section || nav_section(assigns.current_path))
+
     ~H"""
     <header
       id="site-header"
@@ -43,46 +56,34 @@ defmodule HangukoWeb.Layouts do
       phx-key="escape"
     >
       <nav class="mx-auto flex max-w-5xl items-center gap-3 px-4 py-2.5 sm:px-6" aria-label="Main">
-        <.link navigate={~p"/"} class="group mr-2 flex shrink-0 items-baseline gap-1.5" id="brand">
+        <.link navigate={~p"/"} class="group mr-3 flex shrink-0 items-baseline gap-1.5" id="brand">
           <span lang="ko" class="text-xl font-bold text-primary transition group-hover:opacity-80">
             한국어
           </span>
           <span class="text-sm font-semibold tracking-wide">Hanguko</span>
         </.link>
 
-        <%!-- Desktop: everything inline --%>
-        <div class="hidden min-w-0 flex-1 items-center gap-0.5 md:flex">
-          <.nav_link
-            :for={{label, path, id} <- nav_items(@current_scope)}
-            navigate={path}
-            id={"nav-#{id}"}
-          >
-            {label}
-          </.nav_link>
+        <%!-- Desktop: the learner's own pages, then the curriculum --%>
+        <div class="hidden min-w-0 flex-1 items-center gap-1 lg:flex">
+          <%= for {group, index} <- Enum.with_index(nav_groups(@current_scope)) do %>
+            <span :if={index > 0} class="mx-2 h-5 w-px bg-base-300" aria-hidden="true"></span>
+            <.nav_link
+              :for={{label, path, id} <- group}
+              navigate={path}
+              id={"nav-#{id}"}
+              aria-current={@section == id && "page"}
+            >
+              {label}
+            </.nav_link>
+          <% end %>
         </div>
 
-        <div class="hidden shrink-0 items-center gap-3 md:flex">
-          <.theme_toggle />
-          <div class="flex items-center gap-1 text-sm">
-            <%= if @current_scope do %>
-              <.link
-                navigate={~p"/users/settings"}
-                id="nav-settings"
-                class="flex items-center gap-1.5 rounded-field px-2 py-1.5 text-base-content/70 transition hover:bg-base-200 hover:text-base-content"
-                title={@current_scope.user.email}
-              >
-                <.icon name="hero-user-circle" class="size-5" />
-                <span class="max-w-40 truncate">{@current_scope.user.email}</span>
-              </.link>
-              <.link
-                href={~p"/users/log-out"}
-                method="delete"
-                id="nav-log-out"
-                class="rounded-field px-2 py-1.5 text-base-content/70 transition hover:bg-base-200 hover:text-base-content"
-              >
-                Log out
-              </.link>
-            <% else %>
+        <div class="hidden shrink-0 items-center gap-3 lg:flex">
+          <%= if @current_scope do %>
+            <.account_menu current_scope={@current_scope} />
+          <% else %>
+            <.theme_toggle />
+            <div class="flex items-center gap-1 text-sm">
               <.link
                 navigate={~p"/users/log-in"}
                 id="nav-log-in"
@@ -97,15 +98,15 @@ defmodule HangukoWeb.Layouts do
               >
                 Sign up
               </.link>
-            <% end %>
-          </div>
+            </div>
+          <% end %>
         </div>
 
-        <%!-- Mobile: a menu button that opens the panel below --%>
+        <%!-- Narrower screens: a menu button that opens the panel below --%>
         <button
           type="button"
           id="mobile-menu-button"
-          class="group ml-auto inline-flex size-10 cursor-pointer items-center justify-center rounded-field text-base-content/70 transition hover:bg-base-200 hover:text-base-content md:hidden"
+          class="group ml-auto inline-flex size-10 cursor-pointer items-center justify-center rounded-field text-base-content/70 transition hover:bg-base-200 hover:text-base-content lg:hidden"
           aria-label="Menu"
           aria-controls="mobile-menu"
           aria-expanded="false"
@@ -118,17 +119,21 @@ defmodule HangukoWeb.Layouts do
 
       <div
         id="mobile-menu"
-        class="hidden border-t border-base-300 md:hidden"
+        class="hidden border-t border-base-300 lg:hidden"
         data-close={close_mobile_menu()}
       >
         <div class="mx-auto max-w-5xl px-4 py-3 sm:px-6">
-          <.mobile_link
-            :for={{label, path, id} <- nav_items(@current_scope)}
-            navigate={path}
-            id={"mobile-nav-#{id}"}
-          >
-            {label}
-          </.mobile_link>
+          <%= for {group, index} <- Enum.with_index(nav_groups(@current_scope)) do %>
+            <div :if={index > 0} class="my-2 border-t border-base-300"></div>
+            <.mobile_link
+              :for={{label, path, id} <- group}
+              navigate={path}
+              id={"mobile-nav-#{id}"}
+              aria-current={@section == id && "page"}
+            >
+              {label}
+            </.mobile_link>
+          <% end %>
 
           <div class="my-3 border-t border-base-300"></div>
 
@@ -136,6 +141,9 @@ defmodule HangukoWeb.Layouts do
             <.mobile_link navigate={~p"/users/settings"} id="mobile-nav-settings">
               <.icon name="hero-user-circle" class="size-5 shrink-0" />
               <span class="truncate">{@current_scope.user.email}</span>
+            </.mobile_link>
+            <.mobile_link navigate={~p"/study/settings"} id="mobile-nav-study-settings">
+              <.icon name="hero-adjustments-horizontal" class="size-5 shrink-0" /> Study settings
             </.mobile_link>
             <.mobile_link href={~p"/users/log-out"} method="delete" id="mobile-nav-log-out">
               <.icon name="hero-arrow-right-start-on-rectangle" class="size-5 shrink-0" /> Log out
@@ -169,19 +177,36 @@ defmodule HangukoWeb.Layouts do
     """
   end
 
-  defp nav_items(current_scope) do
-    study =
-      if current_scope,
-        do: [{"Study", ~p"/dashboard", "study"}, {"Progress", ~p"/stats", "progress"}],
-        else: []
+  # The learner's own pages come first, set apart from the curriculum, which
+  # anyone can browse.
+  defp nav_groups(current_scope) do
+    curriculum = [
+      {"Hangeul", ~p"/hangeul", "hangeul"},
+      {"Vocabulary", ~p"/decks?kind=vocab", "vocab"},
+      {"Grammar", ~p"/grammar", "grammar"},
+      {"Phrases", ~p"/phrases", "phrases"}
+    ]
 
-    study ++
-      [
-        {"Hangeul", ~p"/hangeul", "hangeul"},
-        {"Vocabulary", ~p"/decks?kind=vocab", "vocab"},
-        {"Grammar", ~p"/grammar", "grammar"},
-        {"Phrases", ~p"/phrases", "phrases"}
-      ]
+    if current_scope,
+      do: [[{"Study", ~p"/dashboard", "study"}, {"Progress", ~p"/stats", "progress"}], curriculum],
+      else: [curriculum]
+  end
+
+  # The nav section a path belongs to, by its first segment, so a lesson or
+  # study settings count as part of their section. `/decks` isn't here: it
+  # serves every kind of deck, and deck pages pass `section` instead.
+  defp nav_section(nil), do: nil
+
+  defp nav_section(path) do
+    case String.split(path, "/", trim: true) do
+      ["dashboard" | _] -> "study"
+      ["study" | _] -> "study"
+      ["stats" | _] -> "progress"
+      ["hangeul" | _] -> "hangeul"
+      ["grammar" | _] -> "grammar"
+      ["phrases" | _] -> "phrases"
+      _ -> nil
+    end
   end
 
   attr :navigate, :string, required: true
@@ -192,7 +217,7 @@ defmodule HangukoWeb.Layouts do
     ~H"""
     <.link
       navigate={@navigate}
-      class="shrink-0 rounded-field px-3 py-1.5 text-sm font-medium text-base-content/70 transition hover:bg-base-200 hover:text-base-content"
+      class="shrink-0 rounded-field px-3 py-1.5 text-sm font-medium text-base-content/70 transition hover:bg-base-200 hover:text-base-content aria-[current=page]:bg-base-200 aria-[current=page]:text-base-content"
       {@rest}
     >
       {render_slot(@inner_block)}
@@ -206,7 +231,7 @@ defmodule HangukoWeb.Layouts do
   defp mobile_link(assigns) do
     ~H"""
     <.link
-      class="flex items-center gap-2 rounded-field px-3 py-2.5 font-medium text-base-content/80 transition hover:bg-base-200 hover:text-base-content"
+      class="flex items-center gap-2 rounded-field px-3 py-2.5 font-medium text-base-content/80 transition hover:bg-base-200 hover:text-base-content aria-[current=page]:bg-base-200 aria-[current=page]:text-base-content"
       {@rest}
     >
       {render_slot(@inner_block)}
@@ -214,7 +239,82 @@ defmodule HangukoWeb.Layouts do
     """
   end
 
-  # The mobile menu also closes when a live navigation starts (see the
+  attr :current_scope, :map, required: true
+
+  # A disclosure rather than an ARIA menu: a button that shows a panel of
+  # ordinary links, so Tab and Enter work without extra key handling.
+  defp account_menu(assigns) do
+    ~H"""
+    <div
+      class="relative"
+      phx-click-away={close_account_menu()}
+      phx-window-keydown={close_account_menu()}
+      phx-key="escape"
+    >
+      <button
+        type="button"
+        id="account-menu-button"
+        class="group flex cursor-pointer items-center gap-1 rounded-field px-2 py-1.5 text-base-content/70 transition hover:bg-base-200 hover:text-base-content aria-expanded:bg-base-200 aria-expanded:text-base-content"
+        aria-label="Account"
+        aria-controls="account-menu"
+        aria-expanded="false"
+        title={@current_scope.user.email}
+        phx-click={toggle_account_menu()}
+      >
+        <.icon name="hero-user-circle" class="size-6" />
+        <.icon
+          name="hero-chevron-down-micro"
+          class="size-4 transition group-aria-expanded:rotate-180"
+        />
+      </button>
+
+      <div
+        id="account-menu"
+        class="absolute right-0 mt-2 hidden w-64 rounded-box border border-base-300 bg-base-100 p-2 text-sm shadow-lg"
+        data-close={close_account_menu()}
+      >
+        <p class="truncate px-3 pt-1.5 pb-2 text-xs text-base-content/60" id="account-email">
+          Logged in as <span class="font-medium text-base-content">{@current_scope.user.email}</span>
+        </p>
+        <.menu_link navigate={~p"/users/settings"} id="nav-settings">
+          <.icon name="hero-user-circle" class="size-5 shrink-0" /> Account settings
+        </.menu_link>
+        <.menu_link navigate={~p"/study/settings"} id="nav-study-settings">
+          <.icon name="hero-adjustments-horizontal" class="size-5 shrink-0" /> Study settings
+        </.menu_link>
+
+        <div class="my-2 border-t border-base-300"></div>
+
+        <div class="flex items-center justify-between px-3 py-1.5">
+          <span class="text-base-content/70">Theme</span>
+          <.theme_toggle />
+        </div>
+
+        <div class="my-2 border-t border-base-300"></div>
+
+        <.menu_link href={~p"/users/log-out"} method="delete" id="nav-log-out">
+          <.icon name="hero-arrow-right-start-on-rectangle" class="size-5 shrink-0" /> Log out
+        </.menu_link>
+      </div>
+    </div>
+    """
+  end
+
+  attr :rest, :global, include: ~w(navigate href method)
+  slot :inner_block, required: true
+
+  defp menu_link(assigns) do
+    ~H"""
+    <.link
+      class="flex items-center gap-2 rounded-field px-3 py-2 text-base-content/80 transition hover:bg-base-200 hover:text-base-content"
+      {@rest}
+    >
+      {render_slot(@inner_block)}
+    </.link>
+    """
+  end
+
+  # Both menus also close when a live navigation starts (see the
   # `phx:page-loading-start` listener in app.js, which runs `data-close`).
   defp toggle_mobile_menu do
     JS.toggle_class("hidden", to: "#mobile-menu")
@@ -224,6 +324,16 @@ defmodule HangukoWeb.Layouts do
   defp close_mobile_menu do
     JS.add_class("hidden", to: "#mobile-menu")
     |> JS.set_attribute({"aria-expanded", "false"}, to: "#mobile-menu-button")
+  end
+
+  defp toggle_account_menu do
+    JS.toggle_class("hidden", to: "#account-menu")
+    |> JS.toggle_attribute({"aria-expanded", "true", "false"}, to: "#account-menu-button")
+  end
+
+  defp close_account_menu do
+    JS.add_class("hidden", to: "#account-menu")
+    |> JS.set_attribute({"aria-expanded", "false"}, to: "#account-menu-button")
   end
 
   @doc """

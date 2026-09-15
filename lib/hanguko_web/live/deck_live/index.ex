@@ -11,7 +11,12 @@ defmodule HangukoWeb.DeckLive.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_scope={@current_scope}>
+    <Layouts.app
+      flash={@flash}
+      current_scope={@current_scope}
+      current_path={@current_path}
+      section={@kind && to_string(@kind)}
+    >
       <.header>
         {@page_title}
         <:subtitle>
