@@ -24,12 +24,12 @@ defmodule Hanguko.SRS.Queue do
       reviewed at most once per day in the review/new queues.
     * When nothing else is left, learning cards due within the next 20
       minutes are shown early.
-  """
-  import Ecto.Query, warn: false
 
+  The queries it runs are built in `Hanguko.SRS.Queries`.
+  """
   alias Hanguko.Repo
-  alias Hanguko.Content.{Deck, GrammarProgress, Item}
-  alias Hanguko.SRS.{Card, Day, DeckEnrollment, ReviewLog, Settings}
+  alias Hanguko.Content.Item
+  alias Hanguko.SRS.{Card, Day, Queries, Settings}
 
   @learn_ahead_seconds 20 * 60
 
@@ -111,48 +111,25 @@ defmodule Hanguko.SRS.Queue do
   def entries(%__MODULE__{} = queue),
     do: queue.learning ++ queue.review ++ queue.new ++ queue.learning_ahead
 
-  @doc """
-  A query for the user's cards that study sessions draw from: cards of active
-  items in enrolled decks, not suspended, and not set aside because their
-  grammar point isn't marked as learned. Unordered, for counting (e.g. the
-  forecast in `Hanguko.Progress`), so it agrees with what the queue shows.
-  """
-  def studied_cards_query(user_id) do
-    user_id
-    |> cards_query(deck_ids(user_id, nil))
-    |> exclude(:order_by)
-    |> exclude(:preload)
-  end
-
   ## Cards already being studied
 
   defp deck_ids(user_id, deck_id) do
-    DeckEnrollment
-    |> join(:inner, [e], d in Deck, on: d.id == e.deck_id)
-    |> where([e, d], e.user_id == ^user_id and not d.retired)
-    |> then(fn query -> if deck_id, do: where(query, [e], e.deck_id == ^deck_id), else: query end)
-    |> select([e], e.deck_id)
+    user_id |> Queries.studied_deck_ids() |> Queries.in_deck(deck_id) |> Repo.all()
+  end
+
+  # Un-marking a grammar point puts its sentences aside, history and all:
+  # `studied_cards/2` leaves them out.
+  defp due_cards(user_id, deck_ids, states, day_end) do
+    user_id
+    |> Queries.studied_cards(deck_ids)
+    |> Queries.in_state(states)
+    |> Queries.due_before(day_end)
+    |> Queries.in_due_order()
     |> Repo.all()
   end
 
-  defp cards_query(user_id, deck_ids) do
-    from c in Card,
-      join: i in assoc(c, :item),
-      left_join: p in GrammarProgress,
-      on: p.grammar_point_id == i.grammar_point_id and p.user_id == ^user_id,
-      where: c.user_id == ^user_id and not c.suspended,
-      where: i.deck_id in ^deck_ids and not i.retired,
-      # Un-marking a grammar point puts its sentences aside, history and all.
-      where: is_nil(i.grammar_point_id) or not is_nil(p.id),
-      order_by: [c.due, c.id],
-      preload: [item: i]
-  end
-
   defp learning_cards(user_id, deck_ids, now, day_end) do
-    cards =
-      cards_query(user_id, deck_ids)
-      |> where([c], c.state in [:learning, :relearning] and c.due < ^day_end)
-      |> Repo.all()
+    cards = due_cards(user_id, deck_ids, [:learning, :relearning], day_end)
 
     learn_ahead_until = DateTime.add(now, @learn_ahead_seconds)
     {due, not_due} = Enum.split_with(cards, &(DateTime.compare(&1.due, now) != :gt))
@@ -167,10 +144,7 @@ defmodule Hanguko.SRS.Queue do
   defp review_cards(user_id, deck_ids, settings, day_start, day_end, reviewed_today) do
     budget = max(settings.daily_review_limit - reviews_done_since(user_id, day_start), 0)
 
-    cards =
-      cards_query(user_id, deck_ids)
-      |> where([c], c.state == :review and c.due < ^day_end)
-      |> Repo.all()
+    cards = due_cards(user_id, deck_ids, :review, day_end)
 
     # Bury siblings: skip a card if another card of its item was already
     # reviewed today or comes earlier in the queue.
@@ -192,22 +166,19 @@ defmodule Hanguko.SRS.Queue do
   end
 
   defp reviews_done_since(user_id, day_start) do
-    Repo.aggregate(
-      from(l in ReviewLog,
-        where: l.user_id == ^user_id and l.reviewed_at >= ^day_start and l.state_before == :review
-      ),
-      :count
-    )
+    user_id
+    |> Queries.review_logs()
+    |> Queries.reviewed_since(day_start)
+    |> Queries.of_review_cards()
+    |> Repo.aggregate(:count)
   end
 
   defp items_reviewed_since(user_id, day_start) do
-    Repo.all(
-      from l in ReviewLog,
-        join: c in assoc(l, :card),
-        where: l.user_id == ^user_id and l.reviewed_at >= ^day_start,
-        distinct: true,
-        select: {c.item_id, c.id}
-    )
+    user_id
+    |> Queries.review_logs()
+    |> Queries.reviewed_since(day_start)
+    |> Queries.reviewed_item_cards()
+    |> Repo.all()
   end
 
   defp entry(%Card{} = card), do: %{card: card, item: card.item, template: card.template}
@@ -216,10 +187,10 @@ defmodule Hanguko.SRS.Queue do
 
   defp new_entries(user_id, deck_ids, settings, day_start, busy_items) do
     introduced_today =
-      Repo.aggregate(
-        from(c in Card, where: c.user_id == ^user_id and c.introduced_at >= ^day_start),
-        :count
-      )
+      user_id
+      |> Queries.cards()
+      |> Queries.introduced_since(day_start)
+      |> Repo.aggregate(:count)
 
     budget = max(settings.daily_new_limit - introduced_today, 0)
 
@@ -231,35 +202,10 @@ defmodule Hanguko.SRS.Queue do
   # Up to `count` new entries, taking one from each deck in turn. Example
   # sentences wait until their grammar point has been marked as learned.
   defp find_new_entries(user_id, deck_ids, day_start, busy_items, count) do
-    kinds = Enum.map(Deck.kinds(), &Atom.to_string/1)
-
-    items =
-      Repo.all(
-        from i in Item,
-          join: d in assoc(i, :deck),
-          left_join: p in GrammarProgress,
-          on: p.grammar_point_id == i.grammar_point_id and p.user_id == ^user_id,
-          where: i.deck_id in ^deck_ids and not i.retired,
-          where: is_nil(i.grammar_point_id) or not is_nil(p.id),
-          order_by: [
-            fragment("array_position(?::text[], ?::text)", ^kinds, d.kind),
-            d.level,
-            d.position,
-            d.id,
-            i.position,
-            i.id
-          ]
-      )
+    items = user_id |> Queries.unlocked_items(deck_ids) |> Repo.all()
 
     # {item_id, template} => introduced_at, for the user's existing cards
-    existing =
-      Repo.all(
-        from c in Card,
-          join: i in assoc(c, :item),
-          where: c.user_id == ^user_id and i.deck_id in ^deck_ids,
-          select: {{c.item_id, c.template}, c.introduced_at}
-      )
-      |> Map.new()
+    existing = user_id |> Queries.card_introductions(deck_ids) |> Repo.all() |> Map.new()
 
     # Items are sorted by deck, so chunking groups each deck's items.
     items

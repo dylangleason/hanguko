@@ -37,6 +37,38 @@ Public functions take a `%Scope{}` first, per Phoenix 1.8 convention. A `nil`
 scope means an anonymous visitor: they can browse the curriculum, have
 learned nothing, and get default study settings.
 
+### Queries
+
+Each context keeps its queries in a `Queries` module beside it
+(`Content.Queries`, `SRS.Queries`, `Progress.Queries`). A query module only
+builds `Ecto.Query` structs; the context runs them. So a context reads as
+the steps of a task — which rows, then what to do with them — and every
+`Repo` call, transaction and lock stays in the context, where it can be seen
+next to the work it protects.
+
+This stops short of a repository layer that wraps `Repo.all/insert/update`
+for each schema. `Hanguko.Repo` already is that layer, and wrapping it would
+hide the transaction boundaries that `SRS.review_card/5` and the importer
+depend on.
+
+Query functions come in two shapes:
+
+* **Starting points** name what they return, scoped to a user where the data
+  is per-user: `SRS.Queries.review_logs(user_id)`,
+  `Content.Queries.active_decks()`.
+* **Narrowing functions** take a query and add to it:
+  `reviewed_since(query, instant)`, `in_curriculum_order(query)`. They find
+  their tables by named binding (`:card`, `:item`, `:deck`, `:log`), so they
+  chain onto any query that has the binding, whatever else it joins.
+
+Rules that several queries share live in one place:
+`Content.Queries.unlocked_for/2` is the grammar gate, used both for new cards
+and for cards already being studied, and `SRS.Day.study_day/3` is the study
+day inside SQL.
+
+`Hanguko.Accounts` is left as `phx.gen.auth` generated it, with its token
+queries on `UserToken`.
+
 ## Content packs
 
 A pack is one YAML file describing one deck, its items, and optionally the
@@ -176,7 +208,8 @@ Three decisions shape the numbers:
 
 * **Days are study days.** Reviews are grouped by the same rule as
   `Day.bounds/3` — local time in the learner's zone, moved back by the
-  rollover hour — in SQL, so the grouping happens in the database. A streak
+  rollover hour — in SQL, with `Day.study_day/3`, so the grouping happens in
+  the database. A test checks the two agree across daylight-saving changes. A streak
   stays current through the day after the last study day, so it isn't shown
   as broken before the learner has had a chance to study today.
 * **Retention is true retention**: over the last 30 days, the share of
@@ -184,7 +217,7 @@ Three decisions shape the numbers:
   are left out, because missing a card first seen minutes ago says little
   about long-term memory.
 * **The forecast counts what the queue would show.** It starts from
-  `Queue.studied_cards_query/1` — enrolled decks, active items, unsuspended
+  `SRS.Queries.studied_cards/2` — enrolled decks, active items, unsuspended
   cards, grammar gating — so it never promises cards a session wouldn't
   offer. Overdue cards count towards today. It counts cards due, not what a
   session will allow, so the daily review limit and sibling burying can still

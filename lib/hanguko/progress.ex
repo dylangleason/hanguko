@@ -10,13 +10,15 @@ defmodule Hanguko.Progress do
   Days are **study days**: in the learner's time zone, turning over at their
   rollover hour (see `Hanguko.SRS.Day`). A review at 1am counts for the day
   before, just as it does for the daily limits.
-  """
-  import Ecto.Query, warn: false
 
+  The queries themselves are in `Hanguko.Progress.Queries`.
+  """
   alias Hanguko.Accounts.Scope
+  alias Hanguko.Progress.Queries
   alias Hanguko.Repo
   alias Hanguko.SRS
-  alias Hanguko.SRS.{Card, Day, Queue, ReviewLog, Settings}
+  alias Hanguko.SRS.{Day, Settings}
+  alias Hanguko.SRS.Queries, as: SRSQueries
 
   @activity_weeks 26
   @recent_days 30
@@ -77,35 +79,15 @@ defmodule Hanguko.Progress do
     }
   end
 
-  # The study day a UTC timestamp column falls on, by the same rule as
-  # `Day.bounds/3`: the local wall-clock time, moved back by the rollover hour.
-  defmacrop study_day(column, timezone, hour) do
-    quote do
-      fragment(
-        "((? AT TIME ZONE 'UTC') AT TIME ZONE ? - make_interval(hours => ?))::date",
-        unquote(column),
-        unquote(timezone),
-        unquote(hour)
-      )
-    end
-  end
-
   defp study_date(now, {timezone, hour}) do
     {day_start, _day_end} = Day.bounds(now, timezone, hour)
     day_start |> DateTime.shift_zone!(timezone) |> DateTime.to_date()
   end
 
   # %{date => %{reviews: count, duration_ms: total}} for every day with reviews.
-  defp review_days(user_id, {timezone, hour}) do
-    from(l in ReviewLog,
-      where: l.user_id == ^user_id,
-      group_by: selected_as(:date),
-      select: %{
-        date: selected_as(study_day(l.reviewed_at, ^timezone, ^hour), :date),
-        reviews: count(l.id),
-        duration_ms: coalesce(sum(l.duration_ms), 0)
-      }
-    )
+  defp review_days(user_id, day) do
+    user_id
+    |> Queries.reviews_by_study_day(day)
     |> Repo.all()
     |> Map.new(&{&1.date, &1})
   end
@@ -150,36 +132,21 @@ defmodule Hanguko.Progress do
   # True retention: of the reviews of cards that were already in review, the
   # share not rated Again. Learning steps are left out, because missing a
   # card first seen ten minutes ago says little about long-term memory.
-  defp retention(user_id, {timezone, hour}, today) do
+  defp retention(user_id, day, today) do
     first = Date.add(today, 1 - @recent_days)
-
-    {reviews, remembered} =
-      Repo.one(
-        from l in ReviewLog,
-          where: l.user_id == ^user_id and l.state_before == :review,
-          where: study_day(l.reviewed_at, ^timezone, ^hour) >= type(^first, :date),
-          select: {count(l.id), filter(count(l.id), l.rating > 1)}
-      )
+    {reviews, remembered} = user_id |> Queries.retention_since(day, first) |> Repo.one()
 
     %{reviews: reviews, remembered: remembered, rate: if(reviews > 0, do: remembered / reviews)}
   end
 
-  defp forecast(user_id, {timezone, hour}, today) do
+  # Counts what the queue would show: the same decks, and the same cards.
+  defp forecast(user_id, day, today) do
     last = Date.add(today, @forecast_days - 1)
+    deck_ids = user_id |> SRSQueries.studied_deck_ids() |> Repo.all()
 
     due =
       user_id
-      |> Queue.studied_cards_query()
-      |> where([c], study_day(c.due, ^timezone, ^hour) <= type(^last, :date))
-      |> group_by(selected_as(:date))
-      |> select([c], %{
-        date:
-          selected_as(
-            fragment("GREATEST(?, ?)", study_day(c.due, ^timezone, ^hour), type(^today, :date)),
-            :date
-          ),
-        cards: count(c.id)
-      })
+      |> Queries.due_by_study_day(deck_ids, day, today, last)
       |> Repo.all()
       |> Map.new(&{&1.date, &1.cards})
 
@@ -189,13 +156,7 @@ defmodule Hanguko.Progress do
   # Every card the learner has, whether or not its deck is still enrolled,
   # except those of retired content.
   defp card_counts(user_id) do
-    cards =
-      Repo.all(
-        from c in Card,
-          join: i in assoc(c, :item),
-          where: c.user_id == ^user_id and not i.retired,
-          select: %{state: c.state, suspended: c.suspended, stability: c.stability}
-      )
+    cards = user_id |> Queries.card_standings() |> Repo.all()
 
     {suspended, active} = Enum.split_with(cards, & &1.suspended)
     {mature, young} = active |> Enum.filter(&(&1.state == :review)) |> Enum.split_with(&mature?/1)

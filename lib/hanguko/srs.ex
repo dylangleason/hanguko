@@ -4,15 +4,13 @@ defmodule Hanguko.SRS do
   their review history.
 
   Functions that depend on the time take `now` explicitly so that behavior
-  is deterministic and testable.
+  is deterministic and testable. Queries are built in `Hanguko.SRS.Queries`.
   """
-  import Ecto.Query, warn: false
-
   alias Hanguko.Repo
   alias Hanguko.Accounts.Scope
   alias Hanguko.Content
   alias Hanguko.Content.Deck
-  alias Hanguko.SRS.{Card, DeckEnrollment, Queue, ReviewLog, Scheduler, Settings}
+  alias Hanguko.SRS.{Card, DeckEnrollment, Queries, Queue, ReviewLog, Scheduler, Settings}
 
   ## Enrollment
 
@@ -23,18 +21,14 @@ defmodule Hanguko.SRS do
   def enrolled_deck_ids(nil), do: MapSet.new()
 
   def enrolled_deck_ids(%Scope{user: user}) do
-    DeckEnrollment
-    |> where([e], e.user_id == ^user.id)
-    |> select([e], e.deck_id)
-    |> Repo.all()
-    |> MapSet.new()
+    user.id |> Queries.enrolled_deck_ids() |> Repo.all() |> MapSet.new()
   end
 
   @doc "Returns true if the scope's user is enrolled in `deck`."
   def enrolled?(nil, _deck), do: false
 
   def enrolled?(%Scope{user: user}, %Deck{id: deck_id}) do
-    Repo.exists?(from e in DeckEnrollment, where: e.user_id == ^user.id and e.deck_id == ^deck_id)
+    Repo.exists?(Queries.enrollment(user.id, deck_id))
   end
 
   @doc "Enrolls the scope's user in `deck`. Enrolling twice is a no-op."
@@ -50,11 +44,7 @@ defmodule Hanguko.SRS do
   their history is kept and resumes if the user enrolls again.
   """
   def unenroll_deck(%Scope{user: user}, %Deck{id: deck_id}) do
-    {count, _} =
-      Repo.delete_all(
-        from e in DeckEnrollment, where: e.user_id == ^user.id and e.deck_id == ^deck_id
-      )
-
+    {count, _} = Repo.delete_all(Queries.enrollment(user.id, deck_id))
     {:ok, count}
   end
 
@@ -175,9 +165,7 @@ defmodule Hanguko.SRS do
   defp current_card(_user, %{card: nil}), do: {:ok, nil}
 
   defp current_card(user, %{card: %Card{id: id}}) do
-    case Repo.one(
-           from c in Card, where: c.id == ^id and c.user_id == ^user.id, lock: "FOR UPDATE"
-         ) do
+    case Repo.one(Queries.card_for_update(user.id, id)) do
       %Card{} = card -> {:ok, card}
       nil -> {:error, :stale}
     end
@@ -219,18 +207,13 @@ defmodule Hanguko.SRS do
   """
   def undo_review(%Scope{user: user}, %ReviewLog{id: log_id}) do
     Repo.transact(fn ->
-      log =
-        Repo.one(
-          from l in ReviewLog,
-            where: l.id == ^log_id and l.user_id == ^user.id,
-            preload: [card: :item]
-        )
+      log = Repo.one(Queries.review_log(user.id, log_id))
 
       cond do
         is_nil(log) ->
           {:error, :not_found}
 
-        Repo.exists?(from l in ReviewLog, where: l.card_id == ^log.card_id and l.id > ^log.id) ->
+        Repo.exists?(Queries.later_reviews(log)) ->
           {:error, :not_latest}
 
         ReviewLog.first_review?(log) ->
@@ -294,10 +277,10 @@ defmodule Hanguko.SRS do
       end
 
     reviewed_today =
-      Repo.aggregate(
-        from(l in ReviewLog, where: l.user_id == ^user.id and l.reviewed_at >= ^queue.day_start),
-        :count
-      )
+      user.id
+      |> Queries.review_logs()
+      |> Queries.reviewed_since(queue.day_start)
+      |> Repo.aggregate(:count)
 
     %{
       decks: decks,
