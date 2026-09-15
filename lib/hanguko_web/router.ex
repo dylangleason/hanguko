@@ -60,6 +60,7 @@ defmodule HangukoWeb.Router do
       live "/study", StudyLive, :index
       live "/study/settings", StudySettingsLive, :edit
       live "/stats", StatsLive, :index
+      live "/cards", CardLive, :index
     end
 
     post "/users/update-password", UserSessionController, :update_password

@@ -187,9 +187,13 @@ defmodule HangukoWeb.Layouts do
       {"Phrases", ~p"/phrases", "phrases"}
     ]
 
-    if current_scope,
-      do: [[{"Study", ~p"/dashboard", "study"}, {"Progress", ~p"/stats", "progress"}], curriculum],
-      else: [curriculum]
+    learner = [
+      {"Study", ~p"/dashboard", "study"},
+      {"Cards", ~p"/cards", "cards"},
+      {"Progress", ~p"/stats", "progress"}
+    ]
+
+    if current_scope, do: [learner, curriculum], else: [curriculum]
   end
 
   # The nav section a path belongs to, by its first segment, so a lesson or
@@ -202,6 +206,7 @@ defmodule HangukoWeb.Layouts do
       ["dashboard" | _] -> "study"
       ["study" | _] -> "study"
       ["stats" | _] -> "progress"
+      ["cards" | _] -> "cards"
       ["hangeul" | _] -> "hangeul"
       ["grammar" | _] -> "grammar"
       ["phrases" | _] -> "phrases"

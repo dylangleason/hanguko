@@ -119,6 +119,30 @@ defmodule Hanguko.SRSTest do
       assert %Card{state: :relearning, lapses: 1, reps: 4} = Repo.get!(Card, card.id)
     end
 
+    test "a card forgotten too often is suspended as a leech", %{scope: scope, item: item} do
+      card = card_fixture(scope.user, item, due: @now, lapses: Card.leech_lapses() - 1)
+
+      assert {:ok, _} =
+               SRS.review_card(scope, %{card: card, item: item, template: :recognition}, 1, @now)
+
+      leech = Repo.get!(Card, card.id)
+      assert leech.suspended
+      assert leech.lapses == Card.leech_lapses()
+      assert Card.leech?(leech)
+    end
+
+    test "a card is left in the queue until it has lapsed often enough", %{
+      scope: scope,
+      item: item
+    } do
+      card = card_fixture(scope.user, item, due: @now, lapses: Card.leech_lapses() - 2)
+
+      assert {:ok, _} =
+               SRS.review_card(scope, %{card: card, item: item, template: :recognition}, 1, @now)
+
+      refute Repo.get!(Card, card.id).suspended
+    end
+
     test "reviews are scheduled from the card's latest state", %{scope: scope, item: item} do
       card = card_fixture(scope.user, item, state: :learning, step: 0, due: @now)
       stale_entry = %{card: card, item: item, template: :recognition}
@@ -136,6 +160,181 @@ defmodule Hanguko.SRSTest do
 
       assert {:error, :stale} =
                SRS.review_card(other, %{card: card, item: item, template: :recognition}, 3, @now)
+    end
+  end
+
+  describe "the card browser" do
+    setup do
+      scope = user_scope_fixture()
+      food = deck_fixture(%{slug: "browse-food", title: "Food", position: 1})
+      verbs = deck_fixture(%{slug: "browse-verbs", title: "Verbs", position: 2})
+
+      water = item_fixture(food, %{korean: "물", meaning: "water", romanization: "mul"})
+
+      eat =
+        item_fixture(verbs, %{korean: "먹다", meaning: "to eat; to have", romanization: "meokda"})
+
+      %{
+        scope: scope,
+        food: food,
+        verbs: verbs,
+        water: card_fixture(scope.user, water, due: @now),
+        eat: card_fixture(scope.user, eat, template: :recall, due: DateTime.add(@now, 1, :day))
+      }
+    end
+
+    test "lists a learner's own cards, soonest due first", %{
+      scope: scope,
+      water: water,
+      eat: eat
+    } do
+      assert %{cards: [first, second], total: 2} = SRS.browse_cards(scope)
+      assert first.id == water.id
+      assert second.id == eat.id
+      assert first.item.deck.title == "Food"
+
+      card_fixture(user_fixture(), item_fixture(deck_fixture()))
+      assert %{total: 2} = SRS.browse_cards(scope)
+    end
+
+    test "searches the Korean, the meaning and the romanization", %{
+      scope: scope,
+      water: water,
+      eat: eat
+    } do
+      assert %{cards: [found]} = SRS.browse_cards(scope, search: "물")
+      assert found.id == water.id
+
+      assert %{cards: [found]} = SRS.browse_cards(scope, search: "to have")
+      assert found.id == eat.id
+
+      assert %{cards: [found]} = SRS.browse_cards(scope, search: "MEOK")
+      assert found.id == eat.id
+
+      assert %{cards: [], total: 0} = SRS.browse_cards(scope, search: "sausage")
+    end
+
+    test "treats LIKE wildcards in a search as ordinary text", %{scope: scope} do
+      assert %{total: 0} = SRS.browse_cards(scope, search: "%")
+      assert %{total: 0} = SRS.browse_cards(scope, search: "_")
+    end
+
+    test "filters by deck, template and status", %{
+      scope: scope,
+      food: food,
+      water: water,
+      eat: eat
+    } do
+      assert %{cards: [found], total: 1} = SRS.browse_cards(scope, deck_id: food.id)
+      assert found.id == water.id
+
+      assert %{cards: [found]} = SRS.browse_cards(scope, template: :recall)
+      assert found.id == eat.id
+
+      {:ok, _} = SRS.suspend_card(scope, water.id)
+
+      assert %{cards: [found], total: 1} = SRS.browse_cards(scope, status: :suspended)
+      assert found.id == water.id
+
+      assert %{cards: [found], total: 1} = SRS.browse_cards(scope, status: :active)
+      assert found.id == eat.id
+    end
+
+    test "finds the leeches", %{scope: scope, food: food} do
+      leech =
+        card_fixture(scope.user, item_fixture(food),
+          lapses: Card.leech_lapses(),
+          suspended: true
+        )
+
+      assert %{cards: [found], total: 1} = SRS.browse_cards(scope, status: :leech)
+      assert found.id == leech.id
+    end
+
+    test "leaves out cards of retired content", %{scope: scope, water: water} do
+      Hanguko.Content.Item
+      |> Repo.get!(water.item_id)
+      |> Ecto.Changeset.change(retired: true)
+      |> Repo.update!()
+
+      assert %{cards: [found], total: 1} = SRS.browse_cards(scope)
+      refute found.id == water.id
+    end
+
+    test "offers only the decks the learner has cards in", %{
+      scope: scope,
+      food: food,
+      verbs: verbs
+    } do
+      deck_fixture(%{slug: "browse-untouched"})
+
+      assert Enum.map(SRS.list_card_decks(scope), & &1.id) == [food.id, verbs.id]
+    end
+  end
+
+  describe "suspending and resetting cards" do
+    setup do
+      scope = user_scope_fixture()
+      item = item_fixture(deck_fixture())
+      %{scope: scope, item: item, card: card_fixture(scope.user, item, due: @now)}
+    end
+
+    test "suspending holds a card's place, and unsuspending gives it back", %{
+      scope: scope,
+      card: card
+    } do
+      assert {:ok, suspended} = SRS.suspend_card(scope, card.id)
+      assert suspended.suspended
+      assert suspended.due == card.due
+
+      assert {:ok, back} = SRS.unsuspend_card(scope, card.id)
+      refute back.suspended
+      assert back.due == card.due
+    end
+
+    test "resetting forgets the schedule but keeps the row and its reviews", %{
+      scope: scope,
+      card: card
+    } do
+      review_log_fixture(scope.user, card, @now)
+
+      assert {:ok, reset} = SRS.reset_card(scope, card.id, @now)
+      assert %Card{state: :learning, step: 0, stability: nil, difficulty: nil} = reset
+      assert %Card{reps: 0, lapses: 0, suspended: false, last_review_at: nil} = reset
+      assert reset.due == @now
+      assert reset.introduced_at == @now
+      assert Repo.aggregate(ReviewLog, :count) == 1
+    end
+
+    test "a reset card can be studied again", %{scope: scope, item: item, card: card} do
+      {:ok, reset} = SRS.reset_card(scope, card.id, @now)
+
+      assert {:ok, log} =
+               SRS.review_card(scope, %{card: reset, item: item, template: :recognition}, 3, @now)
+
+      assert log.state_before == :learning
+      assert log.elapsed_days == nil
+    end
+
+    test "resetting a leech brings it back into study", %{scope: scope} do
+      card =
+        card_fixture(scope.user, item_fixture(deck_fixture()),
+          lapses: Card.leech_lapses(),
+          suspended: true,
+          due: @now
+        )
+
+      assert {:ok, reset} = SRS.reset_card(scope, card.id, @now)
+      refute reset.suspended
+      refute Card.leech?(reset)
+    end
+
+    test "another learner's card can't be touched", %{scope: scope} do
+      other = card_fixture(user_fixture(), item_fixture(deck_fixture()))
+
+      assert {:error, :not_found} = SRS.suspend_card(scope, other.id)
+      assert {:error, :not_found} = SRS.reset_card(scope, other.id, @now)
+      assert {:error, :not_found} = SRS.suspend_card(scope, "not-an-id")
     end
   end
 

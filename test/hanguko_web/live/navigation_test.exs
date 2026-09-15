@@ -25,7 +25,7 @@ defmodule HangukoWeb.NavigationTest do
     %{conn: conn, user: user} = register_and_log_in_user(%{conn: conn})
     {:ok, view, _html} = live(conn, ~p"/hangeul")
 
-    for id <- ~w(study progress) do
+    for id <- ~w(study cards progress) do
       assert has_element?(view, "#nav-#{id}")
       assert has_element?(view, "#mobile-menu #mobile-nav-#{id}")
     end
@@ -66,7 +66,8 @@ defmodule HangukoWeb.NavigationTest do
             {~p"/decks?kind=vocab", "vocab"},
             {~p"/study/settings", "study"},
             {~p"/dashboard", "study"},
-            {~p"/stats", "progress"}
+            {~p"/stats", "progress"},
+            {~p"/cards", "cards"}
           ] do
         {:ok, view, _html} = live(conn, path)
 

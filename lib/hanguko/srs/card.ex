@@ -20,6 +20,11 @@ defmodule Hanguko.SRS.Card do
   @templates [:recognition, :recall, :cloze]
   @states [:learning, :review, :relearning]
 
+  # A card forgotten this many times is a leech: it keeps coming back without
+  # being learned, so `Hanguko.SRS.review_card/5` suspends it instead of
+  # letting it crowd out the rest of the day's reviews.
+  @leech_lapses 8
+
   schema "cards" do
     field :template, Ecto.Enum, values: @templates
     field :state, Ecto.Enum, values: @states
@@ -41,6 +46,17 @@ defmodule Hanguko.SRS.Card do
 
   def templates, do: @templates
   def states, do: @states
+
+  @doc "How many lapses make a card a leech."
+  def leech_lapses, do: @leech_lapses
+
+  @doc """
+  True if the card has lapsed often enough to count as a leech.
+
+  It is derived from `lapses` rather than stored in a column of its own, so
+  unsuspending a leech to try again doesn't stop it being flagged as one.
+  """
+  def leech?(%__MODULE__{lapses: lapses}), do: lapses >= @leech_lapses
 
   @doc """
   The templates studied for an item, in the order they are introduced.
