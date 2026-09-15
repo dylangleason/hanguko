@@ -301,6 +301,40 @@ Space still checks what was typed rather than skipping it). For a
 * **LiveViews** are tested through `Phoenix.LiveViewTest` at the level a user
   experiences: flip, rate, undo, enrol, mark a lesson learned.
 
+## Deployment
+
+A production build is a **Docker image around a Mix release**, built from
+the `Dockerfile` that `mix phx.gen.release --docker` generated. It's an image
+rather than a release tarball because the image carries the runtime the
+release was compiled against (glibc, OpenSSL, locales). A tarball only runs on
+a host that matches the machine that built it.
+
+Two GitHub Actions workflows build it:
+
+* **CI** runs on pull requests and on pushes to `main`. It runs the
+  `mix precommit` checks against Postgres 18 and builds the docs with warnings
+  as errors, which enforces the documentation rule in `AGENTS.md`. It also
+  builds the image without pushing it, so a change that breaks the Dockerfile
+  fails in the pull request that caused it rather than at release time.
+* **Release** runs on `v*` tags. It refuses a tag that doesn't match `version`
+  in `mix.exs`, so the Git tag, the image tag and the app's own version can't
+  disagree. It then calls CI as a reusable workflow on the tagged commit, and
+  only if that passes does it push the image to GitHub Container Registry and
+  create a GitHub Release.
+
+**The curriculum is imported at deploy time.** Content lives in the database,
+loaded from the packs, but a release has no Mix to run
+`mix hanguko.content.import`. `Hanguko.Release.import_content/0` runs the same
+importer on the packs bundled in the release, and `bin/migrate` runs it right
+after the migrations. That order matters because a pack can use columns a
+migration adds. The importer is idempotent and all-or-nothing, so running it
+on every deploy is safe, and a release with an invalid pack fails at
+`bin/migrate`, before the new version starts serving.
+
+The Elixir and OTP versions are pinned in three places: the development
+machine (see the README), `ci.yml` and the `Dockerfile`. They have to move
+together, or CI would test on a different runtime than production runs.
+
 ## What comes next
 
 The remaining phases lean on what's already here rather than changing it:

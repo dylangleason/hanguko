@@ -1,0 +1,7 @@
+#!/bin/sh
+set -eu
+
+cd -P -- "$(dirname -- "$0")"
+# Migrations first, then the curriculum bundled with this release (the import
+# is idempotent, so it is safe on every deploy).
+exec ./hanguko eval "Hanguko.Release.migrate(); Hanguko.Release.import_content()"

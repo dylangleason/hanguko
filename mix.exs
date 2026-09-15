@@ -75,7 +75,8 @@ defmodule Hanguko.MixProject do
           Hanguko.Accounts.UserNotifier,
           Hanguko.Accounts.UserToken
         ],
-        Web: [~r"HangukoWeb\."]
+        Web: [~r"HangukoWeb\."],
+        Operations: [Hanguko.Release]
       ],
       nest_modules_by_prefix: [Hanguko.Content, Hanguko.SRS, HangukoWeb]
     ]
