@@ -119,7 +119,7 @@ imports the content packs bundled in the release, because Mix isn't available
 in production to run `mix hanguko.content.import`:
 
 ```sh
-podman run --rm -e DATABASE_URL=... -e SECRET_KEY_BASE=... hanguko /app/bin/migrate
+podman run --rm -e DATABASE_URL=... -e SECRET_KEY_BASE=... -e PHX_HOST=... hanguko /app/bin/migrate
 ```
 
 The production environment variables are listed in `config/runtime.exs`:
