@@ -54,16 +54,14 @@ defmodule Hanguko.Content.Queries do
     ])
   end
 
+  @doc "Narrows a query with a `:deck` binding to the deck with `id`."
+  def deck_by_id(query, id), do: where(query, [deck: d], d.id == ^id)
+
+  @doc "Narrows a query with a `:deck` binding to the deck with `slug`."
+  def deck_by_slug(query, slug), do: where(query, [deck: d], d.slug == ^slug)
+
   @doc "Preloads each deck's active items, in position order."
   def with_active_items(query), do: preload(query, items: ^active_items())
-
-  ## Decks and grammar points
-
-  @doc "Narrows a deck or grammar point query to the row with `id`."
-  def by_id(query, id), do: where(query, [row], row.id == ^id)
-
-  @doc "Narrows a deck or grammar point query to the row with `slug`."
-  def by_slug(query, slug), do: where(query, [row], row.slug == ^slug)
 
   ## Items
 
@@ -104,6 +102,10 @@ defmodule Hanguko.Content.Queries do
       on: p.grammar_point_id == g.id and p.user_id == ^user_id,
       select_merge: %{learned_at: p.learned_at}
   end
+
+  @doc "Narrows a query with a `:grammar_point` binding to the point with `slug`."
+  def grammar_point_by_slug(query, slug),
+    do: where(query, [grammar_point: g], g.slug == ^slug)
 
   @doc """
   Orders grammar points as lessons: by level, then their deck's position,
