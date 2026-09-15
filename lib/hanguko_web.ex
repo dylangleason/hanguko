@@ -52,6 +52,8 @@ defmodule HangukoWeb do
     quote do
       use Phoenix.LiveView
 
+      on_mount HangukoWeb.Nav
+
       unquote(html_helpers())
     end
   end

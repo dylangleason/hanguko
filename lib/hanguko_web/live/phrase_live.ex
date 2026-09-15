@@ -17,7 +17,7 @@ defmodule HangukoWeb.PhraseLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_scope={@current_scope}>
+    <Layouts.app flash={@flash} current_scope={@current_scope} current_path={@current_path}>
       <.header>
         Phrases
         <.korean class="ml-1 font-medium text-base-content/50">표현</.korean>

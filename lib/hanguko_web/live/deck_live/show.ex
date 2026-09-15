@@ -9,7 +9,12 @@ defmodule HangukoWeb.DeckLive.Show do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_scope={@current_scope}>
+    <Layouts.app
+      flash={@flash}
+      current_scope={@current_scope}
+      current_path={@current_path}
+      section={to_string(@deck.kind)}
+    >
       <.link
         navigate={~p"/decks?kind=#{@deck.kind}"}
         id="back-to-decks"
