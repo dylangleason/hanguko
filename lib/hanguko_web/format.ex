@@ -18,7 +18,7 @@ defmodule HangukoWeb.Format do
   Returns a formatted number, ensuring commas are placed correctly
 
       iex> HangukoWeb.Format.format_number(100)
-      "1"
+      "100"
       iex> HangukoWeb.Format.format_number(2000)
       "2,000"
   """
