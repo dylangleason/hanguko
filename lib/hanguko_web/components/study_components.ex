@@ -27,11 +27,11 @@ defmodule HangukoWeb.StudyComponents do
       <.icon name="hero-information-circle" class="mt-0.5 size-5 shrink-0 text-info" />
       <div class="space-y-1">
         <p :if={@new_limit_reached} id={"#{@id}-new"}>
-          You've reached today's limit of {count(@settings.daily_new_limit, "new card")}.
+          You've reached today's limit of {format_count(@settings.daily_new_limit, "new card")}.
           More cards from your decks will be introduced tomorrow.
         </p>
         <p :if={@review_limit_reached} id={"#{@id}-review"}>
-          You've reached today's limit of {count(@settings.daily_review_limit, "review")}.
+          You've reached today's limit of {format_count(@settings.daily_review_limit, "review")}.
           The remaining reviews will wait until tomorrow.
         </p>
         <.link
@@ -44,9 +44,6 @@ defmodule HangukoWeb.StudyComponents do
     </div>
     """
   end
-
-  defp count(1, noun), do: "1 #{noun}"
-  defp count(n, noun), do: "#{n} #{noun}s"
 
   @ratings [
     {1, "Again", "bg-error/10 text-error hover:bg-error/20 focus-visible:ring-error"},

@@ -158,9 +158,6 @@ defmodule HangukoWeb.DashboardLive do
   defp today_message(%{due: 0, new: 0}), do: "You've done everything for today."
 
   defp today_message(%{due: due, new: new}) do
-    "#{pluralize(due, "card")} to review and #{pluralize(new, "new card")} to learn."
+    "#{format_count(due, "card")} to review and #{format_count(new, "new card")} to learn."
   end
-
-  defp pluralize(1, noun), do: "1 #{noun}"
-  defp pluralize(n, noun), do: "#{n} #{noun}s"
 end

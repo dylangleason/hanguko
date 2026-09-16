@@ -349,10 +349,10 @@ defmodule HangukoWeb.StatsLive do
   defp weekday_label(_), do: ""
 
   defp day_title(%{date: date, reviews: reviews}),
-    do: "#{pluralize(reviews, "review")} · #{date_label(date)}"
+    do: "#{format_count(reviews, "review")} · #{date_label(date)}"
 
   defp due_title(%{date: date, cards: cards}),
-    do: "#{pluralize(cards, "card")} due · #{date_label(date)}"
+    do: "#{format_count(cards, "card")} due · #{date_label(date)}"
 
   # The axis tops out at a round number at or above the busiest day, and
   # always divides evenly in two for the middle gridline.
@@ -367,11 +367,8 @@ defmodule HangukoWeb.StatsLive do
   defp date_label(date), do: "#{Calendar.strftime(date, "%a")} #{short_date(date)}"
   defp short_date(date), do: "#{date.day} #{Calendar.strftime(date, "%b")}"
 
-  defp days(1), do: "1 day"
-  defp days(n), do: "#{n} days"
-
-  defp pluralize(1, noun), do: "1 #{noun}"
-  defp pluralize(n, noun), do: "#{format_number(n)} #{noun}s"
+  defp days(1), do: format_count(1, "day")
+  defp days(n), do: format_count(n, "day")
 
   defp percent(nil), do: "—"
   defp percent(rate), do: "#{round(rate * 100)}%"
@@ -382,7 +379,4 @@ defmodule HangukoWeb.StatsLive do
       minutes -> "#{div(minutes, 60)} h #{rem(minutes, 60)} min"
     end
   end
-
-  defp format_number(n),
-    do: n |> Integer.to_string() |> String.replace(~r/\B(?=(\d{3})+(?!\d))/, ",")
 end
