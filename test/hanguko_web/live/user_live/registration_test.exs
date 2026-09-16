@@ -1,7 +1,6 @@
 defmodule HangukoWeb.UserLive.RegistrationTest do
   use HangukoWeb.ConnCase, async: true
 
-  import Phoenix.LiveViewTest
   import Hanguko.AccountsFixtures
 
   describe "Registration page" do

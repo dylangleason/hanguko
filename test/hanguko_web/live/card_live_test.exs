@@ -1,7 +1,6 @@
 defmodule HangukoWeb.CardLiveTest do
   use HangukoWeb.ConnCase, async: true
 
-  import Phoenix.LiveViewTest
   import Hanguko.AccountsFixtures
   import Hanguko.ContentFixtures
   import Hanguko.SRSFixtures

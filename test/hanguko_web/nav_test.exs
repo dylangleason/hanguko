@@ -1,8 +1,6 @@
 defmodule HangukoWeb.NavTest do
   use HangukoWeb.ConnCase, async: true
 
-  import Phoenix.LiveViewTest
-
   # A LiveView rendered outside the router, as `live_render/3` or
   # `live_isolated/3` would render it.
   defmodule EmbeddedLive do

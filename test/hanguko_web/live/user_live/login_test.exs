@@ -1,7 +1,6 @@
 defmodule HangukoWeb.UserLive.LoginTest do
   use HangukoWeb.ConnCase, async: true
 
-  import Phoenix.LiveViewTest
   import Hanguko.AccountsFixtures
 
   describe "login page" do

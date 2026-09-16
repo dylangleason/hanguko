@@ -2,7 +2,6 @@ defmodule HangukoWeb.UserLive.SettingsTest do
   use HangukoWeb.ConnCase, async: true
 
   alias Hanguko.Accounts
-  import Phoenix.LiveViewTest
   import Hanguko.AccountsFixtures
 
   describe "Settings page" do

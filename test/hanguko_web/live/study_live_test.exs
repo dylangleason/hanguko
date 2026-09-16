@@ -1,7 +1,6 @@
 defmodule HangukoWeb.StudyLiveTest do
   use HangukoWeb.ConnCase, async: true
 
-  import Phoenix.LiveViewTest
   import Hanguko.ContentFixtures
   import Hanguko.SRSFixtures
 
