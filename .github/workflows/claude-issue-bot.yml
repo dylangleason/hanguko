@@ -33,6 +33,7 @@ jobs:
       contents: write
       pull-requests: write
       issues: write
+      id-token: write # anthropics/claude-code-action needs this to authenticate, per claude.yml / claude-code-review.yml
       actions: read # Required for Claude to read CI results on PRs
 
     services:
