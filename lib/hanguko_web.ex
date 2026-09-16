@@ -86,6 +86,10 @@ defmodule HangukoWeb do
 
       # HTML escaping functionality
       import Phoenix.HTML
+
+      # Component helpers
+      import HangukoWeb.Format
+
       # Core UI components
       import HangukoWeb.CoreComponents
       import HangukoWeb.KoreanComponents
