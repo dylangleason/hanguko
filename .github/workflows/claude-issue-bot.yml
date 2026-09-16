@@ -154,8 +154,17 @@ jobs:
       # absolute or ..-relative path. Don't just trust it: independently
       # verify on every run, from the actual pushed diff rather than the
       # tool's internal matching, and fail loudly if it was somehow bypassed.
+      #
+      # This job is triggered by `issues: labeled`, so any status/failure it
+      # produces attaches to main's SHA at trigger time, not to the PR the
+      # bot opened - a reviewer looking at the PR's own Checks tab would
+      # never see it. So on failure, this also comments on (and closes) the
+      # PR directly, rather than relying solely on this run showing red
+      # somewhere a human has to go looking for it.
       - name: Verify the bot didn't touch .github/
         if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           branch="claude-bot/issue-${{ github.event.issue.number }}"
@@ -163,18 +172,36 @@ jobs:
             echo "No $branch branch was pushed this run; nothing to verify."
             exit 0
           fi
-          git fetch origin main "$branch" --depth=1
+
+          # Fetch into local refs we name ourselves rather than relying on
+          # origin/<ref> remote-tracking refs existing: actions/checkout's
+          # fetch-depth: 1 narrows remote.origin.fetch to just the ref it
+          # checked out (main), so a bare `git fetch origin <ref>` for
+          # anything else only populates FETCH_HEAD, not origin/<ref> - the
+          # diff below would then fail to resolve on every single run, not
+          # just a compromised one.
+          git fetch origin "main:refs/heads/__verify_main__" \
+            "$branch:refs/heads/__verify_branch__" --depth=1
+
+          pr_number="$(gh pr list --head "$branch" --json number --jq '.[0].number // empty')"
 
           # A plain two-ref diff (not the triple-dot merge-base form) so this
           # doesn't depend on the two shallow fetches sharing history, and
           # capture git diff's own exit status separately from the content
           # check - a `set -e`/pipefail guard doesn't catch a failure inside
           # an `if`, so a broken diff must not look identical to a clean one.
-          if ! changed=$(git diff --name-only origin/main origin/"$branch" -- .github/); then
-            echo "::error::could not diff $branch against main, so the .github/ safety check did not run. Failing closed - treat this PR as unverified and do not merge without manually checking its diff."
+          if ! changed=$(git diff --name-only __verify_main__ __verify_branch__ -- .github/); then
+            msg="claude-issue-bot could not diff $branch against main, so the .github/ safety check did not run. Treat this PR as unverified - do not merge without manually checking its diff."
+            echo "::error::$msg"
+            [ -n "$pr_number" ] && gh pr comment "$pr_number" --body "⚠️ $msg"
             exit 1
           fi
           if [ -n "$changed" ]; then
-            echo "::error::claude-issue-bot pushed a change under .github/ on $branch - disallowedTools should have blocked this. Treat this PR as compromised; do not merge without careful review, and investigate how the block was bypassed."
+            msg="claude-issue-bot pushed a change under .github/ on $branch - disallowedTools should have blocked this. This PR has been closed. Investigate how the block was bypassed before trusting this bot again."
+            echo "::error::$msg"
+            if [ -n "$pr_number" ]; then
+              gh pr comment "$pr_number" --body "🚨 $msg"
+              gh pr close "$pr_number"
+            fi
             exit 1
           fi
