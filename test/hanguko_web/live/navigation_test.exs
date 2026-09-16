@@ -1,8 +1,6 @@
 defmodule HangukoWeb.NavigationTest do
   use HangukoWeb.ConnCase, async: true
 
-  import Phoenix.LiveViewTest
-
   test "anonymous visitors get section and log-in links in both menus", %{conn: conn} do
     {:ok, view, _html} = live(conn, ~p"/hangeul")
 

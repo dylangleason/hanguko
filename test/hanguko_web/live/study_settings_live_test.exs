@@ -1,8 +1,6 @@
 defmodule HangukoWeb.StudySettingsLiveTest do
   use HangukoWeb.ConnCase, async: true
 
-  import Phoenix.LiveViewTest
-
   alias Hanguko.Accounts.Scope
   alias Hanguko.SRS
 

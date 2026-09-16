@@ -1,7 +1,6 @@
 defmodule HangukoWeb.UserLive.ConfirmationTest do
   use HangukoWeb.ConnCase, async: true
 
-  import Phoenix.LiveViewTest
   import Hanguko.AccountsFixtures
 
   alias Hanguko.Accounts

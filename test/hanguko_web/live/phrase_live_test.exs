@@ -1,7 +1,6 @@
 defmodule HangukoWeb.PhraseLiveTest do
   use HangukoWeb.ConnCase, async: true
 
-  import Phoenix.LiveViewTest
   import Hanguko.ContentFixtures
 
   alias Hanguko.SRS
