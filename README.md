@@ -101,6 +101,10 @@ Two GitHub Actions workflows live in `.github/workflows`:
   `ghcr.io/dylangleason/hanguko:0.2.0` (also tagged `0.2` and with the commit
   SHA), and creates a GitHub Release with generated notes. A tag with a
   suffix, such as `v0.2.0-rc.1`, is marked as a pre-release.
+* **Claude Issue Bot** (`claude-issue-bot.yml`) runs when an issue is labeled
+  `claude-bot`. Claude implements the issue on a new branch, runs `mix
+  precommit`, and opens a pull request against `main` that closes the issue.
+  It never merges on its own — every PR it opens still needs review.
 
 To build and run the image locally:
 
