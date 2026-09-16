@@ -102,9 +102,10 @@ Two GitHub Actions workflows live in `.github/workflows`:
   SHA), and creates a GitHub Release with generated notes. A tag with a
   suffix, such as `v0.2.0-rc.1`, is marked as a pre-release.
 * **Claude Issue Bot** (`claude-issue-bot.yml`) runs when an issue is labeled
-  `claude-bot`. Claude implements the issue on a new branch, runs `mix
-  precommit`, and opens a pull request against `main` that closes the issue.
-  It never merges on its own — every PR it opens still needs review.
+  `claude-bot`. Claude implements the issue on a new branch and opens a pull
+  request against `main` that closes the issue. It never compiles, formats,
+  or tests the change itself, and never merges on its own — `ci.yml` and a
+  human reviewer are what actually verify the PR.
 
 To build and run the image locally:
 
