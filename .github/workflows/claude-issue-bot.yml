@@ -1,0 +1,103 @@
+# Lets Claude implement an issue end-to-end: label an issue "claude-bot" and
+# this checks out main, has Claude make the change, runs `mix precommit`,
+# and opens a PR back to main referencing the issue. Claude never merges.
+name: Claude Issue Bot
+
+on:
+  issues:
+    types: [labeled]
+
+concurrency:
+  group: claude-issue-bot-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+env:
+  # Keep in step with ci.yml.
+  OTP_VERSION: "29"
+  ELIXIR_VERSION: "1.20.2"
+
+jobs:
+  claude-issue-bot:
+    if: github.event.label.name == 'claude-bot'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read # Required for Claude to read CI results on PRs
+
+    services:
+      # Matches docker-compose.yml / ci.yml. config/test.exs connects to
+      # postgres:postgres@localhost.
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+
+      - uses: erlef/setup-beam@v1
+        id: beam
+        with:
+          otp-version: ${{ env.OTP_VERSION }}
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+
+      - name: Cache deps and build
+        uses: actions/cache@v6
+        with:
+          path: |
+            deps
+            _build
+          key: mix-test-${{ runner.os }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            mix-test-${{ runner.os }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-
+
+      - run: mix deps.get
+
+      - name: Run Claude Code
+        id: claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+
+          additional_permissions: |
+            actions: read
+
+          prompt: |
+            REPO: ${{ github.repository }}
+            ISSUE NUMBER: ${{ github.event.issue.number }}
+
+            Implement the work described in this issue. Run
+            `gh issue view ${{ github.event.issue.number }}` first to read
+            its full title and body.
+
+            - Create a new branch off main for the change.
+            - Make the minimal, correct implementation the issue asks for,
+              following this repo's AGENTS.md conventions (query modules,
+              doc updates alongside code changes, etc).
+            - Run `mix precommit` and fix everything it reports before
+              continuing. Deps are already fetched.
+            - Commit the changes and push the branch.
+            - Open a pull request against main that references and closes
+              the issue (e.g. "Closes #${{ github.event.issue.number }}"),
+              describing what changed and why.
+            - Do not merge the pull request yourself.
+
+            If the issue is too vague or you get stuck, stop and post a
+            comment on the issue explaining what's blocking you instead of
+            opening a partial or broken PR.
+
+          claude_args: |
+            --allowedTools "Bash(mix *),Bash(git *),Bash(gh issue view:*),Bash(gh issue comment:*),Bash(gh pr create:*)"
