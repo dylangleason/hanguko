@@ -262,7 +262,5 @@ defmodule HangukoWeb.PhraseLive do
   end
 
   defp level_label(nil), do: "All"
-  defp level_label("formal"), do: "Formal"
-  defp level_label("polite"), do: "Polite"
-  defp level_label("casual"), do: "Casual"
+  defp level_label(level), do: politeness_label(level)
 end

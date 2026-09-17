@@ -307,7 +307,11 @@ decks alike, so they name their section from the deck's kind.
 Shared UI lives in three component modules: `CoreComponents` (generated),
 `KoreanComponents` (`<.korean>` for the font and line-breaking rules,
 `<.speak_button>`, `<.jamo_tile>`, politeness badges) and `StudyComponents`
-(rating buttons, queue counts, the daily-limit notice).
+(rating buttons, queue counts, the daily-limit notice). `HangukoWeb.Labels`,
+imported everywhere those are, holds the one table of human-readable names
+for the domain's fixed enums — card templates and states, politeness levels,
+deck kinds — so a filter and the rows it filters read the same label instead
+of each naming it separately.
 
 Two JS hooks carry the behaviour that has to be client-side:
 

@@ -15,6 +15,7 @@ defmodule HangukoWeb.CardLive do
   alias Hanguko.Content.Item
   alias Hanguko.SRS
   alias Hanguko.SRS.Card
+  alias HangukoWeb.Labels
 
   @statuses [
     {:all, "All"},
@@ -23,11 +24,7 @@ defmodule HangukoWeb.CardLive do
     {:leech, "Leeches"}
   ]
 
-  @templates [
-    {:recognition, "Recognition"},
-    {:recall, "Recall"},
-    {:cloze, "Cloze"}
-  ]
+  @templates Labels.templates()
 
   @impl true
   def render(assigns) do
@@ -303,14 +300,6 @@ defmodule HangukoWeb.CardLive do
   defp empty_message(%{status: :suspended}), do: "Nothing is suspended."
   defp empty_message(%{query: ""}), do: "No cards yet. They appear here once you study them."
   defp empty_message(_filters), do: "No cards match that search."
-
-  defp template_label(:recognition), do: "Recognition"
-  defp template_label(:recall), do: "Recall"
-  defp template_label(:cloze), do: "Cloze"
-
-  defp state_label(:learning), do: "Learning"
-  defp state_label(:review), do: "In review"
-  defp state_label(:relearning), do: "Relearning"
 
   defp reviews_label(%Card{reps: 1, lapses: 0}), do: "1 review"
   defp reviews_label(%Card{reps: reps, lapses: 0}), do: "#{reps} reviews"

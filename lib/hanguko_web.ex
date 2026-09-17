@@ -94,6 +94,9 @@ defmodule HangukoWeb do
       import HangukoWeb.CoreComponents
       import HangukoWeb.KoreanComponents
 
+      # Labels for the domain's fixed enums
+      import HangukoWeb.Labels
+
       # Common modules used in templates
       alias Phoenix.LiveView.JS
       alias HangukoWeb.Layouts
