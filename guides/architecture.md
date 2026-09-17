@@ -291,7 +291,11 @@ Routes divide along the same line as the data. Browsing the curriculum
 (`/hangeul`, `/decks`, `/grammar`, `/phrases`) is public; anything per-user
 (`/dashboard`, `/study`, `/study/settings`, `/stats`, `/cards`) requires a login. Public pages
 that offer a per-user action — enrol, mark as learned — send anonymous
-visitors to the log-in page rather than failing.
+visitors to the log-in page rather than failing. `HangukoWeb.Live.PerUserAction`
+gives that redirect one definition, and the deck enrol/unenrol toggle that
+rides along with it another, so the four pages that offer such an action
+(`DeckLive.Index`, `DeckLive.Show`, `PhraseLive`, `GrammarLive.Show`)
+delegate to it instead of each repeating the rule.
 
 The header puts the learner's own pages (Study, Cards, Progress) ahead of the
 curriculum, with everything about the account — settings, study settings,

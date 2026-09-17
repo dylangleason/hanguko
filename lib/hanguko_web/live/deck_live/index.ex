@@ -4,6 +4,7 @@ defmodule HangukoWeb.DeckLive.Index do
   import HangukoWeb.DeckLive.Components
 
   alias Hanguko.{Content, SRS}
+  alias HangukoWeb.Live.PerUserAction
 
   @filters [nil, :hangeul, :vocab, :phrases]
   @browsable [:hangeul, :vocab, :phrases]
@@ -96,25 +97,19 @@ defmodule HangukoWeb.DeckLive.Index do
   end
 
   @impl true
+  def handle_event("toggle_enroll", _params, %{assigns: %{current_scope: nil}} = socket) do
+    PerUserAction.require_scope(socket)
+  end
+
   def handle_event("toggle_enroll", %{"id" => id}, socket) do
-    case socket.assigns.current_scope do
-      nil ->
-        {:noreply, push_navigate(socket, to: ~p"/users/log-in")}
+    %{current_scope: scope, enrolled: enrolled} = socket.assigns
+    deck = Content.get_deck!(id)
+    enrolled? = PerUserAction.toggle_enroll(scope, deck, MapSet.member?(enrolled, deck.id))
 
-      scope ->
-        deck = Content.get_deck!(id)
+    enrolled =
+      if enrolled?, do: MapSet.put(enrolled, deck.id), else: MapSet.delete(enrolled, deck.id)
 
-        enrolled =
-          if MapSet.member?(socket.assigns.enrolled, deck.id) do
-            {:ok, _} = SRS.unenroll_deck(scope, deck)
-            MapSet.delete(socket.assigns.enrolled, deck.id)
-          else
-            {:ok, _} = SRS.enroll_deck(scope, deck)
-            MapSet.put(socket.assigns.enrolled, deck.id)
-          end
-
-        {:noreply, socket |> assign(:enrolled, enrolled) |> stream_insert(:decks, deck)}
-    end
+    {:noreply, socket |> assign(:enrolled, enrolled) |> stream_insert(:decks, deck)}
   end
 
   defp parse_kind(kind) when is_binary(kind) do

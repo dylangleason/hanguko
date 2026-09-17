@@ -13,6 +13,7 @@ defmodule HangukoWeb.PhraseLive do
 
   alias Hanguko.{Content, SRS}
   alias Hanguko.Content.Item
+  alias HangukoWeb.Live.PerUserAction
 
   @impl true
   def render(assigns) do
@@ -207,7 +208,7 @@ defmodule HangukoWeb.PhraseLive do
 
   @impl true
   def handle_event("toggle_enroll", _params, %{assigns: %{current_scope: nil}} = socket) do
-    {:noreply, push_navigate(socket, to: ~p"/users/log-in")}
+    PerUserAction.require_scope(socket)
   end
 
   def handle_event("toggle_enroll", %{"id" => id}, socket) do
@@ -218,14 +219,10 @@ defmodule HangukoWeb.PhraseLive do
         {:noreply, socket}
 
       deck ->
+        enrolled? = PerUserAction.toggle_enroll(scope, deck, MapSet.member?(enrolled, deck.id))
+
         enrolled =
-          if MapSet.member?(enrolled, deck.id) do
-            {:ok, _} = SRS.unenroll_deck(scope, deck)
-            MapSet.delete(enrolled, deck.id)
-          else
-            {:ok, _} = SRS.enroll_deck(scope, deck)
-            MapSet.put(enrolled, deck.id)
-          end
+          if enrolled?, do: MapSet.put(enrolled, deck.id), else: MapSet.delete(enrolled, deck.id)
 
         {:noreply, assign(socket, :enrolled, enrolled)}
     end
