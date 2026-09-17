@@ -4,6 +4,7 @@ defmodule HangukoWeb.GrammarLive.Show do
   alias Hanguko.{Content, Korean, SRS}
   alias Hanguko.Content.{GrammarPoint, Item}
   alias HangukoWeb.Markdown
+  alias HangukoWeb.Live.PerUserAction
 
   @impl true
   def render(assigns) do
@@ -197,7 +198,7 @@ defmodule HangukoWeb.GrammarLive.Show do
 
   def handle_event(event, _params, %{assigns: %{current_scope: nil}} = socket)
       when event in ~w(mark_learned unmark_learned) do
-    {:noreply, push_navigate(socket, to: ~p"/users/log-in")}
+    PerUserAction.require_scope(socket)
   end
 
   def handle_event("mark_learned", _params, socket) do

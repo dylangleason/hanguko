@@ -5,6 +5,7 @@ defmodule HangukoWeb.DeckLive.Show do
 
   alias Hanguko.{Content, SRS}
   alias Hanguko.Content.Item
+  alias HangukoWeb.Live.PerUserAction
 
   @impl true
   def render(assigns) do
@@ -125,20 +126,14 @@ defmodule HangukoWeb.DeckLive.Show do
   end
 
   @impl true
+  def handle_event("toggle_enroll", _params, %{assigns: %{current_scope: nil}} = socket) do
+    PerUserAction.require_scope(socket)
+  end
+
   def handle_event("toggle_enroll", _params, socket) do
     %{current_scope: scope, deck: deck, enrolled: enrolled} = socket.assigns
+    enrolled = PerUserAction.toggle_enroll(scope, deck, enrolled)
 
-    cond do
-      is_nil(scope) ->
-        {:noreply, push_navigate(socket, to: ~p"/users/log-in")}
-
-      enrolled ->
-        {:ok, _} = SRS.unenroll_deck(scope, deck)
-        {:noreply, assign(socket, :enrolled, false)}
-
-      true ->
-        {:ok, _} = SRS.enroll_deck(scope, deck)
-        {:noreply, assign(socket, :enrolled, true)}
-    end
+    {:noreply, assign(socket, :enrolled, enrolled)}
   end
 end
