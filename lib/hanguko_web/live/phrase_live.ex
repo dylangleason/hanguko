@@ -87,22 +87,14 @@ defmodule HangukoWeb.PhraseLive do
 
             <div class="mt-5 flex flex-wrap items-center justify-between gap-3">
               <nav id="politeness-filters" class="flex flex-wrap gap-1.5" aria-label="Speech level">
-                <.link
+                <.filter_pill
                   :for={level <- @levels}
-                  patch={phrases_path(@deck, level)}
                   id={"politeness-#{level || "all"}"}
-                  aria-current={if(level == @politeness, do: "page")}
-                  class={[
-                    "rounded-full border px-3.5 py-1 text-sm font-medium transition",
-                    if(level == @politeness,
-                      do: "border-base-content bg-base-content text-base-100",
-                      else:
-                        "border-base-300 bg-base-100 text-base-content/70 hover:border-base-content/30"
-                    )
-                  ]}
+                  patch={phrases_path(@deck, level)}
+                  selected={level == @politeness}
                 >
                   {level_label(level)}
-                </.link>
+                </.filter_pill>
               </nav>
               <div class="flex flex-wrap gap-2">
                 <.reveal_toggle
