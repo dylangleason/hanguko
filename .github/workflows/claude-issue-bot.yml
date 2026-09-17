@@ -51,8 +51,10 @@ jobs:
       # anyway. Validated against real runs, iteratively: claude-code-action
       # bundles setup-bun (downloads Bun via
       # release-assets.githubusercontent.com, a distinct CDN domain from
-      # objects.githubusercontent.com) and then `bun install`s its own
-      # dependencies (octokit and friends) from registry.npmjs.org. If a
+      # objects.githubusercontent.com), `bun install`s its own dependencies
+      # (octokit and friends) from registry.npmjs.org, and installs the
+      # Claude Code CLI itself via a curl script hosted on claude.ai -
+      # separate from api.anthropic.com, which is only the model API. If a
       # future run fails the same way, harden-runner's job summary names
       # the exact blocked host to add here.
       - name: Harden runner
@@ -69,6 +71,7 @@ jobs:
             raw.githubusercontent.com:443
             *.actions.githubusercontent.com:443
             registry.npmjs.org:443
+            claude.ai:443
             api.anthropic.com:443
 
       - name: Checkout repository
