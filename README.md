@@ -10,7 +10,7 @@ history — is per user and separate from that content.
 
 ## Requirements
 
-* Elixir 1.17 or newer (developed on 1.20 / OTP 29)
+* Elixir 1.18 or newer (developed on 1.20 / OTP 29)
 * PostgreSQL 18 (a `docker-compose.yml` is included; podman works too)
 * Node is *not* required — assets are built with esbuild and Tailwind
   binaries fetched by Mix
