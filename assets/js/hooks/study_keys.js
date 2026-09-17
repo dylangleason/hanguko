@@ -86,7 +86,10 @@ const StudyKeys = {
       } else if (shown && ["1", "2", "3", "4"].includes(event.key)) {
         event.preventDefault()
         this.pushEvent("rate", {rating: event.key, key})
-      } else if (event.key === "s") {
+        // `code` names the physical key rather than the character it
+        // produces, so this still fires when a Korean input method is
+        // active and `key` would otherwise be a Hangul jamo instead of "s".
+      } else if (event.code === "KeyS") {
         const speak = this.el.querySelector("[data-primary-speak]")
         if (speak) speak.click()
       }
