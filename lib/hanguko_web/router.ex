@@ -56,11 +56,19 @@ defmodule HangukoWeb.Router do
       live "/users/settings/confirm-email/:token", UserLive.Settings, :confirm_email
 
       # Studying is per user, so these require logging in.
+      live "/study/settings", StudySettingsLive, :edit
+      live "/cards", CardLive, :index
+    end
+
+    # Dashboard, study and stats all read the learner's study settings on
+    # mount, so this live_session also runs HangukoWeb.DetectTimezone, which
+    # loads those settings once (detecting the browser's time zone first if
+    # needed) and assigns them, rather than each page repeating that dance.
+    live_session :require_authenticated_user_study,
+      on_mount: [{HangukoWeb.UserAuth, :require_authenticated}, HangukoWeb.DetectTimezone] do
       live "/dashboard", DashboardLive, :index
       live "/study", StudyLive, :index
-      live "/study/settings", StudySettingsLive, :edit
       live "/stats", StatsLive, :index
-      live "/cards", CardLive, :index
     end
 
     post "/users/update-password", UserSessionController, :update_password

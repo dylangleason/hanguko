@@ -397,9 +397,13 @@ defmodule Hanguko.SRS do
     * `:new_limit_reached`, `:review_limit_reached` - whether that daily
       limit is used up while more cards are waiting
     * `:settings` - the user's study settings
+
+  ## Options
+
+    * `:settings` - the user's settings, if already loaded
   """
-  def summary(%Scope{user: user} = scope, %DateTime{} = now) do
-    settings = get_settings(scope)
+  def summary(%Scope{user: user} = scope, %DateTime{} = now, opts \\ []) do
+    settings = opts[:settings] || get_settings(scope)
     queue = study_queue(scope, now, settings: settings)
 
     by_deck =
