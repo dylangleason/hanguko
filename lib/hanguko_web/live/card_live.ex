@@ -178,7 +178,7 @@ defmodule HangukoWeb.CardLive do
   @impl true
   def handle_params(params, _url, socket) do
     filters = %{
-      query: params["query"] |> to_string() |> String.trim(),
+      query: normalize_query(params["query"]),
       deck: Enum.find(socket.assigns.decks, &(&1.slug == params["deck"])),
       template: parse_option(params["template"], @templates),
       status: parse_option(params["status"], @statuses) || :all
@@ -275,6 +275,12 @@ defmodule HangukoWeb.CardLive do
 
     ~p"/cards?#{params}"
   end
+
+  # `?query[a]=b` parses to a map, which has no `String.Chars`
+  # implementation; treat any non-binary shape as no search at all rather
+  # than crashing the LiveView on a crafted query string.
+  defp normalize_query(query) when is_binary(query), do: String.trim(query)
+  defp normalize_query(_query), do: ""
 
   defp parse_option(nil, _options), do: nil
 

@@ -58,6 +58,13 @@ defmodule HangukoWeb.CardLiveTest do
       assert has_element?(view, "#card-count", "1 card")
     end
 
+    test "a nested query param doesn't crash the browser", %{conn: conn, water: water, eat: eat} do
+      {:ok, view, _html} = live(conn, ~p"/cards?query[a]=b")
+
+      assert has_element?(view, "#cards-#{water.id}")
+      assert has_element?(view, "#cards-#{eat.id}")
+    end
+
     test "filters by deck", %{conn: conn, food: food, water: water, eat: eat} do
       {:ok, view, _html} = live(conn, ~p"/cards")
 
