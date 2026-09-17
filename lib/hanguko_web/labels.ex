@@ -25,13 +25,19 @@ defmodule HangukoWeb.Labels do
 
   @doc """
   A label for a phrase's speech level (`Item.politeness_levels/0`), or
-  `nil` when `level` isn't one of them — used to hide a badge rather than
-  show one with no text.
+  `nil` for a `nil` level — used to hide a badge rather than show one
+  with no text. Raises for any other value, since that means a level
+  has drifted out of sync with `Item.politeness_levels/0` rather than
+  legitimately having no level.
   """
+  def politeness_label(nil), do: nil
   def politeness_label("formal"), do: "Formal"
   def politeness_label("polite"), do: "Polite"
   def politeness_label("casual"), do: "Casual"
-  def politeness_label(_), do: nil
+
+  def politeness_label(level) do
+    raise ArgumentError, "unrecognized politeness level: #{inspect(level)}"
+  end
 
   @doc "A label for a deck kind (`Deck.kinds/0`)."
   def deck_kind_label(:hangeul), do: "Hangeul"
