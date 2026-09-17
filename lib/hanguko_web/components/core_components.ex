@@ -124,6 +124,40 @@ defmodule HangukoWeb.CoreComponents do
   end
 
   @doc """
+  Renders a filter pill: a patch link styled to show whether it is the
+  active filter in a row of `<.filter_pill>`s.
+
+  ## Examples
+
+      <.filter_pill id="status-all" patch={~p"/cards"} selected={@filters.status == :all}>
+        All
+      </.filter_pill>
+  """
+  attr :id, :string, default: nil
+  attr :patch, :any, required: true
+  attr :selected, :boolean, default: false
+  slot :inner_block, required: true
+
+  def filter_pill(assigns) do
+    ~H"""
+    <.link
+      id={@id}
+      patch={@patch}
+      aria-current={if(@selected, do: "page")}
+      class={[
+        "rounded-full border px-3.5 py-1 text-sm font-medium transition",
+        if(@selected,
+          do: "border-base-content bg-base-content text-base-100",
+          else: "border-base-300 bg-base-100 text-base-content/70 hover:border-base-content/30"
+        )
+      ]}
+    >
+      {render_slot(@inner_block)}
+    </.link>
+    """
+  end
+
+  @doc """
   Renders an input with label and error messages.
 
   A `Phoenix.HTML.FormField` may be passed as argument,

@@ -71,21 +71,14 @@ defmodule HangukoWeb.CardLive do
       </.form>
 
       <nav id="status-filters" class="mt-4 flex flex-wrap gap-1.5" aria-label="Card status">
-        <.link
+        <.filter_pill
           :for={{status, label} <- @statuses}
-          patch={cards_path(@filters, status: status)}
           id={"status-#{status}"}
-          aria-current={if(status == @filters.status, do: "page")}
-          class={[
-            "rounded-full border px-3.5 py-1 text-sm font-medium transition",
-            if(status == @filters.status,
-              do: "border-base-content bg-base-content text-base-100",
-              else: "border-base-300 bg-base-100 text-base-content/70 hover:border-base-content/30"
-            )
-          ]}
+          patch={cards_path(@filters, status: status)}
+          selected={status == @filters.status}
         >
           {label}
-        </.link>
+        </.filter_pill>
       </nav>
 
       <p id="card-count" class="mt-4 text-sm text-base-content/60">

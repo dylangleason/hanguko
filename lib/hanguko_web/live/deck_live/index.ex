@@ -25,21 +25,14 @@ defmodule HangukoWeb.DeckLive.Index do
       </.header>
 
       <nav id="deck-filters" class="mt-6 flex flex-wrap gap-1.5" aria-label="Deck type">
-        <.link
+        <.filter_pill
           :for={kind <- @filters}
-          patch={if(kind, do: ~p"/decks?kind=#{kind}", else: ~p"/decks")}
           id={"filter-#{kind || "all"}"}
-          aria-current={if(kind == @kind, do: "page")}
-          class={[
-            "rounded-full border px-3.5 py-1 text-sm font-medium transition",
-            if(kind == @kind,
-              do: "border-base-content bg-base-content text-base-100",
-              else: "border-base-300 bg-base-100 text-base-content/70 hover:border-base-content/30"
-            )
-          ]}
+          patch={if(kind, do: ~p"/decks?kind=#{kind}", else: ~p"/decks")}
+          selected={kind == @kind}
         >
           {if(kind, do: deck_kind_label(kind), else: "All")}
-        </.link>
+        </.filter_pill>
       </nav>
 
       <div id="decks" phx-update="stream" class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
