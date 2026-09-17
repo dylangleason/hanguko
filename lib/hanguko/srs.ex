@@ -50,8 +50,7 @@ defmodule Hanguko.SRS do
 
   @doc "Lists the decks the scope's user is enrolled in, in curriculum order."
   def list_enrolled_decks(%Scope{} = scope) do
-    enrolled = enrolled_deck_ids(scope)
-    Enum.filter(Content.list_decks(), &MapSet.member?(enrolled, &1.id))
+    scope |> enrolled_deck_ids() |> decks_by_id()
   end
 
   ## Settings
@@ -311,8 +310,11 @@ defmodule Hanguko.SRS do
   what the browser's deck filter offers.
   """
   def list_card_decks(%Scope{user: user}) do
-    deck_ids = user.id |> Queries.card_deck_ids() |> Repo.all() |> MapSet.new()
-    Enum.filter(Content.list_decks(), &MapSet.member?(deck_ids, &1.id))
+    user.id
+    |> Queries.card_deck_ids()
+    |> Repo.all()
+    |> MapSet.new()
+    |> decks_by_id()
   end
 
   @doc """
@@ -428,5 +430,14 @@ defmodule Hanguko.SRS do
       review_limit_reached: queue.review_limit_reached,
       settings: settings
     }
+  end
+
+  ## Helpers
+
+  defp decks_by_id(ids) do
+    Content.Queries.active_decks_with_item_counts()
+    |> Content.Queries.of_id(ids)
+    |> Content.Queries.in_curriculum_order()
+    |> Repo.all()
   end
 end
