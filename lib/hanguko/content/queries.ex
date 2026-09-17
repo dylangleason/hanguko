@@ -32,6 +32,15 @@ defmodule Hanguko.Content.Queries do
   end
 
   @doc """
+  Narrows a deck query to one id, or to any id in a list or set. `nil` keeps
+  every id.
+  """
+  def of_id(query, nil), do: query
+  def of_id(query, %MapSet{} = ids), do: where(query, [deck: d], d.id in ^MapSet.to_list(ids))
+  def of_id(query, ids) when is_list(ids), do: where(query, [deck: d], d.id in ^ids)
+  def of_id(query, id), do: where(query, [deck: d], d.id == ^id)
+
+  @doc """
   Narrows a deck query to one kind, or to any kind in a list. `nil` keeps
   every kind.
   """
