@@ -9,7 +9,7 @@ defmodule HangukoWeb.StatsLive do
   """
   use HangukoWeb, :live_view
 
-  alias Hanguko.{Progress, SRS}
+  alias Hanguko.Progress
 
   @impl true
   def render(assigns) do
@@ -270,13 +270,9 @@ defmodule HangukoWeb.StatsLive do
 
   @impl true
   def mount(_params, _session, socket) do
-    scope = socket.assigns.current_scope
+    %{current_scope: scope, settings: settings} = socket.assigns
 
-    if connected?(socket) do
-      SRS.put_detected_timezone(scope, get_connect_params(socket)["timezone"])
-    end
-
-    overview = Progress.overview(scope, DateTime.utc_now())
+    overview = Progress.overview(scope, DateTime.utc_now(), settings: settings)
     forecast_peak = overview.forecast |> Enum.map(& &1.cards) |> Enum.max()
 
     {:ok,

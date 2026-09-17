@@ -238,6 +238,14 @@ hour, 04:00 by default, so a late-night session still counts as the same day.
 `Hanguko.SRS.Day.bounds/3` turns that into a UTC window, handling the
 ambiguous and skipped hours around daylight-saving changes.
 
+The dashboard, study and stats pages all need the settings row on mount, and
+all detect the time zone first if the scope doesn't have one yet, so they
+share `HangukoWeb.DetectTimezone` — an `on_mount` hook, attached in the
+router's `live_session` for those three routes — rather than each repeating
+the same `connected?/1` check and loading the row a second time through
+`SRS.summary/3` or `Progress.overview/3`. Those two functions take an
+already-loaded `:settings` option for that reason.
+
 Every function that depends on the time takes `now` explicitly. Tests pass a
 fixed instant and interval fuzz is disabled in the test environment, so
 scheduling assertions are exact.

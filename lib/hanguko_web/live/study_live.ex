@@ -445,18 +445,12 @@ defmodule HangukoWeb.StudyLive do
   def mount(params, _session, socket) do
     scope = socket.assigns.current_scope
 
-    settings =
-      if connected?(socket),
-        do: SRS.put_detected_timezone(scope, get_connect_params(socket)["timezone"]),
-        else: SRS.get_settings(scope)
-
     deck = params["deck"] && Content.get_deck_by_slug(params["deck"])
     enrolled = SRS.list_enrolled_decks(scope)
 
     socket =
       socket
       |> assign(:page_title, "Study")
-      |> assign(:settings, settings)
       |> assign(:deck, deck)
       |> assign(:deck_titles, Map.new(enrolled, &{&1.id, &1.title}))
       |> assign(:has_decks, enrolled != [])

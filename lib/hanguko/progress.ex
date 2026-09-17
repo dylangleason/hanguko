@@ -61,9 +61,13 @@ defmodule Hanguko.Progress do
     * `:cards` - counts of the learner's cards by where they stand:
       `:learning`, `:relearning`, `:young`, `:mature` and `:suspended`
       (suspended cards are counted only there), plus `:total`
+
+  ## Options
+
+    * `:settings` - the user's settings, if already loaded
   """
-  def overview(%Scope{user: user} = scope, %DateTime{} = now) do
-    settings = SRS.get_settings(scope)
+  def overview(%Scope{user: user} = scope, %DateTime{} = now, opts \\ []) do
+    settings = opts[:settings] || SRS.get_settings(scope)
     day = {Settings.timezone(settings), settings.day_rollover_hour}
     today = study_date(now, day)
     days = review_days(user.id, day)

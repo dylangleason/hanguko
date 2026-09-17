@@ -142,16 +142,12 @@ defmodule HangukoWeb.DashboardLive do
 
   @impl true
   def mount(_params, _session, socket) do
-    scope = socket.assigns.current_scope
-
-    if connected?(socket) do
-      SRS.put_detected_timezone(scope, get_connect_params(socket)["timezone"])
-    end
+    %{current_scope: scope, settings: settings} = socket.assigns
 
     {:ok,
      socket
      |> assign(:page_title, "Today")
-     |> assign(:summary, SRS.summary(scope, DateTime.utc_now()))}
+     |> assign(:summary, SRS.summary(scope, DateTime.utc_now(), settings: settings))}
   end
 
   defp today_message(%{decks: []}), do: "Add a deck to start studying."
