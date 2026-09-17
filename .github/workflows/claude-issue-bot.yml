@@ -121,7 +121,11 @@ jobs:
               - this job has no Elixir toolchain installed and isn't meant
               to validate the change itself. CI will compile and test the
               PR once it's open.
-            - Commit the changes and push the branch (never main).
+            - Commit the changes, then push with exactly this command -
+              no `-u`, no `--set-upstream`, no other form, even though
+              those are more idiomatic - the sandbox only permits this
+              literal invocation and will silently deny anything else:
+              `git push origin claude-bot/issue-${{ github.event.issue.number }}:claude-bot/issue-${{ github.event.issue.number }}`
             - Open a pull request against main that references and closes
               the issue (e.g. "Closes #${{ github.event.issue.number }}"),
               describing what changed and why, and noting that it hasn't
@@ -189,10 +193,24 @@ jobs:
             exit 0
           fi
 
-          echo "::warning::claude-issue-bot hit $count tool permission denial(s) this run - it may have silently given up without opening a PR."
+          # A run can rack up denials from off-script exploration (git
+          # fetch, gh api, poking around for .claude/settings.json, even a
+          # dangerouslyDisableSandbox retry) and still land the exact
+          # allowed command afterwards and open a PR fine - observed on a
+          # real run: 14 denials, PR opened anyway. Check before asserting
+          # a causal "no PR was opened" that isn't actually true.
+          branch="claude-bot/issue-${{ github.event.issue.number }}"
+          pr_number="$(gh pr list --head "$branch" --json number --jq '.[0].number // empty')"
+          if [ -n "$pr_number" ]; then
+            headline="claude-issue-bot hit $count tool permission denial(s) this run, but still opened #$pr_number - for visibility, here's what got blocked along the way:"
+          else
+            headline="claude-issue-bot hit $count tool permission denial(s) this run, which is likely why no PR was opened:"
+          fi
 
-          body="$(jq -r --argjson denials "$denials" -n '
-            "⚠️ claude-issue-bot hit \($denials | length) tool permission denial(s) this run, which may be why no PR was opened:\n\n" +
+          echo "::warning::$headline"
+
+          body="$(jq -r --argjson denials "$denials" --arg headline "$headline" -n '
+            "⚠️ " + $headline + "\n\n" +
             ( $denials | map(
                 "- `" + .tool + "`: `" +
                 (if (.input | length) > 500 then .input[0:500] + "…(truncated)" else .input end) +
