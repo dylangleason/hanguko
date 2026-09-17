@@ -139,6 +139,56 @@ jobs:
           claude_args: |
             --allowedTools "Edit,Write,Bash(git checkout -b claude-bot/issue-${{ github.event.issue.number }}),Bash(git add:*),Bash(git commit:*),Bash(git push origin claude-bot/issue-${{ github.event.issue.number }}:claude-bot/issue-${{ github.event.issue.number }}),Bash(gh issue view:*),Bash(gh issue comment:*),Bash(gh pr create:*)" --disallowedTools "Edit(.github/**),Write(.github/**)"
 
+      # claude-code-action hides the run's full internal trace by default
+      # (show_full_output stays false - a security-bot review already
+      # rejected turning that on for this job: it's untrusted-input +
+      # privileged-token, and this repo is public, so a verbose trace is a
+      # world-readable log). But that leaves tool-permission denials - e.g.
+      # Claude reaching for a git invocation that doesn't match the
+      # allowedTools patterns above - completely silent: the run reports
+      # "success" with no PR and no explanation. The SDK's own result
+      # message (dumped unredacted to $RUNNER_TEMP/claude-execution-
+      # output.json, which is never uploaded or printed) already carries a
+      # permission_denials list with exactly the tool name and attempted
+      # command for each denial. Surface only that slice - never the rest
+      # of that file, which is as sensitive as show_full_output - so a
+      # silent failure like this leaves a diagnosable trail on the issue
+      # instead of nothing.
+      - name: Report tool permission denials
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          file="${RUNNER_TEMP}/claude-execution-output.json"
+          if [ ! -f "$file" ]; then
+            echo "No execution output file found; nothing to report."
+            exit 0
+          fi
+
+          denials="$(jq -c '
+            [ .[] | select(.type == "result") | (.permission_denials // [])[] |
+              {tool: .tool_name, input: (.tool_input | tostring)} ]
+          ' "$file")"
+
+          count="$(echo "$denials" | jq 'length')"
+          if [ "$count" -eq 0 ]; then
+            echo "No tool permission denials this run."
+            exit 0
+          fi
+
+          echo "::warning::claude-issue-bot hit $count tool permission denial(s) this run - it may have silently given up without opening a PR."
+
+          body="$(jq -r --argjson denials "$denials" -n '
+            "⚠️ claude-issue-bot hit \($denials | length) tool permission denial(s) this run, which may be why no PR was opened:\n\n" +
+            ( $denials | map(
+                "- `" + .tool + "`: `" +
+                (if (.input | length) > 500 then .input[0:500] + "…(truncated)" else .input end) +
+                "`"
+              ) | join("\n") )
+          ')"
+          gh issue comment "${{ github.event.issue.number }}" --body "$body"
+
       # The disallowedTools block above depends on claude-code-action's own
       # path-glob matching, which we haven't verified against, say, an
       # absolute or ..-relative path. Don't just trust it: independently
