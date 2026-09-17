@@ -166,9 +166,21 @@ jobs:
             exit 0
           fi
 
+          # Both fields are interpolated into the comment body inside
+          # single-backtick markdown code spans below. tool_input is
+          # attacker-reachable (it's the literal command Claude attempted,
+          # which can embed issue-body text verbatim, e.g. via a commit
+          # message), and CommonMark closes a code span on the next
+          # matching backtick regardless of what's inside it - tostring
+          # escapes quotes/newlines but not backticks, so an unescaped one
+          # would let attacker text break out of the span and inject
+          # markdown (links, images) into a comment posted under this
+          # workflow's own identity. Replace every backtick with a
+          # lookalike before it ever reaches the template.
           denials="$(jq -c '
+            def delint: gsub("`"; "´");
             [ .[] | select(.type == "result") | (.permission_denials // [])[] |
-              {tool: .tool_name, input: (.tool_input | tostring)} ]
+              {tool: (.tool_name | delint), input: (.tool_input | tostring | delint)} ]
           ' "$file")"
 
           count="$(echo "$denials" | jq 'length')"
