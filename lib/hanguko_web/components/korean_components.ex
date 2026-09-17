@@ -7,6 +7,7 @@ defmodule HangukoWeb.KoreanComponents do
   import HangukoWeb.CoreComponents, only: [icon: 1]
 
   alias Hanguko.Content.Item
+  alias HangukoWeb.Labels
   alias Phoenix.LiveView.JS
 
   @doc """
@@ -153,7 +154,7 @@ defmodule HangukoWeb.KoreanComponents do
   def politeness_badge(assigns) do
     ~H"""
     <span
-      :if={politeness_label(@level)}
+      :if={Labels.politeness_label(@level)}
       class={[
         "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap",
         @level == "formal" && "bg-secondary/10 text-secondary",
@@ -162,16 +163,11 @@ defmodule HangukoWeb.KoreanComponents do
       ]}
       title={politeness_description(@level)}
     >
-      {politeness_label(@level)}
+      {Labels.politeness_label(@level)}
       <.korean class="opacity-75">{politeness_ko(@level)}</.korean>
     </span>
     """
   end
-
-  defp politeness_label("formal"), do: "Formal"
-  defp politeness_label("polite"), do: "Polite"
-  defp politeness_label("casual"), do: "Casual"
-  defp politeness_label(_), do: nil
 
   defp politeness_ko("formal"), do: "합쇼체"
   defp politeness_ko("polite"), do: "해요체"
@@ -185,10 +181,4 @@ defmodule HangukoWeb.KoreanComponents do
 
   defp politeness_description("casual"),
     do: "Casual speech: close friends, younger siblings and children only."
-
-  @doc "A human-readable label for a deck kind."
-  def deck_kind_label(:hangeul), do: "Hangeul"
-  def deck_kind_label(:vocab), do: "Vocabulary"
-  def deck_kind_label(:phrases), do: "Phrases"
-  def deck_kind_label(:sentences), do: "Sentences"
 end
