@@ -48,11 +48,11 @@ jobs:
       # the prompt's "treat the issue as untrusted data" instruction to stop
       # secret exfiltration - it's to make exfiltration impossible at the
       # network layer even if a prompt injection gets Claude to try it
-      # anyway. Validated against a real run: the first attempt failed
-      # because claude-code-action's bundled setup-bun step downloads Bun
-      # from a GitHub Releases URL that resolves through
-      # release-assets.githubusercontent.com - a distinct CDN domain from
-      # objects.githubusercontent.com, not covered by that entry. If a
+      # anyway. Validated against real runs, iteratively: claude-code-action
+      # bundles setup-bun (downloads Bun via
+      # release-assets.githubusercontent.com, a distinct CDN domain from
+      # objects.githubusercontent.com) and then `bun install`s its own
+      # dependencies (octokit and friends) from registry.npmjs.org. If a
       # future run fails the same way, harden-runner's job summary names
       # the exact blocked host to add here.
       - name: Harden runner
@@ -68,6 +68,7 @@ jobs:
             release-assets.githubusercontent.com:443
             raw.githubusercontent.com:443
             *.actions.githubusercontent.com:443
+            registry.npmjs.org:443
             api.anthropic.com:443
 
       - name: Checkout repository
