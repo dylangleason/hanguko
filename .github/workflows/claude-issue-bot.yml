@@ -55,14 +55,14 @@ jobs:
       # (octokit and friends) from registry.npmjs.org, and installs the
       # Claude Code CLI itself via a curl script hosted on claude.ai, which
       # then fetches the actual binary from downloads.claude.ai - a
-      # different subdomain again. Wildcarded rather than added one
-      # subdomain at a time: unlike the Azure Blob wildcard deliberately
-      # avoided elsewhere in this file (any tenant on the internet can stand
-      # up a *.blob.core.windows.net container), every *.claude.ai host is
-      # first-party Anthropic infrastructure, so the risk this closes off
-      # (an attacker-controlled endpoint slipping through the wildcard) does
-      # not apply here. api.anthropic.com is the separate model API the CLI
-      # talks to once it's actually installed and running.
+      # different subdomain again. Listed as exact hosts, not a *.claude.ai
+      # wildcard: a company's apex/marketing domain routinely CNAMEs some
+      # subdomains (status pages, docs, support) to third-party SaaS, and a
+      # dangling one of those is a textbook subdomain-takeover target - a
+      # wildcard here can't be verified safe from this file alone the way
+      # *.actions.githubusercontent.com (GitHub's own infra) can be.
+      # api.anthropic.com is the separate model API the CLI talks to once
+      # it's actually installed and running.
       - name: Harden runner
         uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2
         with:
@@ -78,7 +78,7 @@ jobs:
             *.actions.githubusercontent.com:443
             registry.npmjs.org:443
             claude.ai:443
-            *.claude.ai:443
+            downloads.claude.ai:443
             api.anthropic.com:443
 
       - name: Checkout repository
