@@ -206,7 +206,7 @@ defmodule HangukoWeb.StatsLive do
   attr :peak, :integer, required: true
 
   # A column per day: columns grow from the baseline, capped at 24px wide
-  # with 2px between them and rounded tops. Only the busiest day is labelled;
+  # with 2px between them and rounded tops. Only the busiest day is labeled;
   # the axis, titles and table carry the rest.
   defp forecast_chart(assigns) do
     assigns =
@@ -319,7 +319,7 @@ defmodule HangukoWeb.StatsLive do
 
   # One hue, more is stronger: three steps relative to the busiest day, and a
   # neutral cell for days without reviews. Three is as many as the primary
-  # colour allows while each step stays distinct from the next and the
+  # color allows while each step stays distinct from the next and the
   # lightest still stands out from the card, in both themes (checked with
   # the dataviz ordinal-ramp validator).
   defp heat_class(0, _busiest), do: "bg-base-300"

@@ -1,6 +1,6 @@
 defmodule Hanguko.SRS.Queries do
   @moduledoc """
-  Queries over per-user study state: enrolments, cards and review logs. Used
+  Queries over per-user study state: enrollments, cards and review logs. Used
   by `Hanguko.SRS`, the study queue (`Hanguko.SRS.Queue`) and
   `Hanguko.Progress`.
 
@@ -14,7 +14,7 @@ defmodule Hanguko.SRS.Queries do
   alias Hanguko.Content.Queries, as: ContentQueries
   alias Hanguko.SRS.{Card, DeckEnrollment, ReviewLog}
 
-  ## Enrolments
+  ## Enrollments
 
   @doc "The ids of every deck `user_id` is enrolled in."
   def enrolled_deck_ids(user_id) do
@@ -35,12 +35,12 @@ defmodule Hanguko.SRS.Queries do
       where: not d.retired
   end
 
-  @doc "`user_id`'s enrolment in one deck: at most one row."
+  @doc "`user_id`'s enrollment in one deck: at most one row."
   def enrollment(user_id, deck_id) do
     from e in DeckEnrollment, where: e.user_id == ^user_id and e.deck_id == ^deck_id
   end
 
-  @doc "Narrows an enrolment query to one deck. `nil` keeps every deck."
+  @doc "Narrows an enrollment query to one deck. `nil` keeps every deck."
   def in_deck(query, nil), do: query
   def in_deck(query, deck_id), do: where(query, [enrollment: e], e.deck_id == ^deck_id)
 

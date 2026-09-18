@@ -53,7 +53,7 @@ defmodule HangukoWeb.StudyComponents do
   ]
 
   @doc """
-  The four rating buttons, each labelled with the interval it would give.
+  The four rating buttons, each labeled with the interval it would give.
   `card_key` identifies the card being rated (see the `StudyKeys` hook).
   """
   attr :intervals, :map, required: true

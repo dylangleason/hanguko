@@ -6,7 +6,7 @@ deck:
   level: 1
   position: 4
   description: >-
-    Browsing, asking about sizes and colours, paying, and returning things,
+    Browsing, asking about sizes and colors, paying, and returning things,
     from markets to department stores.
 
 defaults:
@@ -38,7 +38,7 @@ items:
 
   - korean: 다른 색 있어요?
     romanization: dareun saek isseoyo
-    meaning: do you have another colour?
+    meaning: do you have another color?
     metadata:
       politeness: polite
 

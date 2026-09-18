@@ -33,7 +33,7 @@ what changed:
   the Dockerfile, the CI and release workflows, what `bin/migrate` does,
   runtime configuration, the pinned Elixir/OTP versions
 - **`@moduledoc`** — every new module says what it is responsible for and how
-  it relates to its neighbours. New public functions get a `@doc`. Invariants
+  it relates to its neighbors. New public functions get a `@doc`. Invariants
   that a reader would otherwise have to infer (why a card has no `new` state,
   why content is retired rather than deleted) belong next to the code that
   enforces them
@@ -180,7 +180,7 @@ Controllers automatically have the `current_scope` available if they use the `:b
         end
 
 - **Never** nest multiple modules in the same file as it can cause cyclic dependencies and compilation errors
-- **Never** use map access syntax (`changeset[:field]`) on structs as they do not implement the Access behaviour by default. For regular structs, you **must** access the fields directly, such as `my_struct.field` or use higher level APIs that are available on the struct if they exist, `Ecto.Changeset.get_field/2` for changesets
+- **Never** use map access syntax (`changeset[:field]`) on structs as they do not implement the Access behavior by default. For regular structs, you **must** access the fields directly, such as `my_struct.field` or use higher level APIs that are available on the struct if they exist, `Ecto.Changeset.get_field/2` for changesets
 - Elixir's standard library has everything necessary for date and time manipulation. Familiarize yourself with the common `Time`, `Date`, `DateTime`, and `Calendar` interfaces by accessing their documentation as necessary. **Never** install additional dependencies unless asked or for date/time parsing (which you can use the `date_time_parser` package)
 - Don't use `String.to_atom/1` on user input (memory leak risk)
 - Predicate function names should not start with `is_` and should end in a question mark. Names like `is_thing` should be reserved for guards
