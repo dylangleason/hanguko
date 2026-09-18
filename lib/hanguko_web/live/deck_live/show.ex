@@ -19,7 +19,7 @@ defmodule HangukoWeb.DeckLive.Show do
       <.link
         navigate={~p"/decks?kind=#{@deck.kind}"}
         id="back-to-decks"
-        class="inline-flex items-center gap-1 text-sm text-base-content/60 transition hover:text-base-content"
+        class="-my-1.5 inline-flex items-center gap-1 py-1.5 text-sm text-base-content/60 transition hover:text-base-content"
       >
         <.icon name="hero-arrow-left" class="size-4" /> {deck_kind_label(@deck.kind)}
       </.link>

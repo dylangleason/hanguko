@@ -20,31 +20,31 @@ defmodule HangukoWeb.DashboardLive do
           <.link
             navigate={~p"/study/settings"}
             id="study-settings-link"
-            class="inline-flex items-center gap-1.5 text-sm text-base-content/60 transition hover:text-base-content"
+            class="-my-1.5 inline-flex items-center gap-1.5 py-1.5 text-sm text-base-content/60 transition hover:text-base-content"
           >
             <.icon name="hero-adjustments-horizontal" class="size-4" /> Study settings
           </.link>
         </:actions>
       </.header>
 
-      <section id="today" class="mt-6 rounded-box border border-base-300 bg-base-100 p-6">
+      <section id="today" class="mt-6 rounded-box border border-base-300 bg-base-100 p-5 sm:p-6">
         <div class="flex flex-wrap items-center justify-between gap-6">
-          <dl class="flex gap-8">
+          <dl class="flex gap-6 sm:gap-8">
             <div>
               <dt class="text-sm text-base-content/60">To review</dt>
-              <dd id="today-due" class="text-4xl font-bold text-success tabular-nums">
+              <dd id="today-due" class="text-3xl font-bold text-success tabular-nums sm:text-4xl">
                 {@summary.due}
               </dd>
             </div>
             <div>
               <dt class="text-sm text-base-content/60">New</dt>
-              <dd id="today-new" class="text-4xl font-bold text-secondary tabular-nums">
+              <dd id="today-new" class="text-3xl font-bold text-secondary tabular-nums sm:text-4xl">
                 {@summary.new}
               </dd>
             </div>
             <div>
               <dt class="text-sm text-base-content/60">Studied today</dt>
-              <dd id="today-reviewed" class="text-4xl font-bold tabular-nums">
+              <dd id="today-reviewed" class="text-3xl font-bold tabular-nums sm:text-4xl">
                 {@summary.reviewed_today}
               </dd>
             </div>

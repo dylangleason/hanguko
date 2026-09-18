@@ -95,7 +95,9 @@ defmodule HangukoWeb.CardLive do
           id={dom_id}
           class="flex flex-wrap items-start gap-x-4 gap-y-3 px-4 py-4 sm:flex-nowrap sm:px-5"
         >
-          <div class="min-w-0 flex-1">
+          <%!-- A full line to itself on a phone, so the buttons wrap below
+                instead of squeezing the card down to a column of two words --%>
+          <div class="min-w-0 grow basis-full sm:basis-0">
             <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
               <.korean class="text-xl font-medium">{card.item.korean}</.korean>
               <span class="rounded-full bg-base-200 px-2 py-0.5 text-xs font-medium">

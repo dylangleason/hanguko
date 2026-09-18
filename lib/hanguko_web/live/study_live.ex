@@ -46,7 +46,7 @@ defmodule HangukoWeb.StudyLive do
           <.link
             navigate={~p"/dashboard"}
             id="end-session"
-            class="inline-flex items-center gap-1 text-sm text-base-content/60 transition hover:text-base-content"
+            class="-my-1.5 inline-flex items-center gap-1 py-1.5 text-sm text-base-content/60 transition hover:text-base-content"
           >
             <.icon name="hero-arrow-left" class="size-4" />
             {if @deck, do: @deck.title, else: "All decks"}
@@ -152,13 +152,13 @@ defmodule HangukoWeb.StudyLive do
       class="mt-5 overflow-hidden rounded-box border border-base-300 bg-base-100 shadow-sm"
     >
       <%!-- The deck gives context, e.g. "two" in Sino-Korean vs native numbers --%>
-      <p class="px-6 pt-5 text-xs font-semibold tracking-wide text-base-content/40 uppercase">
+      <p class="px-4 pt-5 text-xs font-semibold tracking-wide text-base-content/40 uppercase sm:px-6">
         <span :if={@deck_title} id="card-deck">{@deck_title} ·</span> {prompt(@entry)}
       </p>
 
       <div
         id="card-front"
-        class="flex min-h-48 flex-col items-center justify-center px-6 py-8 text-center"
+        class="flex min-h-48 flex-col items-center justify-center px-4 py-8 text-center sm:px-6"
       >
         <%= cond do %>
           <% @entry.template == :cloze -> %>
@@ -208,7 +208,9 @@ defmodule HangukoWeb.StudyLive do
             </.form>
           <% true -> %>
             <div class="flex items-center gap-2">
-              <.korean class="text-6xl leading-tight font-medium">{@entry.item.korean}</.korean>
+              <.korean class="text-5xl leading-tight font-medium sm:text-6xl">
+                {@entry.item.korean}
+              </.korean>
               <.speak_button
                 id="study-speak"
                 text={Item.speech_text(@entry.item)}
@@ -223,7 +225,7 @@ defmodule HangukoWeb.StudyLive do
       <div
         :if={@revealed}
         id="card-answer"
-        class="border-t border-base-300 bg-base-200/40 px-6 py-6 text-center"
+        class="border-t border-base-300 bg-base-200/40 px-4 py-6 text-center sm:px-6"
       >
         <.answer_result :if={@answer} answer={@answer} />
         <%= cond do %>
@@ -240,7 +242,9 @@ defmodule HangukoWeb.StudyLive do
             </div>
           <% @entry.template == :recall -> %>
             <div class="flex items-center justify-center gap-2">
-              <.korean class="text-5xl leading-tight font-medium">{@entry.item.korean}</.korean>
+              <.korean class="text-4xl leading-tight font-medium sm:text-5xl">
+                {@entry.item.korean}
+              </.korean>
               <.speak_button
                 id="study-speak"
                 text={Item.speech_text(@entry.item)}
@@ -320,7 +324,7 @@ defmodule HangukoWeb.StudyLive do
         <p id="answer-diff" class="mt-2" aria-label={"You wrote #{@answer.typed}"}>
           <%!-- One element per character, with no whitespace between them,
                which would otherwise show as gaps inside the word --%>
-          <.korean class="text-3xl leading-snug font-medium">
+          <.korean class="text-2xl leading-snug font-medium sm:text-3xl">
             <span :for={part <- @answer.diff} class={diff_class(part)}>{diff_text(part)}</span>
           </.korean>
         </p>
@@ -362,7 +366,7 @@ defmodule HangukoWeb.StudyLive do
     assigns = assign(assigns, before: before, target: target, rest: rest)
 
     ~H"""
-    <.korean class="text-3xl leading-snug font-medium text-balance">
+    <.korean class="text-2xl leading-snug font-medium text-balance sm:text-3xl">
       {@before}
       <%= if @reveal do %>
         <mark class="rounded bg-primary/15 px-1 text-primary">{@target}</mark>
@@ -384,7 +388,7 @@ defmodule HangukoWeb.StudyLive do
     ~H"""
     <section
       id="session-done"
-      class="mt-8 rounded-box border border-base-300 bg-base-100 px-6 py-10 text-center"
+      class="mt-8 rounded-box border border-base-300 bg-base-100 px-4 py-10 text-center sm:px-6"
     >
       <%= if @has_decks do %>
         <div class="mx-auto flex size-14 items-center justify-center rounded-full bg-success/15 text-success">

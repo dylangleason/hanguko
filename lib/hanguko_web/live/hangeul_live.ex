@@ -37,7 +37,7 @@ defmodule HangukoWeb.HangeulLive do
       <div class="mt-8 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <aside
           id="builder"
-          class="rounded-box border border-base-300 bg-base-100 p-5 lg:sticky lg:top-20 lg:order-last"
+          class="rounded-box border border-base-300 bg-base-100 p-4 sm:p-5 lg:sticky lg:top-20 lg:order-last"
         >
           <div class="flex items-center justify-between">
             <h2 class="font-semibold">Syllable builder</h2>
