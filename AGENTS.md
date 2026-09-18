@@ -52,7 +52,10 @@ Rules for writing it:
 - Mermaid diagrams use `flowchart` and `erDiagram`, never the experimental
   `C4Context` / `C4Container` types, so they render the same on GitHub and in
   `mix docs`. `mix.exs` loads Mermaid into the generated HTML through
-  `before_closing_body_tag/1`
+  `before_closing_body_tag/1`, pinned to an exact version with an SRI hash —
+  move `@mermaid_version` and `@mermaid_integrity` together, and open a guide
+  in `doc/` afterwards, because a stale hash blocks the script silently and
+  the diagrams fall back to code blocks
 - Keep prose in `guides/`. `doc/` is git-ignored because `mix docs` (ExDoc)
   generates into it, so anything written there is lost
 - Add new guides to the `extras` list in `mix.exs` so `mix docs` picks them up
