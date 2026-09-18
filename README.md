@@ -63,9 +63,10 @@ mix hanguko.content.import
 The importer validates every pack before writing anything, reports errors
 with the file and item they came from, and is idempotent: re-running it with
 no edits changes no rows. Content that disappears from the packs is marked
-retired rather than deleted, so review history survives an edit. The format
-is documented in `Hanguko.Content.Importer` and in
-[guides/architecture.md](guides/architecture.md#content-packs).
+retired rather than deleted, so review history survives an edit. The pack
+format — the keys a deck, item and grammar point take, and how an item keeps
+its identity when its text is corrected — is documented in
+`Hanguko.Content.Importer`.
 
 ## Tests
 
@@ -80,7 +81,9 @@ function that depends on the time takes `now` as an argument.
 
 ## CI and releases
 
-Two GitHub Actions workflows live in `.github/workflows`:
+Two GitHub Actions workflows live in `.github/workflows`. Why they are split
+this way, and what a deploy has to do, is in
+[guides/deployment.md](guides/deployment.md).
 
 * **CI** (`ci.yml`) runs on every pull request and every push to `main`. It
   does what `mix precommit` does (unused deps, formatting, warnings as errors,
@@ -139,7 +142,7 @@ lib/hanguko_web/      LiveViews, components and the router
 priv/content/         the curriculum, as YAML packs
 priv/repo/migrations/ schema history
 assets/js/hooks/      speech synthesis and study keyboard shortcuts
-guides/               architecture and domain model
+guides/               architecture, domain model and deployment
 test/                 mirrors lib/
 ```
 
@@ -147,10 +150,13 @@ test/                 mirrors lib/
 
 Read the guides straight from the repository:
 
-* [guides/architecture.md](guides/architecture.md) — how the pieces fit: contexts,
-  the content pipeline, the study loop, and why it's shaped this way
+* [guides/architecture.md](guides/architecture.md) — how the pieces fit, in
+  three diagrams: what the app talks to, what it's made of, and the
+  curriculum/progress split everything hangs off. Start here
 * [guides/domain-model.md](guides/domain-model.md) — the tables, what they mean and
   the rules they enforce
+* [guides/deployment.md](guides/deployment.md) — how a commit becomes something
+  running in production, and why it's built that way
 * `AGENTS.md` — Phoenix 1.8 and LiveView conventions this codebase follows
 
 Or build them together with the module documentation, where the guides and
@@ -163,4 +169,5 @@ open doc/index.html      # Linux: xdg-open doc/index.html
 
 ExDoc writes into `doc/`, which is git-ignored — that's why the guides
 themselves live in `guides/`. The modules are grouped there by what they do:
-Curriculum, Spaced repetition, Korean, Accounts and Web.
+Curriculum, Spaced repetition, Progress, Korean, Accounts, Web and
+Operations.

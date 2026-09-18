@@ -143,7 +143,10 @@ defmodule Hanguko.Progress do
     %{reviews: reviews, remembered: remembered, rate: if(reviews > 0, do: remembered / reviews)}
   end
 
-  # Counts what the queue would show: the same decks, and the same cards.
+  # Counts what the queue would show: the same decks, and the same cards, so
+  # it never promises cards a session wouldn't offer. It counts cards due, not
+  # what a session will allow, so the daily review limit and sibling burying
+  # can still push some of them to a later day.
   defp forecast(user_id, day, today) do
     last = Date.add(today, @forecast_days - 1)
     deck_ids = user_id |> SRSQueries.studied_deck_ids() |> Repo.all()

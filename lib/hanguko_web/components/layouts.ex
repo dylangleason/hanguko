@@ -1,7 +1,19 @@
 defmodule HangukoWeb.Layouts do
   @moduledoc """
-  This module holds layouts and related functionality
-  used by your application.
+  The application layout and the main navigation.
+
+  The bar puts the learner's own pages (Study, Cards, Progress) ahead of the
+  curriculum, with everything about the account — settings, study settings,
+  theme, log out — in one menu, so it stays readable as sections are added.
+  Below 1024px it collapses to a menu button rather than squeezing.
+
+  The current section is marked with `aria-current`. `HangukoWeb.Nav` keeps
+  `@current_path` up to date, LiveViews pass it on as
+  `<Layouts.app current_path={@current_path}>`, and `nav_section/1` maps a
+  path to its section by its first segment, so inner pages (a lesson, study
+  settings) mark their section too. Deck pages are the exception — `/decks`
+  serves Hangeul, vocabulary and phrase decks alike — which is why `app/1`
+  also takes a `section` attribute for a page to name its own.
   """
   use HangukoWeb, :html
 

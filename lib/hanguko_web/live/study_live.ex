@@ -6,7 +6,15 @@ defmodule HangukoWeb.StudyLive do
   With typed answers turned on in the study settings, recall cards ask for
   the Korean to be typed. Checking it reveals the answer along with what was
   wrong, letter by letter (see `Hanguko.Korean.compare_answer/2`), and
-  suggests a rating. The learner still picks the rating.
+  suggests a rating.
+
+  The check suggests a rating but doesn't make it: the learner still presses
+  the button. A typo in something they plainly knew shouldn't reset a card,
+  and only the learner can tell a typo from a gap in memory.
+
+  Only recall cards take typed answers. A recognition answer is an English
+  meaning with several right phrasings, and a cloze has no single string to
+  type.
   """
   use HangukoWeb, :live_view
 

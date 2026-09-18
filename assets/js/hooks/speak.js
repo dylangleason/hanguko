@@ -4,6 +4,8 @@
 //
 // If the element has a `data-audio` URL (pre-generated audio), that file is
 // played instead, so pages upgrade automatically once recorded audio exists.
+// That is the swap point for cloud TTS: pass an item's clip and this hook
+// prefers it over browser speech, with no change here.
 
 const isKorean = voice => voice.lang.replace("_", "-").toLowerCase().startsWith("ko")
 

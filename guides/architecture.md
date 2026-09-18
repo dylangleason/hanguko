@@ -1,11 +1,72 @@
 # Architecture
 
 Hanguko is a standard Phoenix 1.8 application: contexts under `lib/hanguko`,
-LiveViews under `lib/hanguko_web`, PostgreSQL underneath. What's worth
-explaining is the split between *curriculum* and *progress*, and the study
-loop built on top of it.
+LiveViews under `lib/hanguko_web`, PostgreSQL underneath. This guide is the
+shape of the system — three views, from the outside in, and the handful of
+rules that cut across all of it. The mechanics of any one part live in the
+moduledoc of the module that enforces them, linked from here.
 
-For the tables themselves, see [domain-model.md](domain-model.md).
+For the tables, see [domain-model.md](domain-model.md); for how a build
+reaches production, [deployment.md](deployment.md).
+
+## Context
+
+```mermaid
+flowchart LR
+  learner([Learner])
+  author([Curriculum author])
+  app[Hanguko]
+  speech[Browser speech synthesis]
+  mail[Email delivery]
+
+  learner -->|studies, browses the curriculum| app
+  author -->|edits YAML packs in a pull request| app
+  app -->|pronounces Korean| speech
+  app -->|sends a sign-in link| mail
+```
+
+Two kinds of people use the system, and they meet in the repository rather
+than in the app: a learner studies, and an author edits the curriculum as
+files that go through code review. There is no admin UI, and that is the
+point — see [the central split](#the-central-split).
+
+The outside world it touches is small. Pronunciation is the browser's own
+speech synthesis (`assets/js/hooks/speak.js`), which is why nothing has to be
+recorded or paid for yet. Sign-in is by magic link, so mail delivery is on the
+critical path for logging in; in development it goes to `/dev/mailbox`, and
+production delivery is configured through `Hanguko.Mailer` in
+`config/runtime.exs`.
+
+## Containers
+
+```mermaid
+flowchart TB
+  learner([Learner])
+
+  subgraph hanguko[Hanguko]
+    web["Phoenix LiveView app<br/>Elixir / OTP"]
+    db[("PostgreSQL<br/>curriculum and progress")]
+  end
+
+  packs[/"Content packs<br/>YAML in priv/content"/]
+  browser["Browser<br/>LiveView JS, Speak and StudyKeys hooks"]
+
+  learner --> browser
+  browser <-->|WebSocket| web
+  web -->|Ecto| db
+  packs -.->|"imported at deploy time"| db
+```
+
+Everything the learner sees is server-rendered over a LiveView WebSocket.
+Only two things have to be client-side, and both are JS hooks in
+`assets/js/hooks`: `Speak`, which pronounces Korean, and `StudyKeys`, which
+maps the keyboard to a study session. Their headers document the behaviour.
+
+The content packs are a build-time input, not a container the app talks to.
+They are read once, by the importer, at deploy time — `bin/migrate` runs
+`Hanguko.Release.import_content/0` after the migrations. Nothing in the
+running app reads the YAML, which is what lets the curriculum be reviewed
+like code without the app depending on a file layout.
 
 ## The central split
 
@@ -13,8 +74,10 @@ Everything divides into two halves that meet only through foreign keys:
 
 **Curriculum** is global, read-only at runtime, and lives in the repository
 as YAML. Decks, items and grammar points are loaded by
-`Hanguko.Content.Importer`. Nothing a learner does writes to these tables, so
-a pack can be edited and re-imported at any time.
+`Hanguko.Content.Importer` — the only writer of curriculum rows. Nothing a
+learner does writes to these tables, so a pack can be edited and re-imported
+at any time. The importer validates every pack before writing anything and
+retires what has left the packs instead of deleting it.
 
 **Progress** is per user and written constantly: enrolments, study settings,
 cards and review logs. It refers to curriculum rows by id, which is why
@@ -23,7 +86,38 @@ content is never deleted — only retired.
 This is what lets the curriculum be reviewed like code (a pull request that
 fixes a typo in a sentence) without touching anyone's review history.
 
-## Contexts
+## Components
+
+```mermaid
+flowchart TB
+  subgraph webl["Web — HangukoWeb"]
+    lv[LiveViews, components, router]
+  end
+
+  subgraph domain["Domain — Hanguko"]
+    content["Content<br/>curriculum, importer, grammar progress"]
+    srs["SRS<br/>enrolments, settings, queue, review, undo"]
+    progress["Progress<br/>read-only history"]
+    korean["Korean<br/>pure Hangul helpers"]
+    accounts["Accounts<br/>users, tokens, sessions"]
+  end
+
+  fsrs[["fsrs_ex"]]
+  db[("PostgreSQL")]
+
+  lv --> content
+  lv --> srs
+  lv --> progress
+  lv --> korean
+  lv --> accounts
+  srs -->|"grammar gate, items"| content
+  progress -->|"the same cards a session would show"| srs
+  srs -->|"Scheduler only"| fsrs
+  content --> db
+  srs --> db
+  progress --> db
+  accounts --> db
+```
 
 | Context | Responsibility |
 | --- | --- |
@@ -33,9 +127,21 @@ fixes a typo in a sentence) without touching anyone's review history.
 | `Hanguko.Progress` | Read-only views of a learner's history: streaks, daily activity, retention, the forecast and card counts. Computed from `review_logs` and `cards`; stores nothing. |
 | `Hanguko.Korean` | Pure Hangul utilities: compose/decompose syllables, batchim detection, romanization, checking typed answers. No database, no dependencies. |
 
-Public functions take a `%Scope{}` first, per Phoenix 1.8 convention. A `nil`
-scope means an anonymous visitor: they can browse the curriculum, have
-learned nothing, and get default study settings.
+The arrows only point one way, and three boundaries are worth naming because
+keeping them is what keeps the diagram true:
+
+* `Hanguko.SRS.Scheduler` is the only module that talks to the FSRS library.
+  It converts between our `Card` and the library's and is otherwise pure, so
+  changing scheduling algorithms touches one file.
+* `Hanguko.Content.Importer` is the only writer of curriculum rows.
+* `Hanguko.Korean` depends on nothing at all. Anything that needs a fact
+  about Hangul asks it rather than re-deriving the arithmetic.
+
+The study loop lives in `Hanguko.SRS`: `study_queue/3` builds the day's queue,
+`HangukoWeb.StudyLive` shows a card, `review_card/5` records the rating in a
+transaction and the queue is rebuilt from the database. What that queue
+contains and in what order is `Hanguko.SRS.Queue`; what a rating does to a
+card's schedule is `Hanguko.SRS.Scheduler`.
 
 ### Queries
 
@@ -69,273 +175,53 @@ day inside SQL.
 `Hanguko.Accounts` is left as `phx.gen.auth` generated it, with its token
 queries on `UserToken`.
 
-## Content packs
+## Scoping
 
-A pack is one YAML file describing one deck, its items, and optionally the
-grammar it teaches:
-
-```yaml
-deck:
-  slug: food           # stable identity
-  kind: vocab          # hangeul | vocab | phrases | sentences
-items:
-  - korean: 사과
-    meaning: apple
-grammar:
-  - slug: ieyo-yeyo
-    pattern: 명사 + 이에요/예요
-    explanation: |     # markdown
-      ...
-    formation:         # how the pattern changes shape
-      - when: The noun ends in a consonant
-        batchim: true
-        form: 이에요
-    examples:          # become sentence items, tied to this point
-      - korean: 저는 학생이에요.
-        meaning: I am a student.
-        cloze: 이에요   # the part blanked out when studied
-```
-
-The importer works in three passes:
-
-1. **Load and shape-check** every file, reporting YAML errors with line and
-   column, and unknown keys with the file and item they appear in.
-2. **Plan**: build changesets for every deck, item and grammar point, diffed
-   against what's in the database. Duplicate slugs and keys are caught here.
-3. **Apply**, in one transaction: insert, update or leave alone, then retire
-   anything that has left the packs.
-
-Nothing is written unless every pack is valid, which keeps a typo in one file
-from half-importing the rest. An item's identity is `"<deck-slug>/<key>"`,
-where `key` defaults to the Korean text — give an item an explicit `key` and
-its text can be corrected without orphaning anyone's cards.
-
-`batchim: true/false` marks the formation rows that depend on whether a word
-ends in a consonant. The grammar page uses those rows to offer a "try it"
-box, joining a typed word to the right form — including writing a lone
-consonant into the last syllable, so 가 + `-ㄹ 거예요` shows 갈 거예요.
-
-A `phrases` pack is one **situation** — greetings, the restaurant, the
-phone — so enrolling in a situation is just enrolling in its deck, and the
-queue, limits and burying need nothing new. Each phrase names its speech
-level (`metadata.politeness`: `formal`, `polite` or `casual`), which the
-importer validates because badges, the politeness filter and study cards all
-key off it. A phrase may name the same phrase at another level with
-`variant_of`; the importer stores it as the full source key and rejects a
-variant that isn't another item in the same pack (a phrase or a grammar
-example), or a pair linked from both sides, which would list each form twice. Variants are separate items
-on purpose: the casual form is worth studying too, and the badge on a recall
-card says which level is being asked for.
-
-## The study loop
-
-```
-SRS.study_queue/3  ->  StudyLive shows a card  ->  SRS.review_card/5
-      ^                                                  |
-      |                                                  v
-      +-------------  queue rebuilt from the DB  <--  Scheduler.review/4
-                                                        + ReviewLog
-```
-
-`Hanguko.SRS.Queue` builds the whole queue for the current study day in one
-pass, in study order:
-
-1. **Learning** cards that are due (minute-scale steps).
-2. **Review** cards due before the day ends, oldest first, up to the daily
-   review limit.
-3. **New** cards, up to the daily new limit. The limit is shared across all
-   enrolled decks, which take turns — one card from each in curriculum order
-   — so finishing one deck doesn't starve the others.
-4. **Learning ahead**: when nothing else is left, cards due within the next
-   20 minutes, so a session can be finished in one sitting.
-
-Rules the queue enforces:
-
-* Only enrolled decks, active items, unsuspended cards.
-* **Siblings are buried**: an item is studied at most once a day, so you
-  don't see a word's recognition and recall cards in the same session.
-* An item's **recall card waits until the day after** its recognition card.
-* **Example sentences are only studied while their grammar point is marked
-  as learned** — both when introduced and afterwards, so un-marking a lesson
-  puts its cards aside without losing their history.
-* When a limit is what's stopping a session, the queue says so
-  (`new_limit_reached`, `review_limit_reached`) and the UI explains it rather
-  than showing an empty screen.
-
-**Cards are created lazily.** A card row appears the first time it's rated,
-which is why there is no `new` state: a new card is one that has no row yet.
-Enrolling in a deck therefore costs nothing until you study it.
-
-`SRS.review_card/5` runs in a transaction, re-reading the card `FOR UPDATE`
-so two open tabs can't schedule from stale state, and writes a `ReviewLog`
-holding the card's state *before* and *after*. The before-half is what makes
-undo exact: restore those fields, or delete the card outright if this was its
-first review.
-
-### Typed answers
-
-With `typed_answers` on in the study settings, a recall card asks for the
-Korean to be typed. `Korean.compare_answer/2` checks it after
-`Korean.normalize/1` (NFC, lowercase, no punctuation, single spaces). NFC
-matters because some input methods produce decomposed jamo that look the same
-but aren't equal as strings. An answer that only differs in spacing counts as
-correct, with a note: Korean word spacing is easy to get wrong and doesn't
-change what was said.
-
-A wrong answer is diffed character by character. Where one syllable was typed
-in place of another, the two are split into jamo, so the feedback says which
-letter was off (ㄷ for ㄸ, a missing final consonant) rather than only that
-the syllable was wrong.
-
-The check **suggests a rating but doesn't make it**: Again for a wrong
-answer, or when the learner left the box empty or chose "I don't know", and
-Good otherwise. The learner still presses the button (Enter or Space
-takes the suggestion). A typo in something they plainly knew shouldn't reset
-a card, and only the learner can tell a typo from a gap in memory. Only recall
-cards take typed answers: recognition answers are English meanings with
-several right phrasings, and a cloze has no single string to type.
-
-### The card browser
-
-`/cards` lists everything the learner has studied (`SRS.browse_cards/2`),
-whether or not its deck is still enrolled — a card they stopped studying is
-exactly what they come here to find. Cards of retired content are left out,
-because there is nothing left to show.
-
-Every filter — search, deck, template, status — lives in the query string,
-so a view of the cards (the leeches in one deck, say) can be linked to and
-comes back on reload. The list is capped at `SRS.browse_limit/0` rows and
-carries the full count beside it, which keeps a learner with thousands of
-cards from paying to render a page they wouldn't read.
-
-Two things can be done to a card:
-
-* **Suspend** takes it out of the queue and leaves its schedule untouched,
-  so unsuspending puts it back exactly where it was.
-* **Reset** forgets what FSRS knows: back to the first learning step, due
-  now, no longer suspended, with `reps` and `lapses` cleared. The row is
-  kept rather than deleted, so the reviews pointing at it stay valid and the
-  statistics keep their shape. `introduced_at` moves to now, which counts
-  the card against today's new-card limit, since relearning it from scratch
-  is the work a new card would have been. A reset card is the one case of a
-  card with a history but no `last_review_at`, which is why `elapsed_days`
-  on its next review is `nil`.
-
-**Leeches.** A card rated Again `Hanguko.SRS.Card.leech_lapses/0` times (8)
-is suspended by `review_card/5` as it lapses. A card forgotten eight times
-isn't being learned — it's usually a pair being confused with each other, or
-an item that needs rewording — and showing it again tomorrow only costs the
-rest of the day's reviews. Being a leech is derived from `lapses` rather
-than stored, so putting one back to try again doesn't quietly clear the
-label, and every later lapse sets it aside once more. Resetting is what
-clears the count.
+Public functions take a `%Hanguko.Accounts.Scope{}` first, per Phoenix 1.8
+convention. A `nil` scope means an anonymous visitor: they can browse the
+curriculum, have learned nothing, and get default study settings. Handling
+`nil` in the context rather than at the edge is what lets the same
+curriculum page serve a visitor and a learner without branching on
+authentication.
 
 ## Time and the study day
 
 A "day" is per user: a timezone (detected from the browser's `Intl` API
 through LiveSocket connect params, overridable in settings) and a rollover
 hour, 04:00 by default, so a late-night session still counts as the same day.
-`Hanguko.SRS.Day.bounds/3` turns that into a UTC window, handling the
-ambiguous and skipped hours around daylight-saving changes.
+The same rule has to hold in Elixir and in SQL, which is why `Hanguko.SRS.Day`
+offers both `bounds/3` and the `study_day/3` macro, and why a test checks the
+two agree across daylight-saving changes.
 
-The dashboard, study and stats pages all need the settings row on mount, and
-all detect the time zone first if the scope doesn't have one yet, so they
-share `HangukoWeb.DetectTimezone` — an `on_mount` hook, attached in the
-router's `live_session` for those three routes — rather than each repeating
-the same `connected?/1` check and loading the row a second time through
-`SRS.summary/3` or `Progress.overview/3`. Those two functions take an
-already-loaded `:settings` option for that reason.
+The dashboard, study and stats pages all need the settings row on mount and
+all detect the time zone first, so they share `HangukoWeb.DetectTimezone` —
+an `on_mount` hook attached in the router's `live_session` for those three
+routes — rather than each repeating the check and loading the row again.
 
 Every function that depends on the time takes `now` explicitly. Tests pass a
 fixed instant and interval fuzz is disabled in the test environment, so
 scheduling assertions are exact.
 
-## Scheduling
-
-`Hanguko.SRS.Scheduler` is the only module that talks to the FSRS library
-(`fsrs_ex`, a port of the reference py-fsrs implementation of FSRS-6). It
-converts between our `Card` and the library's, and is otherwise pure.
-
-It offers two calls: `review/4`, which returns the card's new scheduling
-fields, and `preview/3`, which returns what each of the four ratings would
-give in seconds — that's what labels the rating buttons with "1m", "10m",
-"4d" before you commit to an answer. Previews are never fuzzed, so the
-numbers don't jitter between renders.
-
-## Progress
-
-`Hanguko.Progress` is behind the progress page (`/stats`). It stores nothing:
-streaks, daily activity, retention and the forecast are computed on request
-from `review_logs` and `cards`. `review_logs` already keeps both sides of every
-review, so there is no second copy of the history to keep in step, and a
-change to how a number is worked out applies to all of it at once.
-
-Three decisions shape the numbers:
-
-* **Days are study days.** Reviews are grouped by the same rule as
-  `Day.bounds/3` — local time in the learner's zone, moved back by the
-  rollover hour — in SQL, with `Day.study_day/3`, so the grouping happens in
-  the database. A test checks the two agree across daylight-saving changes. A streak
-  stays current through the day after the last study day, so it isn't shown
-  as broken before the learner has had a chance to study today.
-* **Retention is true retention**: over the last 30 days, the share of
-  reviews of cards already in review that weren't rated Again. Learning steps
-  are left out, because missing a card first seen minutes ago says little
-  about long-term memory.
-* **The forecast counts what the queue would show.** It starts from
-  `SRS.Queries.studied_cards/2` — enrolled decks, active items, unsuspended
-  cards, grammar gating — so it never promises cards a session wouldn't
-  offer. Overdue cards count towards today. It counts cards due, not what a
-  session will allow, so the daily review limit and sibling burying can still
-  push some to a later day.
-
-Card counts cover every card of non-retired content, with suspended cards
-counted on their own and review cards split into young and mature at a
-stability of 21 days.
-
 ## Web layer
 
 Routes divide along the same line as the data. Browsing the curriculum
 (`/hangeul`, `/decks`, `/grammar`, `/phrases`) is public; anything per-user
-(`/dashboard`, `/study`, `/study/settings`, `/stats`, `/cards`) requires a login. Public pages
-that offer a per-user action — enrol, mark as learned — send anonymous
-visitors to the log-in page rather than failing. `HangukoWeb.Live.PerUserAction`
-gives that redirect one definition, and the deck enrol/unenrol toggle that
-rides along with it another, so the four pages that offer such an action
-(`DeckLive.Index`, `DeckLive.Show`, `PhraseLive`, `GrammarLive.Show`)
-delegate to it instead of each repeating the rule.
-
-The header puts the learner's own pages (Study, Cards, Progress) ahead of the
-curriculum, with everything about the account — settings, study settings,
-theme, log out — in one menu, so the bar stays readable as sections are
-added. It switches to a menu button below 1024px rather than squeezing. The
-current section is marked with `aria-current`: every LiveView mounts
-`HangukoWeb.Nav`, which keeps `@current_path` up to date on each
-`handle_params`, and the layout maps a path to its section by its first
-segment, so inner pages (a lesson, study settings) mark their section too.
-Deck pages are the exception: `/decks` serves Hangeul, vocabulary and phrase
-decks alike, so they name their section from the deck's kind.
+(`/dashboard`, `/study`, `/study/settings`, `/stats`, `/cards`) requires a
+login. Public pages that offer a per-user action — enrol, mark as learned —
+send anonymous visitors to the log-in page rather than failing.
+`HangukoWeb.Live.PerUserAction` gives that redirect one definition, and the
+deck enrol/unenrol toggle that rides along with it another.
 
 Shared UI lives in three component modules: `CoreComponents` (generated),
-`KoreanComponents` (`<.korean>` for the font and line-breaking rules,
-`<.speak_button>`, `<.jamo_tile>`, politeness badges) and `StudyComponents`
+`HangukoWeb.KoreanComponents` (the Korean font and line-breaking rules, the
+speak button, jamo tiles, politeness badges) and `HangukoWeb.StudyComponents`
 (rating buttons, queue counts, the daily-limit notice). `HangukoWeb.Labels`,
 imported everywhere those are, holds the one table of human-readable names
-for the domain's fixed enums — card templates and states, politeness levels,
-deck kinds — so a filter and the rows it filters read the same label instead
-of each naming it separately.
+for the domain's fixed enums, so a filter and the rows it filters read the
+same label instead of each naming it separately.
 
-Two JS hooks carry the behaviour that has to be client-side:
-
-* **`Speak`** — Web Speech API with `ko-KR`, or an `<audio>` element when an
-  item has pre-generated audio. The swap point for cloud TTS later.
-* **`StudyKeys`** — Space flips, 1–4 rate, S speaks, U undoes. It deliberately
-  leaves Enter and Space alone when focus is on a button or link reached by
-  keyboard, so the rating buttons stay usable without a mouse. It ignores keys
-  while the learner types in the answer box (Escape leaves the box, and Enter or
-Space still checks what was typed rather than skipping it). For a
-  moment after an answer is submitted, it also ignores Enter, because some
-  Korean input methods send a second Enter when committing the last syllable.
+`HangukoWeb.Layouts` documents the navigation, and `HangukoWeb.Nav` the hook
+that tells it which section is current.
 
 ## Testing approach
 
@@ -352,43 +238,9 @@ Space still checks what was typed rather than skipping it). For a
 * **LiveViews** are tested through `Phoenix.LiveViewTest` at the level a user
   experiences: flip, rate, undo, enrol, mark a lesson learned.
 
-## Deployment
-
-A production build is a **Docker image around a Mix release**, built from
-the `Dockerfile` that `mix phx.gen.release --docker` generated. It's an image
-rather than a release tarball because the image carries the runtime the
-release was compiled against (glibc, OpenSSL, locales). A tarball only runs on
-a host that matches the machine that built it.
-
-Two GitHub Actions workflows build it:
-
-* **CI** runs on pull requests and on pushes to `main`. It runs the
-  `mix precommit` checks against Postgres 18 and builds the docs with warnings
-  as errors, which enforces the documentation rule in `AGENTS.md`. It also
-  builds the image without pushing it, so a change that breaks the Dockerfile
-  fails in the pull request that caused it rather than at release time.
-* **Release** runs on `v*` tags. It refuses a tag that doesn't match `version`
-  in `mix.exs`, so the Git tag, the image tag and the app's own version can't
-  disagree. It then calls CI as a reusable workflow on the tagged commit, and
-  only if that passes does it push the image to GitHub Container Registry and
-  create a GitHub Release.
-
-**The curriculum is imported at deploy time.** Content lives in the database,
-loaded from the packs, but a release has no Mix to run
-`mix hanguko.content.import`. `Hanguko.Release.import_content/0` runs the same
-importer on the packs bundled in the release, and `bin/migrate` runs it right
-after the migrations. That order matters because a pack can use columns a
-migration adds. The importer is idempotent and all-or-nothing, so running it
-on every deploy is safe, and a release with an invalid pack fails at
-`bin/migrate`, before the new version starts serving.
-
-The Elixir and OTP versions are pinned in three places: the development
-machine (see the README), `ci.yml` and the `Dockerfile`. They have to move
-together, or CI would test on a different runtime than production runs.
-
 ## What comes next
 
 The remaining phases lean on what's already here rather than changing it:
-a card browser, production audio (cloud neural TTS clips
-that `Speak` already prefers over browser speech when a page passes one), and
-listening comprehension built on that audio.
+production audio (cloud neural TTS clips that `Speak` already prefers over
+browser speech when a page passes one), and listening comprehension built on
+that audio.

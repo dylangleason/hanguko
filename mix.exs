@@ -42,8 +42,10 @@ defmodule Hanguko.MixProject do
       extras: [
         "README.md": [title: "Overview"],
         "guides/architecture.md": [title: "Architecture"],
-        "guides/domain-model.md": [title: "Domain model"]
+        "guides/domain-model.md": [title: "Domain model"],
+        "guides/deployment.md": [title: "Deployment"]
       ],
+      before_closing_body_tag: &before_closing_body_tag/1,
       groups_for_extras: [Guides: ~r"guides/"],
       groups_for_modules: [
         Curriculum: [
@@ -81,6 +83,59 @@ defmodule Hanguko.MixProject do
       nest_modules_by_prefix: [Hanguko.Content, Hanguko.SRS, HangukoWeb]
     ]
   end
+
+  # ExDoc renders a ```mermaid block as a plain code block unless the page
+  # loads Mermaid itself, so the guides' diagrams need this to show up in
+  # `mix docs` output. Lifted from the ExDoc README ("Rendering Mermaid
+  # graphs"); the theme follows ExDoc's own light/dark class.
+  #
+  # The version is exact and carries an SRI hash, so the browser refuses a
+  # script that isn't the build we checked. Bump the two together: fetch the
+  # new URL and run
+  #
+  #     openssl dgst -sha384 -binary mermaid.min.js | openssl base64 -A
+  #
+  # A stale hash means the diagrams silently stay as code blocks, so re-open
+  # a guide in `doc/` after changing either.
+  @mermaid_version "12.0.0"
+  @mermaid_integrity "sha384-xzghz1GQ5u9HCpVskeDPqMsdogD1yvuMQbEK53+wi+G70+6J1AG0L2cfi9PHjDWI"
+
+  defp before_closing_body_tag(:html) do
+    """
+    <script defer
+            src="https://cdn.jsdelivr.net/npm/mermaid@#{@mermaid_version}/dist/mermaid.min.js"
+            integrity="#{@mermaid_integrity}"
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer"></script>
+    <script>
+      let mermaidInitialized = false;
+
+      window.addEventListener("exdoc:loaded", () => {
+        if (!mermaidInitialized) {
+          mermaid.initialize({
+            startOnLoad: false,
+            theme: document.body.className.includes("dark") ? "dark" : "default"
+          });
+          mermaidInitialized = true;
+        }
+
+        let id = 0;
+        for (const codeEl of document.querySelectorAll("pre code.mermaid")) {
+          const preEl = codeEl.parentElement;
+          const graphEl = document.createElement("div");
+          mermaid.render("mermaid-graph-" + id++, codeEl.textContent).then(({svg, bindFunctions}) => {
+            graphEl.innerHTML = svg;
+            bindFunctions?.(graphEl);
+            preEl.insertAdjacentElement("afterend", graphEl);
+            preEl.remove();
+          });
+        }
+      });
+    </script>
+    """
+  end
+
+  defp before_closing_body_tag(_), do: ""
 
   # Specifies which paths to compile per environment.
   defp elixirc_paths(:test), do: ["lib", "test/support"]
