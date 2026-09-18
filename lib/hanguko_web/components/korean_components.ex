@@ -52,7 +52,7 @@ defmodule HangukoWeb.KoreanComponents do
         "group inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full",
         "text-base-content/50 transition hover:bg-primary/10 hover:text-primary active:scale-90",
         "data-speaking:bg-primary/10 data-speaking:text-primary",
-        @size == "sm" && "size-7",
+        @size == "sm" && "size-8",
         @size == "md" && "size-9",
         @size == "lg" && "size-12",
         @class

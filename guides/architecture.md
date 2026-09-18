@@ -223,6 +223,22 @@ same label instead of each naming it separately.
 `HangukoWeb.Layouts` documents the navigation, and `HangukoWeb.Nav` the hook
 that tells it which section is current.
 
+Every page is laid out for a phone first: the nav collapses to a menu below
+1024px, and pages that put controls beside content (the card browser, the
+page header, the dashboard's counts) give the content its own line on a
+narrow screen. Two rules are easy to undo by accident and so live in
+`assets/css/app.css` next to the code that enforces them: Korean text breaks
+between words rather than inside them, and form fields are 16px below the
+`sm` breakpoint, because mobile Safari zooms the page in on a field with
+smaller text and never zooms back out.
+
+`priv/static/manifest.webmanifest` and the icons beside it, linked from the
+root layout, let the app be installed to a home screen — its own icon and
+window, without browser chrome. There is deliberately no service worker:
+studying offline would mean caching the curriculum *and* queueing reviews to
+replay, which is a feature in its own right rather than a side effect of the
+manifest.
+
 ## Testing approach
 
 * **Pure modules** (`Korean`, `Scheduler`) have unit tests plus StreamData

@@ -68,6 +68,28 @@ format — the keys a deck, item and grammar point take, and how an item keeps
 its identity when its text is corrected — is documented in
 `Hanguko.Content.Importer`.
 
+## Installing on a phone
+
+The app ships a web app manifest, so a browser can install it to a home
+screen and run it in its own window. Nothing works offline — see the web
+layer section of [guides/architecture.md](guides/architecture.md) for why.
+
+`priv/static/images/icon.svg` is the source for every icon. Regenerate them
+after editing it (`rsvg-convert` comes from `librsvg`):
+
+```sh
+for size in 192 512; do
+  rsvg-convert -w $size -h $size priv/static/images/icon.svg \
+    -o priv/static/images/icon-$size.png
+done
+rsvg-convert -w 180 -h 180 priv/static/images/icon.svg \
+  -o priv/static/images/apple-touch-icon.png
+```
+
+The sizes are the ones `priv/static/manifest.webmanifest` and the root layout
+name; `test/hanguko_web/pwa_test.exs` fails if an icon a manifest names isn't
+served.
+
 ## Tests
 
 ```sh

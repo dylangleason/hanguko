@@ -66,8 +66,10 @@ defmodule HangukoWeb.CoreComponents do
       class="toast toast-top toast-end z-50"
       {@rest}
     >
+      <%!-- The viewport caps the width, so on a narrow phone the toast's
+            close button can't end up off-screen --%>
       <div class={[
-        "alert w-80 sm:w-96 max-w-80 sm:max-w-96 text-wrap",
+        "alert w-80 sm:w-96 max-w-[calc(100vw-2rem)] sm:max-w-96 text-wrap",
         @kind == :info && "alert-info",
         @kind == :error && "alert-error"
       ]}>
@@ -355,7 +357,11 @@ defmodule HangukoWeb.CoreComponents do
 
   def header(assigns) do
     ~H"""
-    <header class={[@actions != [] && "flex items-center justify-between gap-6", "pb-4"]}>
+    <header class={[
+      @actions != [] &&
+        "flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-6",
+      "pb-4"
+    ]}>
       <div>
         <h1 class="text-lg font-semibold leading-8">
           {render_slot(@inner_block)}

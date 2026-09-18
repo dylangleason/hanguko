@@ -14,7 +14,7 @@ defmodule HangukoWeb.GrammarLive.Show do
         <.link
           navigate={~p"/grammar"}
           id="back-to-grammar"
-          class="inline-flex items-center gap-1 text-sm text-base-content/60 transition hover:text-base-content"
+          class="-my-1.5 inline-flex items-center gap-1 py-1.5 text-sm text-base-content/60 transition hover:text-base-content"
         >
           <.icon name="hero-arrow-left" class="size-4" /> All grammar
         </.link>
@@ -86,10 +86,10 @@ defmodule HangukoWeb.GrammarLive.Show do
                   class="border-t border-base-300"
                 >
                   <td class="py-2.5 pr-4 text-base-content/70">{row["when"]}</td>
-                  <td class="py-2.5 pr-4">
+                  <td class="py-2.5 pr-4 whitespace-nowrap">
                     <.korean class="font-semibold">{row["form"]}</.korean>
                   </td>
-                  <td class="py-2.5">
+                  <td class="py-2.5 whitespace-nowrap">
                     <.korean class="text-base-content/70">{row["example"]}</.korean>
                   </td>
                 </tr>
