@@ -5,7 +5,7 @@ phrases and grammar, studied with spaced repetition (FSRS).
 
 The curriculum lives in the repo as YAML content packs under `priv/content`
 and is loaded into the database by an importer, so lessons are reviewed the
-same way as code. Everything a learner does — enrolments, cards, review
+same way as code. Everything a learner does — enrollments, cards, review
 history — is per user and separate from that content.
 
 ## Requirements

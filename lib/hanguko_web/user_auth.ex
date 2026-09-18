@@ -108,7 +108,7 @@ defmodule HangukoWeb.UserAuth do
   #
   # When the session is created, rather than extended, the renew_session
   # function will clear the session to avoid fixation attacks. See the
-  # renew_session function to customize this behaviour.
+  # renew_session function to customize this behavior.
   defp create_or_extend_session(conn, user, params) do
     token = Accounts.generate_user_session_token(user)
     remember_me = get_session(conn, :user_remember_me)
