@@ -42,8 +42,10 @@ defmodule Hanguko.MixProject do
       extras: [
         "README.md": [title: "Overview"],
         "guides/architecture.md": [title: "Architecture"],
-        "guides/domain-model.md": [title: "Domain model"]
+        "guides/domain-model.md": [title: "Domain model"],
+        "guides/deployment.md": [title: "Deployment"]
       ],
+      before_closing_body_tag: &before_closing_body_tag/1,
       groups_for_extras: [Guides: ~r"guides/"],
       groups_for_modules: [
         Curriculum: [
@@ -81,6 +83,43 @@ defmodule Hanguko.MixProject do
       nest_modules_by_prefix: [Hanguko.Content, Hanguko.SRS, HangukoWeb]
     ]
   end
+
+  # ExDoc renders a ```mermaid block as a plain code block unless the page
+  # loads Mermaid itself, so the guides' diagrams need this to show up in
+  # `mix docs` output. Lifted from the ExDoc README ("Rendering Mermaid
+  # graphs"); the theme follows ExDoc's own light/dark class.
+  defp before_closing_body_tag(:html) do
+    """
+    <script defer src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+    <script>
+      let mermaidInitialized = false;
+
+      window.addEventListener("exdoc:loaded", () => {
+        if (!mermaidInitialized) {
+          mermaid.initialize({
+            startOnLoad: false,
+            theme: document.body.className.includes("dark") ? "dark" : "default"
+          });
+          mermaidInitialized = true;
+        }
+
+        let id = 0;
+        for (const codeEl of document.querySelectorAll("pre code.mermaid")) {
+          const preEl = codeEl.parentElement;
+          const graphEl = document.createElement("div");
+          mermaid.render("mermaid-graph-" + id++, codeEl.textContent).then(({svg, bindFunctions}) => {
+            graphEl.innerHTML = svg;
+            bindFunctions?.(graphEl);
+            preEl.insertAdjacentElement("afterend", graphEl);
+            preEl.remove();
+          });
+        }
+      });
+    </script>
+    """
+  end
+
+  defp before_closing_body_tag(_), do: ""
 
   # Specifies which paths to compile per environment.
   defp elixirc_paths(:test), do: ["lib", "test/support"]

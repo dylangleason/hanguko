@@ -17,13 +17,21 @@ what changed:
   change to the commands used day to day (its table is the list of those
   commands). Also update it when a workflow changes, such as how the
   curriculum is edited
-- **`guides/architecture.md`** — a new context, subsystem or pipeline; a new
-  rule in the study loop; a change to how time, scoping or content loading
-  works. Say **why** it is shaped that way, not just what it does — the
-  rationale is the part that can't be read off the code
+- **`guides/architecture.md`** — the *shape* of the system: its C4 context,
+  container and component views, the curriculum/progress split, and the rules
+  that cut across contexts (scoping, study days, queries). Update it for a new
+  context or an external dependency, or when one of those cross-cutting rules
+  changes. Say **why** it is shaped that way, not just what it does — the
+  rationale is the part that can't be read off the code.
+  **Feature mechanics do not go here.** If a rule can name one module, it
+  belongs in that module's `@moduledoc`; the guide links to it. The test: a
+  new contributor should be able to read this guide in a couple of minutes
 - **`guides/domain-model.md`** — a new table, a new column that carries
   meaning, a new relationship, or a new invariant. Keep the Mermaid ER
   diagram and the "rules worth keeping in mind" list in step with the schema
+- **`guides/deployment.md`** — anything about how a build reaches production:
+  the Dockerfile, the CI and release workflows, what `bin/migrate` does,
+  runtime configuration, the pinned Elixir/OTP versions
 - **`@moduledoc`** — every new module says what it is responsible for and how
   it relates to its neighbours. New public functions get a `@doc`. Invariants
   that a reader would otherwise have to infer (why a card has no `new` state,
@@ -38,6 +46,13 @@ Rules for writing it:
   confidently wrong is worse than none
 - Prefer explaining decisions and invariants over restating structure a
   reader can see. Never paste a file listing that will drift
+- **Never state a rule in two places.** A guide that repeats a moduledoc is
+  one copy that will go stale; link to the moduledoc instead. The rule lives
+  next to the code that enforces it
+- Mermaid diagrams use `flowchart` and `erDiagram`, never the experimental
+  `C4Context` / `C4Container` types, so they render the same on GitHub and in
+  `mix docs`. `mix.exs` loads Mermaid into the generated HTML through
+  `before_closing_body_tag/1`
 - Keep prose in `guides/`. `doc/` is git-ignored because `mix docs` (ExDoc)
   generates into it, so anything written there is lost
 - Add new guides to the `extras` list in `mix.exs` so `mix docs` picks them up
