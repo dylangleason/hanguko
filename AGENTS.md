@@ -5,6 +5,7 @@ This is a web application written using the Phoenix web framework.
 - Use `mix precommit` alias when you are done with all changes and fix any pending issues
 - Use the already included and available `:req` (`Req`) library for HTTP requests, **avoid** `:httpoison`, `:tesla`, and `:httpc`. Req is included by default and is the preferred HTTP client for Phoenix apps
 - Build queries in the context's `Queries` module (`Hanguko.Content.Queries`, `Hanguko.SRS.Queries`, `Hanguko.Progress.Queries`), never in the context itself. Query modules return `Ecto.Query` structs and never call `Repo`; contexts run them and own every transaction and lock. Name bindings with `as:` and have narrowing functions (`query -> query`) match on the binding name, not position. Contexts don't `import Ecto.Query`. `Hanguko.Accounts` is generated code and is exempt. See "Queries" in `guides/architecture.md`
+- Migrations use `:text` for string columns, never `:string`. Ecto's `:string` creates `varchar(255)`, an arbitrary limit that fails as a database error rather than a changeset error. In Postgres, `text` performs the same. Put a real length rule in the changeset with `validate_length`, plus a named `CHECK` constraint if the database must enforce it too. Existing `varchar(255)` columns are left as they are. Schema fields stay `:string` either way
 
 ### Documentation guidelines
 
