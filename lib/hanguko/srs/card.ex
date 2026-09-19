@@ -59,6 +59,16 @@ defmodule Hanguko.SRS.Card do
   def leech?(%__MODULE__{lapses: lapses}), do: lapses >= @leech_lapses
 
   @doc """
+  True if rating a card in `state` as `rating` is a lapse.
+
+  A lapse is forgetting something already learned: rating a `:review` card
+  `1` ("Again"). Every place that credits or reverses a lapse against
+  `lapses` must agree on this exact rule, or `lapses` (and the `leech?/1`
+  derived from it) will drift.
+  """
+  def lapse?(state, rating), do: state == :review and rating == 1
+
+  @doc """
   The templates studied for an item, in the order they are introduced.
   Letters are only studied in the recognition direction, and example
   sentences only as cloze deletions of the grammar they demonstrate.

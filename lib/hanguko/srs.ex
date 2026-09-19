@@ -187,7 +187,7 @@ defmodule Hanguko.SRS do
   end
 
   defp save_card(_user, _entry, %Card{} = card, schedule, rating, _now) do
-    lapsed? = card.state == :review and rating == 1
+    lapsed? = Card.lapse?(card.state, rating)
     lapses = card.lapses + if(lapsed?, do: 1, else: 0)
 
     card
@@ -239,7 +239,7 @@ defmodule Hanguko.SRS do
           {:ok, %{card: nil, item: log.card.item, template: log.card.template}}
 
         true ->
-          lapsed? = log.state_before == :review and log.rating == 1
+          lapsed? = Card.lapse?(log.state_before, log.rating)
 
           card =
             log.card
