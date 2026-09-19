@@ -62,9 +62,9 @@ defmodule Hanguko.SRS.Card do
   True if rating a card in `state` as `rating` is a lapse.
 
   A lapse is forgetting something already learned: rating a `:review` card
-  `1` ("Again"). `Hanguko.SRS.review_card/5` and `Hanguko.SRS.undo_review/2`
-  both need this to agree exactly, since undo subtracts the same lapse the
-  review added to `lapses`.
+  `1` ("Again"). Every place that credits or reverses a lapse against
+  `lapses` must agree on this exact rule, or `lapses` (and the `leech?/1`
+  derived from it) will drift.
   """
   def lapse?(state, rating), do: state == :review and rating == 1
 
