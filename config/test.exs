@@ -26,6 +26,12 @@ config :hanguko, HangukoWeb.Endpoint,
 # Deterministic review intervals in tests
 config :hanguko, Hanguko.SRS, fuzz: false
 
+# Configure the provider using a Fake to simulate an external API
+# handling generation of audio clips
+config :hanguko, Hanguko.Audio,
+  provider: Hanguko.Audio.Providers.Fake,
+  voice: "test-voice"
+
 # In test we don't send emails
 config :hanguko, Hanguko.Mailer, adapter: Swoosh.Adapters.Test
 

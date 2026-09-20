@@ -86,6 +86,12 @@ config :elixir, :time_zone_database, Tz.TimeZoneDatabase
 # bunched together forever (FSRS interval fuzzing).
 config :hanguko, Hanguko.SRS, fuzz: true
 
+# Configure the provider and default voice used to generate Korean
+# language audio clips
+config :hanguko, Hanguko.Audio,
+  provider: Hanguko.Audio.Providers.Google,
+  voice: "ko-KR-Chirp3-HD-Achernar"
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"

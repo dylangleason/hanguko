@@ -180,7 +180,7 @@ defmodule Hanguko.Korean do
   """
   def normalize(text) when is_binary(text) do
     text
-    |> :unicode.characters_to_nfc_binary()
+    |> nfc()
     |> String.downcase()
     |> String.replace(~r/[\p{P}\p{S}]/u, "")
     |> String.split()
@@ -233,6 +233,13 @@ defmodule Hanguko.Korean do
       |> pair_changes()
 
     {verdict, diff}
+  end
+
+  @doc """
+  Convert the Korean text using Unicode Normalization Form C (NFC)
+  """
+  def nfc(text) when is_binary(text) do
+    :unicode.characters_to_nfc_binary(text)
   end
 
   # A deletion next to an insertion is one character typed in place of
