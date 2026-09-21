@@ -9,9 +9,14 @@ defmodule Hanguko.SRSFixtures do
   @doc """
   Inserts a card for `user` and `item`. Defaults to a review card that is
   due at `attrs[:due]` (or now).
+
+  The default timestamps are relative to `attrs[:now]`, which defaults to the
+  wall clock. Tests that pin the time must pass the same instant as `:now`,
+  or the defaults drift as real time moves on: a card "introduced ten days
+  ago" by the wall clock can land after a pinned study day starts.
   """
   def card_fixture(user, item, attrs \\ %{}) do
-    now = DateTime.utc_now(:second)
+    {now, attrs} = Map.pop_lazy(Map.new(attrs), :now, fn -> DateTime.utc_now(:second) end)
 
     %Card{
       user_id: user.id,
@@ -25,7 +30,7 @@ defmodule Hanguko.SRSFixtures do
       introduced_at: DateTime.add(now, -10, :day),
       reps: 3
     }
-    |> struct(Map.new(attrs))
+    |> struct(attrs)
     |> Repo.insert!()
   end
 

@@ -85,12 +85,14 @@ defmodule Hanguko.SRS.QueueTest do
       # Introduced at 03:00 UTC, before today's 04:00 rollover: yesterday.
       card_fixture(user, a,
         introduced_at: ~U[2026-09-11 03:00:00Z],
-        due: ~U[2026-09-20 00:00:00Z]
+        due: ~U[2026-09-20 00:00:00Z],
+        now: @now
       )
 
       card_fixture(user, b,
         introduced_at: ~U[2026-09-11 05:00:00Z],
-        due: ~U[2026-09-20 00:00:00Z]
+        due: ~U[2026-09-20 00:00:00Z],
+        now: @now
       )
 
       # Only b counts against today's limit, leaving one slot (c's recognition
@@ -108,12 +110,14 @@ defmodule Hanguko.SRS.QueueTest do
 
       card_fixture(user, a,
         introduced_at: DateTime.add(@now, -1, :day),
-        due: DateTime.add(@now, 3, :day)
+        due: DateTime.add(@now, 3, :day),
+        now: @now
       )
 
       card_fixture(user, b,
         introduced_at: DateTime.add(@now, -3600),
-        due: DateTime.add(@now, 3, :day)
+        due: DateTime.add(@now, 3, :day),
+        now: @now
       )
 
       # a's recall is available (recognition introduced yesterday), b's is not
@@ -141,14 +145,14 @@ defmodule Hanguko.SRS.QueueTest do
       {:ok, _} = SRS.update_settings(scope, %{daily_new_limit: 2})
       refute queue(scope).new_limit_reached
 
-      card_fixture(user, a, introduced_at: @now, due: DateTime.add(@now, 3, :day))
-      card_fixture(user, b, introduced_at: @now, due: DateTime.add(@now, 3, :day))
+      card_fixture(user, a, introduced_at: @now, due: DateTime.add(@now, 3, :day), now: @now)
+      card_fixture(user, b, introduced_at: @now, due: DateTime.add(@now, 3, :day), now: @now)
       queue = queue(scope)
       assert queue.new == [] and queue.new_limit_reached
 
       # Once every item's recognition card was introduced today, nothing is
       # waiting (recall cards only become available tomorrow).
-      card_fixture(user, c, introduced_at: @now, due: DateTime.add(@now, 3, :day))
+      card_fixture(user, c, introduced_at: @now, due: DateTime.add(@now, 3, :day), now: @now)
       refute queue(scope).new_limit_reached
     end
 
@@ -174,7 +178,7 @@ defmodule Hanguko.SRS.QueueTest do
       {:ok, _} = Hanguko.Content.mark_grammar_learned(scope, point)
 
       card =
-        card_fixture(user, example, template: :cloze, due: DateTime.add(@now, -60))
+        card_fixture(user, example, template: :cloze, due: DateTime.add(@now, -60), now: @now)
 
       assert Enum.map(queue(scope).review, & &1.item.id) == [example.id]
 
@@ -194,7 +198,8 @@ defmodule Hanguko.SRS.QueueTest do
 
       card_fixture(user, letter,
         introduced_at: DateTime.add(@now, -2, :day),
-        due: DateTime.add(@now, 3, :day)
+        due: DateTime.add(@now, 3, :day),
+        now: @now
       )
 
       refute Enum.any?(queue(scope).new, &(&1.item.id == letter.id))
@@ -208,9 +213,9 @@ defmodule Hanguko.SRS.QueueTest do
       deck: deck
     } do
       [a, b, c, d] = items(deck, 4)
-      card_fixture(user, a, state: :review, due: DateTime.add(@now, 6, :hour))
-      card_fixture(user, b, state: :learning, step: 1, due: DateTime.add(@now, -60))
-      card_fixture(user, c, state: :review, due: ~U[2026-09-12 05:00:00Z])
+      card_fixture(user, a, state: :review, due: DateTime.add(@now, 6, :hour), now: @now)
+      card_fixture(user, b, state: :learning, step: 1, due: DateTime.add(@now, -60), now: @now)
+      card_fixture(user, c, state: :review, due: ~U[2026-09-12 05:00:00Z], now: @now)
 
       queue = queue(scope)
       assert Enum.map(queue.learning, & &1.item.id) == [b.id]
@@ -230,8 +235,14 @@ defmodule Hanguko.SRS.QueueTest do
     } do
       [a, b] = items(deck, 2)
       {:ok, _} = SRS.update_settings(scope, %{daily_new_limit: 0})
-      card_fixture(user, a, state: :learning, step: 0, due: DateTime.add(@now, 5 * 60))
-      card_fixture(user, b, state: :relearning, step: 0, due: DateTime.add(@now, 2 * 3600))
+      card_fixture(user, a, state: :learning, step: 0, due: DateTime.add(@now, 5 * 60), now: @now)
+
+      card_fixture(user, b,
+        state: :relearning,
+        step: 0,
+        due: DateTime.add(@now, 2 * 3600),
+        now: @now
+      )
 
       queue = queue(scope)
       assert Queue.next(queue).item.id == a.id
@@ -245,9 +256,9 @@ defmodule Hanguko.SRS.QueueTest do
     test "reviews are limited per day, oldest first", %{scope: scope, user: user, deck: deck} do
       [a, b, c] = items(deck, 3)
       {:ok, _} = SRS.update_settings(scope, %{daily_review_limit: 2, daily_new_limit: 0})
-      card_fixture(user, a, due: DateTime.add(@now, -3600))
-      card_fixture(user, b, due: DateTime.add(@now, -2 * 86_400))
-      card_fixture(user, c, due: DateTime.add(@now, -86_400))
+      card_fixture(user, a, due: DateTime.add(@now, -3600), now: @now)
+      card_fixture(user, b, due: DateTime.add(@now, -2 * 86_400), now: @now)
+      card_fixture(user, c, due: DateTime.add(@now, -86_400), now: @now)
 
       queue = queue(scope)
       assert Enum.map(queue.review, & &1.item.id) == [b.id, c.id]
@@ -265,12 +276,12 @@ defmodule Hanguko.SRS.QueueTest do
     test "siblings are buried: one card per item per day", %{scope: scope, user: user, deck: deck} do
       [a, b] = items(deck, 2)
       {:ok, _} = SRS.update_settings(scope, %{daily_new_limit: 0})
-      card_fixture(user, a, template: :recognition, due: DateTime.add(@now, -60))
-      card_fixture(user, a, template: :recall, due: DateTime.add(@now, -30))
-      card_fixture(user, b, template: :recall, due: DateTime.add(@now, -10))
+      card_fixture(user, a, template: :recognition, due: DateTime.add(@now, -60), now: @now)
+      card_fixture(user, a, template: :recall, due: DateTime.add(@now, -30), now: @now)
+      card_fixture(user, b, template: :recall, due: DateTime.add(@now, -10), now: @now)
 
       b_recognition =
-        card_fixture(user, b, template: :recognition, due: DateTime.add(@now, 3, :day))
+        card_fixture(user, b, template: :recognition, due: DateTime.add(@now, 3, :day), now: @now)
 
       assert Enum.map(queue(scope).review, &{&1.item.id, &1.template}) ==
                [{a.id, :recognition}, {b.id, :recall}]
@@ -290,11 +301,11 @@ defmodule Hanguko.SRS.QueueTest do
       [a, b, c] = items(deck, 3)
       other = deck_fixture()
       d = item_fixture(other)
-      card_fixture(user, a, due: DateTime.add(@now, -60))
-      card_fixture(user, b, due: DateTime.add(@now, -60), suspended: true)
+      card_fixture(user, a, due: DateTime.add(@now, -60), now: @now)
+      card_fixture(user, b, due: DateTime.add(@now, -60), suspended: true, now: @now)
       Hanguko.Repo.update!(Ecto.Changeset.change(c, retired: true))
-      card_fixture(user, c, due: DateTime.add(@now, -60))
-      card_fixture(user, d, due: DateTime.add(@now, -60))
+      card_fixture(user, c, due: DateTime.add(@now, -60), now: @now)
+      card_fixture(user, d, due: DateTime.add(@now, -60), now: @now)
 
       assert Enum.map(queue(scope).review, & &1.item.id) == [a.id]
 
@@ -307,8 +318,8 @@ defmodule Hanguko.SRS.QueueTest do
       other = deck_fixture(position: 2)
       SRS.enroll_deck(scope, other)
       b = item_fixture(other)
-      card_fixture(user, a, due: DateTime.add(@now, -60))
-      card_fixture(user, b, due: DateTime.add(@now, -60))
+      card_fixture(user, a, due: DateTime.add(@now, -60), now: @now)
+      card_fixture(user, b, due: DateTime.add(@now, -60), now: @now)
 
       assert Enum.map(queue(scope, @now, deck: other).review, & &1.item.id) == [b.id]
       assert queue(scope, @now, deck: other).new == []
