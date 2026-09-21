@@ -3,12 +3,17 @@ defmodule Hanguko.SRSTest do
 
   import Hanguko.AccountsFixtures
   import Hanguko.ContentFixtures
-  import Hanguko.SRSFixtures
+  import Hanguko.SRSFixtures, except: [card_fixture: 2, card_fixture: 3]
 
   alias Hanguko.SRS
   alias Hanguko.SRS.{Card, ReviewLog, Settings}
+  alias Hanguko.SRSFixtures
 
   @now ~U[2026-09-11 12:00:00Z]
+
+  defp card_fixture(user, item, attrs \\ %{}) do
+    SRSFixtures.card_fixture(user, item, Map.put(Map.new(attrs), :now, @now))
+  end
 
   describe "deck enrollment" do
     test "is per user and idempotent" do
@@ -111,8 +116,7 @@ defmodule Hanguko.SRSTest do
       card =
         card_fixture(scope.user, item,
           due: @now,
-          last_review_at: DateTime.add(@now, -5, :day),
-          now: @now
+          last_review_at: DateTime.add(@now, -5, :day)
         )
 
       assert {:ok, log} =
@@ -124,7 +128,7 @@ defmodule Hanguko.SRSTest do
     end
 
     test "a card forgotten too often is suspended as a leech", %{scope: scope, item: item} do
-      card = card_fixture(scope.user, item, due: @now, lapses: Card.leech_lapses() - 1, now: @now)
+      card = card_fixture(scope.user, item, due: @now, lapses: Card.leech_lapses() - 1)
 
       assert {:ok, _} =
                SRS.review_card(scope, %{card: card, item: item, template: :recognition}, 1, @now)
@@ -139,7 +143,7 @@ defmodule Hanguko.SRSTest do
       scope: scope,
       item: item
     } do
-      card = card_fixture(scope.user, item, due: @now, lapses: Card.leech_lapses() - 2, now: @now)
+      card = card_fixture(scope.user, item, due: @now, lapses: Card.leech_lapses() - 2)
 
       assert {:ok, _} =
                SRS.review_card(scope, %{card: card, item: item, template: :recognition}, 1, @now)
@@ -148,7 +152,7 @@ defmodule Hanguko.SRSTest do
     end
 
     test "reviews are scheduled from the card's latest state", %{scope: scope, item: item} do
-      card = card_fixture(scope.user, item, state: :learning, step: 0, due: @now, now: @now)
+      card = card_fixture(scope.user, item, state: :learning, step: 0, due: @now)
       stale_entry = %{card: card, item: item, template: :recognition}
 
       {:ok, _} = SRS.review_card(scope, stale_entry, 3, @now)
@@ -160,7 +164,7 @@ defmodule Hanguko.SRSTest do
 
     test "cards of other users can't be reviewed", %{item: item} do
       other = user_scope_fixture()
-      card = card_fixture(user_fixture(), item, now: @now)
+      card = card_fixture(user_fixture(), item)
 
       assert {:error, :stale} =
                SRS.review_card(other, %{card: card, item: item, template: :recognition}, 3, @now)
@@ -182,12 +186,11 @@ defmodule Hanguko.SRSTest do
         scope: scope,
         food: food,
         verbs: verbs,
-        water: card_fixture(scope.user, water, due: @now, now: @now),
+        water: card_fixture(scope.user, water, due: @now),
         eat:
           card_fixture(scope.user, eat,
             template: :recall,
-            due: DateTime.add(@now, 1, :day),
-            now: @now
+            due: DateTime.add(@now, 1, :day)
           )
       }
     end
@@ -202,7 +205,7 @@ defmodule Hanguko.SRSTest do
       assert second.id == eat.id
       assert first.item.deck.title == "Food"
 
-      card_fixture(user_fixture(), item_fixture(deck_fixture()), now: @now)
+      card_fixture(user_fixture(), item_fixture(deck_fixture()))
       assert %{total: 2} = SRS.browse_cards(scope)
     end
 
@@ -253,8 +256,7 @@ defmodule Hanguko.SRSTest do
       leech =
         card_fixture(scope.user, item_fixture(food),
           lapses: Card.leech_lapses(),
-          suspended: true,
-          now: @now
+          suspended: true
         )
 
       assert %{cards: [found], total: 1} = SRS.browse_cards(scope, status: :leech)
@@ -286,7 +288,7 @@ defmodule Hanguko.SRSTest do
     setup do
       scope = user_scope_fixture()
       item = item_fixture(deck_fixture())
-      %{scope: scope, item: item, card: card_fixture(scope.user, item, due: @now, now: @now)}
+      %{scope: scope, item: item, card: card_fixture(scope.user, item, due: @now)}
     end
 
     test "suspending holds a card's place, and unsuspending gives it back", %{
@@ -331,8 +333,7 @@ defmodule Hanguko.SRSTest do
         card_fixture(scope.user, item_fixture(deck_fixture()),
           lapses: Card.leech_lapses(),
           suspended: true,
-          due: @now,
-          now: @now
+          due: @now
         )
 
       assert {:ok, reset} = SRS.reset_card(scope, card.id, @now)
@@ -341,7 +342,7 @@ defmodule Hanguko.SRSTest do
     end
 
     test "another learner's card can't be touched", %{scope: scope} do
-      other = card_fixture(user_fixture(), item_fixture(deck_fixture()), now: @now)
+      other = card_fixture(user_fixture(), item_fixture(deck_fixture()))
 
       assert {:error, :not_found} = SRS.suspend_card(scope, other.id)
       assert {:error, :not_found} = SRS.reset_card(scope, other.id, @now)
@@ -370,7 +371,7 @@ defmodule Hanguko.SRSTest do
     end
 
     test "undoing a review restores the card", %{scope: scope, item: item} do
-      card = card_fixture(scope.user, item, due: @now, now: @now)
+      card = card_fixture(scope.user, item, due: @now)
 
       {:ok, log} =
         SRS.review_card(scope, %{card: card, item: item, template: :recognition}, 1, @now)
@@ -405,7 +406,7 @@ defmodule Hanguko.SRSTest do
       scope: scope,
       item: item
     } do
-      card = card_fixture(scope.user, item, state: :learning, step: 0, due: @now, now: @now)
+      card = card_fixture(scope.user, item, state: :learning, step: 0, due: @now)
       entry = %{card: card, item: item, template: :recognition}
       {:ok, first} = SRS.review_card(scope, entry, 3, @now)
       {:ok, second} = SRS.review_card(scope, entry, 3, DateTime.add(@now, 600))
@@ -426,7 +427,7 @@ defmodule Hanguko.SRSTest do
     apple = item_fixture(food, position: 1)
     item_fixture(food, position: 2)
     item_fixture(places, position: 1)
-    card_fixture(scope.user, apple, due: DateTime.add(@now, -60), now: @now)
+    card_fixture(scope.user, apple, due: DateTime.add(@now, -60))
 
     {:ok, _} =
       SRS.review_card(
