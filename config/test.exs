@@ -30,7 +30,8 @@ config :hanguko, Hanguko.SRS, fuzz: false
 # handling generation of audio clips
 config :hanguko, Hanguko.Audio,
   provider: Hanguko.Audio.Providers.Fake,
-  voice: "test-voice"
+  voice: "test-voice",
+  storage_dir: "tmp/audio"
 
 # In test we don't send emails
 config :hanguko, Hanguko.Mailer, adapter: Swoosh.Adapters.Test
