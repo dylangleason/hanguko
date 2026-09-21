@@ -2,7 +2,8 @@ defmodule Hanguko.AudioTest do
   use ExUnit.Case, async: true
 
   alias Hanguko.Audio
-  alias Hanguko.Audio.Providers
+  alias Hanguko.Audio.Providers.Google
+  alias Hanguko.Fakes.AudioProvider, as: Fake
 
   describe "clip_key/2" do
     test "same text gives the same key" do
@@ -22,8 +23,7 @@ defmodule Hanguko.AudioTest do
     end
 
     test "different provider options give different keys" do
-      refute Audio.clip_key("한", provider: Providers.Google) ==
-               Audio.clip_key("한", provider: Providers.Fake)
+      refute Audio.clip_key("한", provider: Google) == Audio.clip_key("한", provider: Fake)
     end
 
     test "different voice options give different keys" do

@@ -22,7 +22,7 @@ defmodule Hanguko.Audio.StorageTest do
       assert expected == File.read!(Storage.Local.full_path(path))
     end
 
-    test "write data to an invalid path resutls in error", %{path: path} do
+    test "write data to an invalid path results in error", %{path: path} do
       Storage.Local.put(path, "bad data", "audio/mpeg")
       result = Storage.Local.put(Path.join(path, "bad/dir/file.mp3"), "bad data", "audio/mpeg")
       assert {:error, :enotdir} == result
