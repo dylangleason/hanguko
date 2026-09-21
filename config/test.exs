@@ -29,7 +29,7 @@ config :hanguko, Hanguko.SRS, fuzz: false
 # Configure the provider using a Fake to simulate an external API
 # handling generation of audio clips
 config :hanguko, Hanguko.Audio,
-  provider: Hanguko.Audio.Providers.Fake,
+  provider: Hanguko.Fakes.AudioProvider,
   voice: "test-voice",
   storage_dir: "tmp/audio"
 
