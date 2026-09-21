@@ -64,16 +64,13 @@ defmodule Hanguko.SRS.Queue do
 
       deck_ids ->
         {learning, ahead, later} = learning_cards(user_id, deck_ids, now, day_end)
-        reviewed_today = items_reviewed_since(user_id, day_start)
+        {reviewed_item_ids, reviewed_cards_by_item} = reviewed_today(user_id, day_start)
 
         {review, review_limit_reached} =
-          review_cards(user_id, deck_ids, settings, day_start, day_end, reviewed_today)
+          review_cards(user_id, deck_ids, settings, day_start, day_end, reviewed_cards_by_item)
 
         busy_items =
-          MapSet.union(
-            MapSet.new(reviewed_today, fn {item_id, _card_id} -> item_id end),
-            MapSet.new(learning ++ ahead ++ review, & &1.item.id)
-          )
+          MapSet.union(reviewed_item_ids, MapSet.new(learning ++ ahead ++ review, & &1.item.id))
 
         {new, new_limit_reached} = new_entries(user_id, deck_ids, settings, day_start, busy_items)
 
@@ -141,7 +138,7 @@ defmodule Hanguko.SRS.Queue do
   end
 
   # Returns {entries, limit_reached?}.
-  defp review_cards(user_id, deck_ids, settings, day_start, day_end, reviewed_today) do
+  defp review_cards(user_id, deck_ids, settings, day_start, day_end, reviewed_cards_by_item) do
     budget = max(settings.daily_review_limit - reviews_done_since(user_id, day_start), 0)
 
     cards = due_cards(user_id, deck_ids, :review, day_end)
@@ -150,10 +147,8 @@ defmodule Hanguko.SRS.Queue do
     # reviewed today or comes earlier in the queue.
     {entries, _seen} =
       Enum.flat_map_reduce(cards, MapSet.new(), fn card, seen ->
-        sibling_reviewed? =
-          Enum.any?(reviewed_today, fn {item_id, card_id} ->
-            item_id == card.item_id and card_id != card.id
-          end)
+        reviewed_card_ids = Map.get(reviewed_cards_by_item, card.item_id, MapSet.new())
+        sibling_reviewed? = MapSet.size(MapSet.delete(reviewed_card_ids, card.id)) > 0
 
         if sibling_reviewed? or MapSet.member?(seen, card.item_id) do
           {[], seen}
@@ -173,12 +168,22 @@ defmodule Hanguko.SRS.Queue do
     |> Repo.aggregate(:count)
   end
 
-  defp items_reviewed_since(user_id, day_start) do
-    user_id
-    |> Queries.review_logs()
-    |> Queries.reviewed_since(day_start)
-    |> Queries.reviewed_item_cards()
-    |> Repo.all()
+  # One pass over today's reviewed {item_id, card_id} pairs, producing both
+  # the set of reviewed item ids (for `busy_items`) and a map of item id to
+  # the set of its reviewed card ids (for sibling burying), so both callers
+  # avoid rescanning the list.
+  defp reviewed_today(user_id, day_start) do
+    pairs =
+      user_id
+      |> Queries.review_logs()
+      |> Queries.reviewed_since(day_start)
+      |> Queries.reviewed_item_cards()
+      |> Repo.all()
+
+    Enum.reduce(pairs, {MapSet.new(), %{}}, fn {item_id, card_id}, {item_ids, by_item} ->
+      {MapSet.put(item_ids, item_id),
+       Map.update(by_item, item_id, MapSet.new([card_id]), &MapSet.put(&1, card_id))}
+    end)
   end
 
   defp entry(%Card{} = card), do: %{card: card, item: card.item, template: card.template}
