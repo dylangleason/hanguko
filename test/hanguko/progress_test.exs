@@ -3,12 +3,17 @@ defmodule Hanguko.ProgressTest do
 
   import Hanguko.AccountsFixtures
   import Hanguko.ContentFixtures
-  import Hanguko.SRSFixtures
+  import Hanguko.SRSFixtures, except: [card_fixture: 2, card_fixture: 3]
 
   alias Hanguko.{Progress, SRS}
+  alias Hanguko.SRSFixtures
 
   # Noon in Seoul on Tuesday 15 September 2026.
   @now ~U[2026-09-15 03:00:00Z]
+
+  defp card_fixture(user, item, attrs \\ %{}) do
+    SRSFixtures.card_fixture(user, item, Map.put(Map.new(attrs), :now, @now))
+  end
 
   # A wall-clock time in Seoul, as a UTC timestamp.
   defp seoul(date, hour, minute \\ 0) do
@@ -148,7 +153,9 @@ defmodule Hanguko.ProgressTest do
 
     # Cards the queue won't show
     due.(~D[2026-09-15], 9, %{suspended: true})
+
     card_fixture(user, item_fixture(deck, retired: true), due: seoul(~D[2026-09-15], 9))
+
     card_fixture(user, item_fixture(deck_fixture()), due: seoul(~D[2026-09-15], 9))
 
     forecast = Progress.overview(scope, @now).forecast

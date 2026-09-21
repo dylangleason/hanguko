@@ -3,12 +3,17 @@ defmodule Hanguko.SRSTest do
 
   import Hanguko.AccountsFixtures
   import Hanguko.ContentFixtures
-  import Hanguko.SRSFixtures
+  import Hanguko.SRSFixtures, except: [card_fixture: 2, card_fixture: 3]
 
   alias Hanguko.SRS
   alias Hanguko.SRS.{Card, ReviewLog, Settings}
+  alias Hanguko.SRSFixtures
 
   @now ~U[2026-09-11 12:00:00Z]
+
+  defp card_fixture(user, item, attrs \\ %{}) do
+    SRSFixtures.card_fixture(user, item, Map.put(Map.new(attrs), :now, @now))
+  end
 
   describe "deck enrollment" do
     test "is per user and idempotent" do
@@ -109,7 +114,10 @@ defmodule Hanguko.SRSTest do
 
     test "a forgotten review card lapses", %{scope: scope, item: item} do
       card =
-        card_fixture(scope.user, item, due: @now, last_review_at: DateTime.add(@now, -5, :day))
+        card_fixture(scope.user, item,
+          due: @now,
+          last_review_at: DateTime.add(@now, -5, :day)
+        )
 
       assert {:ok, log} =
                SRS.review_card(scope, %{card: card, item: item, template: :recognition}, 1, @now)
@@ -179,7 +187,11 @@ defmodule Hanguko.SRSTest do
         food: food,
         verbs: verbs,
         water: card_fixture(scope.user, water, due: @now),
-        eat: card_fixture(scope.user, eat, template: :recall, due: DateTime.add(@now, 1, :day))
+        eat:
+          card_fixture(scope.user, eat,
+            template: :recall,
+            due: DateTime.add(@now, 1, :day)
+          )
       }
     end
 

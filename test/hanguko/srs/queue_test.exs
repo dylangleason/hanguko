@@ -3,14 +3,19 @@ defmodule Hanguko.SRS.QueueTest do
 
   import Hanguko.AccountsFixtures
   import Hanguko.ContentFixtures
-  import Hanguko.SRSFixtures
+  import Hanguko.SRSFixtures, except: [card_fixture: 2, card_fixture: 3]
 
   alias Hanguko.SRS
   alias Hanguko.SRS.Queue
+  alias Hanguko.SRSFixtures
 
   # With the default settings (UTC, 04:00 rollover) this study day runs from
   # 2026-09-11 04:00 to 2026-09-12 04:00 UTC.
   @now ~U[2026-09-11 12:00:00Z]
+
+  defp card_fixture(user, item, attrs \\ %{}) do
+    SRSFixtures.card_fixture(user, item, Map.put(Map.new(attrs), :now, @now))
+  end
 
   setup do
     scope = user_scope_fixture()
@@ -231,7 +236,12 @@ defmodule Hanguko.SRS.QueueTest do
       [a, b] = items(deck, 2)
       {:ok, _} = SRS.update_settings(scope, %{daily_new_limit: 0})
       card_fixture(user, a, state: :learning, step: 0, due: DateTime.add(@now, 5 * 60))
-      card_fixture(user, b, state: :relearning, step: 0, due: DateTime.add(@now, 2 * 3600))
+
+      card_fixture(user, b,
+        state: :relearning,
+        step: 0,
+        due: DateTime.add(@now, 2 * 3600)
+      )
 
       queue = queue(scope)
       assert Queue.next(queue).item.id == a.id
