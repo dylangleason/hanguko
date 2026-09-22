@@ -91,6 +91,7 @@ config :hanguko, Hanguko.SRS, fuzz: true
 config :hanguko, Hanguko.Audio,
   provider: Hanguko.Audio.Providers.Google,
   voice: "ko-KR-Chirp3-HD-Achernar",
+  storage: Hanguko.Audio.Storage.Local,
   storage_url_prefix: "/audio"
 
 # Import environment specific config. This must remain at the bottom
