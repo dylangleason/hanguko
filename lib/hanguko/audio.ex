@@ -57,38 +57,24 @@ defmodule Hanguko.Audio do
   Takes the same `:provider` and `:voice` options as `clip_key/2`.
   """
   def urls_for(texts, opts \\ []) do
-    {canonical_texts, keys} =
-      for text <- texts, reduce: {MapSet.new(), []} do
-        {a, b} -> {MapSet.put(a, canonical(text)), b ++ [clip_key(text, opts)]}
-      end
+    provider = Keyword.get_lazy(opts, :provider, &configured_provider/0)
 
-    case Enum.reject(keys, &is_nil/1) do
-      [] ->
-        %{}
+    if provider do
+      opts = Keyword.put(opts, :provider, provider)
+      storage = Keyword.get_lazy(opts, :storage, &configured_storage/0)
 
-      keys ->
-        storage = Keyword.get_lazy(opts, :storage, &configured_storage/0)
+      keys = Map.new(texts, &{&1, clip_key(&1, opts)})
 
-        text_map =
-          Queries.clips()
-          |> Queries.with_key(keys)
-          |> Queries.to_map([:text, :storage_path])
-          |> Repo.all()
-          |> Enum.map(&{&1[:text], storage.url(&1[:storage_path])})
-          |> Enum.into(%{})
+      urls =
+        Queries.clips()
+        |> Queries.with_key(Map.values(keys))
+        |> Queries.to_map([:key, :storage_path])
+        |> Repo.all()
+        |> Map.new(&{&1.key, storage.url(&1.storage_path)})
 
-        # Get a diff of any remaining texts that are in non-canonical form
-        # and add them as keys back to the text map, pointing them the same URL
-        # as their canonical form.
-        texts
-        |> MapSet.new()
-        |> MapSet.difference(canonical_texts)
-        |> Enum.reduce(text_map, fn item, acc ->
-          case acc[canonical(item)] do
-            nil -> acc
-            url -> Map.put(acc, item, url)
-          end
-        end)
+      for {text, key} <- keys, url = urls[key], into: %{}, do: {text, url}
+    else
+      %{}
     end
   end
 
