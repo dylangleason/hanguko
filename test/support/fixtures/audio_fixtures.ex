@@ -26,7 +26,7 @@ defmodule Hanguko.AudioFixtures do
 
     %Clip{
       key: key,
-      text: text,
+      text: Audio.canonical(text),
       # byte_size should actually be audio for real, non test
       # data. just use text here as the input since it doesn't really
       # matter for the fixture
