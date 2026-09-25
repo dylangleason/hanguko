@@ -242,6 +242,13 @@ defmodule Hanguko.Korean do
     :unicode.characters_to_nfc_binary(text)
   end
 
+  @doc """
+  Predicate to test whether a bit of text is valid Korean text
+  """
+  def text?(text) do
+    Regex.match?(~r/\p{Hangul}/u, text) and Regex.match?(~r/^[\p{Hangul}\p{P}\s\d]+$/u, text)
+  end
+
   # A deletion next to an insertion is one character typed in place of
   # another; pair them up so the jamo can be compared.
   defp pair_changes([{:del, typed}, {:ins, expected} | rest]),
