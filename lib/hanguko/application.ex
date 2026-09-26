@@ -14,6 +14,7 @@ defmodule Hanguko.Application do
       {Phoenix.PubSub, name: Hanguko.PubSub},
       # Start a worker by calling: Hanguko.Worker.start_link(arg)
       # {Hanguko.Worker, arg},
+      Hanguko.Audio.RateLimiter,
       # Start to serve requests, typically the last entry
       HangukoWeb.Endpoint
     ]

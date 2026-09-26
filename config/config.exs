@@ -92,7 +92,9 @@ config :hanguko, Hanguko.Audio,
   provider: Hanguko.Audio.Providers.Google,
   voice: "ko-KR-Chirp3-HD-Achernar",
   storage: Hanguko.Audio.Storage.Local,
-  storage_url_prefix: "/audio"
+  storage_url_prefix: "/audio",
+  on_demand_rate: 30,
+  monthly_on_demand_chars: 200_000
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
