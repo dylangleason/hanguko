@@ -125,27 +125,4 @@ defmodule HangukoWeb.StudyComponents do
     </div>
     """
   end
-
-  @doc """
-  Formats an interval in seconds compactly: `"1m"`, `"10m"`, `"3h"`, `"4d"`,
-  `"2.5mo"`, `"1.2y"`.
-  """
-  def format_interval(seconds) when is_integer(seconds) do
-    cond do
-      seconds < 60 -> "<1m"
-      seconds < 3600 -> "#{div(seconds, 60)}m"
-      seconds < 86_400 -> "#{round(seconds / 3600)}h"
-      seconds < 30 * 86_400 -> "#{round(seconds / 86_400)}d"
-      seconds < 365 * 86_400 -> "#{decimal(seconds / (30 * 86_400))}mo"
-      true -> "#{decimal(seconds / (365 * 86_400))}y"
-    end
-  end
-
-  defp decimal(value) do
-    rounded = Float.round(value, 1)
-
-    if rounded == trunc(rounded),
-      do: Integer.to_string(trunc(rounded)),
-      else: Float.to_string(rounded)
-  end
 end
