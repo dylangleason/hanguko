@@ -57,11 +57,33 @@ defmodule Hanguko.Progress.Queries do
   end
 
   @doc """
-  The state, suspension and stability of each of `user_id`'s cards of active
-  items, whether or not their deck is still enrolled.
+  `%{learning: count, relearning: count, young: count, mature: count,
+  suspended: count, total: count}` for `user_id`'s cards of active items,
+  whether or not their deck is still enrolled.
+
+  Suspended cards are counted only under `:suspended`. A review card counts
+  as `:mature` once `stability` reaches `mature_stability_days`; a missing
+  stability counts as 0, so it's `:young`.
   """
-  def card_standings(user_id) do
+  def card_counts(user_id, mature_stability_days) do
     from [card: c] in SRSQueries.active_cards(user_id),
-      select: %{state: c.state, suspended: c.suspended, stability: c.stability}
+      select: %{
+        learning: filter(count(c.id), not c.suspended and c.state == :learning),
+        relearning: filter(count(c.id), not c.suspended and c.state == :relearning),
+        young:
+          filter(
+            count(c.id),
+            not c.suspended and c.state == :review and
+              coalesce(c.stability, 0) < ^mature_stability_days
+          ),
+        mature:
+          filter(
+            count(c.id),
+            not c.suspended and c.state == :review and
+              coalesce(c.stability, 0) >= ^mature_stability_days
+          ),
+        suspended: filter(count(c.id), c.suspended),
+        total: count(c.id)
+      }
   end
 end

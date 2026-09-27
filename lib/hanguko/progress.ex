@@ -163,20 +163,6 @@ defmodule Hanguko.Progress do
   # Every card the learner has, whether or not its deck is still enrolled,
   # except those of retired content.
   defp card_counts(user_id) do
-    cards = user_id |> Queries.card_standings() |> Repo.all()
-
-    {suspended, active} = Enum.split_with(cards, & &1.suspended)
-    {mature, young} = active |> Enum.filter(&(&1.state == :review)) |> Enum.split_with(&mature?/1)
-
-    %{
-      learning: Enum.count(active, &(&1.state == :learning)),
-      relearning: Enum.count(active, &(&1.state == :relearning)),
-      young: length(young),
-      mature: length(mature),
-      suspended: length(suspended),
-      total: length(cards)
-    }
+    user_id |> Queries.card_counts(@mature_stability_days) |> Repo.one()
   end
-
-  defp mature?(%{stability: stability}), do: (stability || 0) >= @mature_stability_days
 end
