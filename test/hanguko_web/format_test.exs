@@ -29,4 +29,23 @@ defmodule HangukoWeb.FormatTest do
       assert Format.format_number(1_234_567) == "1,234,567"
     end
   end
+
+  describe "format_interval/1" do
+    test "formats seconds under a minute as less than a minute" do
+      assert Format.format_interval(30) == "<1m"
+    end
+
+    test "formats minutes, hours and days" do
+      assert Format.format_interval(90) == "1m"
+      assert Format.format_interval(3 * 3600) == "3h"
+      assert Format.format_interval(4 * 86_400) == "4d"
+    end
+
+    test "formats months and years with a decimal when not whole" do
+      assert Format.format_interval(60 * 86_400) == "2mo"
+      assert Format.format_interval(45 * 86_400) == "1.5mo"
+      assert Format.format_interval(730 * 86_400) == "2y"
+      assert Format.format_interval(438 * 86_400) == "1.2y"
+    end
+  end
 end

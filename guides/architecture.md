@@ -218,7 +218,10 @@ speak button, jamo tiles, politeness badges) and `HangukoWeb.StudyComponents`
 (rating buttons, queue counts, the daily-limit notice). `HangukoWeb.Labels`,
 imported everywhere those are, holds the one table of human-readable names
 for the domain's fixed enums, so a filter and the rows it filters read the
-same label instead of each naming it separately.
+same label instead of each naming it separately. `HangukoWeb.Format` is its
+counterpart for values rather than enums: pure formatting with no markup, so
+a count or an interval reads the same wherever a page shows one instead of
+each page growing its own.
 
 `HangukoWeb.Layouts` documents the navigation, and `HangukoWeb.Nav` the hook
 that tells it which section is current.
