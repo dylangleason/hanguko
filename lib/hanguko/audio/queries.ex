@@ -24,4 +24,31 @@ defmodule Hanguko.Audio.Queries do
   Selects the given clip `fields` into a map
   """
   def to_map(query, fields), do: select(query, [clip: c], map(c, ^fields))
+
+  @doc """
+  Narrows `query` to the clips a given `source` produced, `:on_demand` or
+  `:batch`. Only on-demand clips count against the monthly budget; batch
+  generation is a deliberate spend that the operator has already decided on.
+  """
+  def with_source(query, source) do
+    where(query, [clip: c], c.source == ^source)
+  end
+
+  @doc """
+  Narrows `query` to the clips inserted at or after `instant`.
+
+  Clips are never updated, so `inserted_at` is when the characters were spent
+  and the only timestamp the table needs.
+  """
+  def inserted_since(query, %DateTime{} = instant) do
+    where(query, [clip: c], c.inserted_at >= ^instant)
+  end
+
+  @doc """
+  Replaces the selection with the total `characters` of the matching clips,
+  coalescing to `0` so an empty month returns a number rather than `nil`.
+  """
+  def sum_characters(query) do
+    select(query, [clip: c], c.characters |> sum() |> coalesce(0))
+  end
 end

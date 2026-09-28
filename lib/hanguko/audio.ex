@@ -15,8 +15,10 @@ defmodule Hanguko.Audio do
   disabled and the browser's own speech synthesis is used instead.
   """
 
+  alias Hanguko.Accounts.Scope
   alias Hanguko.Audio.Clip
   alias Hanguko.Audio.Queries
+  alias Hanguko.Audio.RateLimiter
   alias Hanguko.Korean
   alias Hanguko.Repo
 
@@ -80,6 +82,105 @@ defmodule Hanguko.Audio do
   end
 
   @doc """
+  Returns `{:ok, url}` for `text` on behalf of the learner in `scope`,
+  synthesizing it if no clip exists. This is the entry point for audio a person
+  asked for in the moment, and the only one that applies limits.
+
+  Checks run cheapest first, and only a miss is ever limited:
+
+    1. no signed-in user - `{:error, :unauthenticated}`. Anonymous visitors get
+       browser speech; synthesis is attributable or it doesn't happen
+    2. no provider configured - `{:error, :disabled}`
+    3. a stored clip - `{:ok, url}` immediately. Replaying audio costs nothing,
+       so it takes no rate-limit slot and no budget
+    4. `Hanguko.Audio.RateLimiter` - `{:error, :rate_limited}` when this user
+       has spent their allowance for the hour
+    5. the monthly budget - `{:error, :budget_exceeded}` when this month's
+       on-demand characters, plus this request's own, would pass the cap. The
+       request counts itself, so one long text can't step over the cap
+    6. `ensure_clip/2` with `source: :on_demand` and this user recorded
+
+  Anything `ensure_clip/2` reports comes back unchanged, including
+  `{:error, :invalid_text}` and provider or storage failures. Every error is
+  something the caller can act on by falling back to browser speech, which is
+  why none of them raise.
+
+  `now` is passed in, as in `Hanguko.SRS.review_card/5`, so the hour the
+  limiter counts and the month the budget sums are the caller's to decide.
+
+  Options: those of `ensure_clip/2`, plus
+
+    * `:limiter` - options passed straight through to
+      `Hanguko.Audio.RateLimiter.take/3`, such as `[name: ..., limit: ...]`.
+      They are that module's to name, not this one's
+    * `:budget` - overrides the configured monthly character cap
+
+  Being able to override both limits per call is what lets the tests stay
+  async, with no `Application.put_env`.
+  """
+
+  def speak(scope, text, now, opts \\ [])
+  def speak(nil, _text, _now, _opts), do: {:error, :unauthenticated}
+  def speak(%Scope{user: nil}, _text, _now, _opts), do: {:error, :unauthenticated}
+
+  def speak(%Scope{user: user}, text, now, opts) do
+    case get_provider(opts) do
+      nil ->
+        {:error, :disabled}
+
+      _ ->
+        key = clip_key(text, opts)
+        clip = get_clip(key)
+        storage = get_storage(opts)
+
+        if is_nil(clip) do
+          opts = Keyword.merge(opts, requested_by_id: user.id, source: :on_demand)
+
+          with :ok <- RateLimiter.take(user.id, now, Keyword.get(opts, :limiter, [])),
+               :ok <- check_budget(text, now, opts),
+               {:ok, clip} <- ensure_clip(text, opts) do
+            {:ok, clip.storage_path |> storage.url()}
+          else
+            {:error, reason} -> {:error, reason}
+          end
+        else
+          {:ok, clip.storage_path |> storage.url()}
+        end
+    end
+  end
+
+  defp check_budget(text, now, opts) do
+    count = characters_used(now) + String.length(canonical(text))
+    budget = Keyword.get_lazy(opts, :budget, &configured_budget/0)
+
+    if count > budget do
+      {:error, :budget_exceeded}
+    else
+      :ok
+    end
+  end
+
+  @doc """
+  Returns how many characters on-demand synthesis has spent in the calendar
+  month containing `now`, in UTC.
+
+  The month is UTC rather than the learner's timezone because this counts one
+  shared bill, not one person's activity; a learner's own day boundary
+  (`Hanguko.SRS.Day`) has nothing to do with it. Batch generation is excluded:
+  pre-rendering the curriculum is a decision made once by whoever runs the
+  task, not something to ration.
+  """
+  def characters_used(now) do
+    this_month = now |> Date.beginning_of_month() |> DateTime.new!(~T[00:00:00], "Etc/UTC")
+
+    Queries.clips()
+    |> Queries.with_source(:on_demand)
+    |> Queries.inserted_since(this_month)
+    |> Queries.sum_characters()
+    |> Repo.one()
+  end
+
+  @doc """
   Returns `{:ok, clip}` for `text`, synthesizing and storing the audio only
   if no clip exists yet. This is the only function that spends provider quota.
 
@@ -128,7 +229,7 @@ defmodule Hanguko.Audio do
 
       provider ->
         key = clip_key(text, opts)
-        clip = Queries.clips() |> Queries.with_key(key) |> Repo.one()
+        clip = get_clip(key)
 
         if is_nil(clip) do
           write_clip(text, key, provider, opts)
@@ -211,6 +312,8 @@ defmodule Hanguko.Audio do
   defp configured_storage, do: config!(:storage)
 
   defp configured_voice, do: config!(:voice)
+
+  defp configured_budget, do: config!(:characters_per_month)
 
   defp config!(key), do: :hanguko |> Application.fetch_env!(__MODULE__) |> Keyword.fetch!(key)
 end

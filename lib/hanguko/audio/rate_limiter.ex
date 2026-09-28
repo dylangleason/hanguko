@@ -88,7 +88,7 @@ defmodule Hanguko.Audio.RateLimiter do
   Options:
 
     * `:limit` - requests allowed per user per hour, defaulting to the
-      `:on_demand_rate` key of the `Hanguko.Audio` config
+      `:requests_per_user_per_hour` key of the `Hanguko.Audio` config
     * `:name` - which limiter to use, for tests
   """
   def take(user_id, now, opts \\ []) when is_integer(user_id) do
@@ -150,6 +150,8 @@ defmodule Hanguko.Audio.RateLimiter do
   end
 
   defp configured_limit() do
-    :hanguko |> Application.fetch_env!(Hanguko.Audio) |> Keyword.fetch!(:on_demand_rate)
+    :hanguko
+    |> Application.fetch_env!(Hanguko.Audio)
+    |> Keyword.fetch!(:requests_per_user_per_hour)
   end
 end

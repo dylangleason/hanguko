@@ -4,8 +4,10 @@ defmodule Hanguko.AudioTest do
   import Hanguko.AccountsFixtures
   import Hanguko.AudioFixtures
 
+  alias Hanguko.Accounts.Scope
   alias Hanguko.Audio
   alias Hanguko.Audio.Clip
+  alias Hanguko.Audio.RateLimiter
   alias Hanguko.Audio.Providers.Google
   alias Hanguko.Audio.Storage.Local
   alias Hanguko.Audio.Queries
@@ -239,6 +241,162 @@ defmodule Hanguko.AudioTest do
       {result, _} = Audio.ensure_clip("안녀히 계세요!", provider: Failing)
       assert :error = result
       assert Audio.clip_key(text) |> query_clip() |> is_nil()
+    end
+  end
+
+  # Every clip in these tests is given an explicit `inserted_at`, and `now` is a
+  # fixed instant in the same month, so the month boundary is part of the test
+  # rather than a property of the day the suite runs on.
+  @now ~U[2026-09-15 10:30:00Z]
+
+  describe "characters_used/2" do
+    test "is zero when nothing has been synthesized" do
+      assert 0 == Audio.characters_used(@now)
+    end
+
+    test "sums the characters of this month's on-demand clips" do
+      clip_1 = clip_fixture("안녕하세요", %{source: :on_demand, inserted_at: @now})
+      clip_2 = clip_fixture("감사합니다", %{source: :on_demand, inserted_at: @now})
+
+      assert clip_1.characters + clip_2.characters == Audio.characters_used(@now)
+    end
+
+    test "ignores clips generated in batch" do
+      clip_fixture("안녕하세요", %{source: :batch, inserted_at: @now})
+
+      assert 0 == Audio.characters_used(@now)
+    end
+
+    test "ignores clips from an earlier month" do
+      last_month = ~U[2026-08-31 23:59:59Z]
+      clip_fixture("안녕하세요", %{source: :on_demand, inserted_at: last_month})
+
+      assert 0 == Audio.characters_used(@now)
+    end
+
+    test "counts a clip inserted at the first instant of the month" do
+      clip = clip_fixture("안녕하세요", %{source: :on_demand, inserted_at: ~U[2026-09-01 00:00:00Z]})
+
+      assert clip.characters == Audio.characters_used(@now)
+    end
+  end
+
+  describe "speak/4" do
+    # A limiter per test, under its own name, so this file stays async. `opts`
+    # carries that name; individual tests add `:limit` or `:budget` when the
+    # limit is what they're testing.
+    setup do
+      user = user_fixture()
+      name = :"audio_limiter_#{System.unique_integer([:positive])}"
+      start_supervised!({RateLimiter, name: name})
+
+      %{user: user, scope: Scope.for_user(user), limiter: name, opts: [limiter: [name: name]]}
+    end
+
+    test "returns the URL of a stored clip", %{scope: scope, opts: opts} do
+      clip = clip_fixture("안녕하세요")
+
+      assert {:ok, Local.url(clip.storage_path)} == Audio.speak(scope, clip.text, @now, opts)
+      refute_received {Fake, :synthesize, _, _}
+    end
+
+    test "synthesizes and returns the URL on a miss", %{scope: scope, opts: opts} do
+      text = "안녕히 계세요"
+
+      assert {:ok, url} = Audio.speak(scope, text, @now, opts)
+      assert_received {Fake, :synthesize, _, _}
+
+      clip = text |> Audio.clip_key() |> query_clip() |> remove_on_exit()
+      assert Local.url(clip.storage_path) == url
+    end
+
+    test "records the clip as on-demand for the signed-in user", %{
+      scope: scope,
+      user: user,
+      opts: opts
+    } do
+      text = "안녕히 계세요"
+
+      assert {:ok, _url} = Audio.speak(scope, text, @now, opts)
+
+      clip = text |> Audio.clip_key() |> query_clip() |> remove_on_exit()
+      assert :on_demand == clip.source
+      assert user.id == clip.requested_by_id
+    end
+
+    test "returns :unauthenticated without a signed-in user", %{opts: opts} do
+      assert {:error, :unauthenticated} == Audio.speak(nil, "안녕하세요", @now, opts)
+      assert {:error, :unauthenticated} == Audio.speak(%Scope{user: nil}, "안녕하세요", @now, opts)
+
+      refute_received {Fake, :synthesize, _, _}
+    end
+
+    test "returns :disabled when no provider is configured", %{scope: scope, opts: opts} do
+      opts = Keyword.put(opts, :provider, nil)
+
+      assert {:error, :disabled} == Audio.speak(scope, "안녕하세요", @now, opts)
+    end
+
+    test "passes :invalid_text through from ensure_clip/2", %{scope: scope, opts: opts} do
+      assert {:error, :invalid_text} == Audio.speak(scope, "hello", @now, opts)
+      refute_received {Fake, :synthesize, _, _}
+    end
+
+    test "returns :rate_limited once the hour's allowance is spent", %{
+      scope: scope,
+      limiter: limiter,
+      opts: opts
+    } do
+      opts = Keyword.put(opts, :limiter, name: limiter, limit: 1)
+
+      assert {:ok, _url} = Audio.speak(scope, "안녕하세요", @now, opts)
+      "안녕하세요" |> Audio.clip_key() |> query_clip() |> remove_on_exit()
+
+      assert {:error, :rate_limited} == Audio.speak(scope, "감사합니다", @now, opts)
+      assert nil == "감사합니다" |> Audio.clip_key() |> query_clip()
+    end
+
+    # A replay is free: it reaches neither the provider nor the limiter, so a
+    # learner can listen to the same phrase as often as they like.
+    test "a stored clip takes no rate-limit slot", %{
+      scope: scope,
+      user: user,
+      limiter: limiter,
+      opts: opts
+    } do
+      opts = Keyword.put(opts, :limiter, name: limiter, limit: 1)
+      clip = clip_fixture("안녕하세요")
+
+      assert {:ok, _url} = Audio.speak(scope, clip.text, @now, opts)
+      assert {:ok, _url} = Audio.speak(scope, clip.text, @now, opts)
+
+      key = {user.id, RateLimiter.window(@now)}
+      assert [] == :ets.lookup(limiter, key)
+    end
+
+    test "returns :budget_exceeded when the month's cap is reached", %{scope: scope, opts: opts} do
+      spent = clip_fixture("안녕하세요", %{source: :on_demand, inserted_at: @now})
+      opts = Keyword.put(opts, :budget, spent.characters)
+
+      assert {:error, :budget_exceeded} == Audio.speak(scope, "감사합니다", @now, opts)
+      refute_received {Fake, :synthesize, _, _}
+    end
+
+    test "counts the request's own characters against the cap", %{scope: scope, opts: opts} do
+      text = "안녕하세요"
+      opts = Keyword.put(opts, :budget, String.length(text) - 1)
+
+      # nothing has been spent this month, so only the request's own characters
+      # can carry it over the cap
+      assert 0 == Audio.characters_used(@now)
+      assert {:error, :budget_exceeded} == Audio.speak(scope, text, @now, opts)
+    end
+
+    test "a stored clip is served after the budget is spent", %{scope: scope, opts: opts} do
+      clip = clip_fixture("안녕하세요", %{source: :on_demand, inserted_at: @now})
+      opts = Keyword.put(opts, :budget, 0)
+
+      assert {:ok, Local.url(clip.storage_path)} == Audio.speak(scope, clip.text, @now, opts)
     end
   end
 
