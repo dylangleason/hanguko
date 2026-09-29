@@ -156,6 +156,13 @@ The production environment variables are listed in `config/runtime.exs`:
 `DATABASE_URL`, `SECRET_KEY_BASE` and `PHX_HOST` are required; `PORT`,
 `POOL_SIZE`, `ECTO_IPV6` and `DNS_CLUSTER_QUERY` are optional.
 
+`GOOGLE_TTS_API_KEY` is optional as well, and is what turns on recorded
+Korean audio: with a key, phrases are synthesized once by Google Cloud
+Text-to-Speech and served from storage from then on. Without one, no provider
+is configured, nothing is synthesized, and pages fall back to the browser's
+own speech synthesis — audio quality degrades, nothing breaks. The key is
+read at boot and never reaches the browser.
+
 ## Where things live
 
 ```

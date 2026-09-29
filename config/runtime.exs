@@ -40,6 +40,13 @@ if config_env() == :dev do
     ]
 end
 
+if config_env() != :test do
+  if api_key = System.get_env("GOOGLE_TTS_API_KEY") do
+    config :hanguko, Hanguko.Audio, provider: Hanguko.Audio.Providers.Google
+    config :hanguko, Hanguko.Audio.Providers.Google, api_key: api_key
+  end
+end
+
 if config_env() == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||

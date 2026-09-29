@@ -33,6 +33,17 @@ config :hanguko, Hanguko.Audio,
   voice: "test-voice",
   storage_dir: "tmp/audio"
 
+# The Google adapter is exercised directly by its own test, against a Req.Test
+# stub rather than the network. Retries happen with no delay and no log line so
+# the retry tests stay fast and quiet.
+config :hanguko, Hanguko.Audio.Providers.Google,
+  api_key: "test-api-key",
+  req_options: [
+    plug: {Req.Test, Hanguko.Audio.Providers.Google},
+    retry_delay: 0,
+    retry_log_level: false
+  ]
+
 # In test we don't send emails
 config :hanguko, Hanguko.Mailer, adapter: Swoosh.Adapters.Test
 

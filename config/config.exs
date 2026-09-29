@@ -89,7 +89,6 @@ config :hanguko, Hanguko.SRS, fuzz: true
 # Configure the provider and default voice used to generate Korean
 # language audio clips
 config :hanguko, Hanguko.Audio,
-  provider: Hanguko.Audio.Providers.Google,
   voice: "ko-KR-Chirp3-HD-Achernar",
   storage: Hanguko.Audio.Storage.Local,
   storage_url_prefix: "/audio",

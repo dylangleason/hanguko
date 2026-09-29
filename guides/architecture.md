@@ -358,12 +358,12 @@ manifest.
 
 ## What comes next
 
-Audio is mid-delivery. `Hanguko.Audio` keys, stores and indexes clips, and
-`Storage.Local` writes them; what remains is the Google provider itself, the
-S3 backend, the rate limiter and budget, the batch generator that pre-renders
-the curriculum, and the web wiring that passes a clip URL to each speak
-button. Until that last piece lands, pages still fall back to browser speech
-everywhere.
+Audio is mid-delivery. `Hanguko.Audio` keys, stores and indexes clips, the
+rate limiter and the monthly budget hold the line on spend, `Storage.Local`
+writes the bytes and `Providers.Google` synthesizes them; what remains is the
+S3 backend, the batch generator that pre-renders the curriculum, and the web
+wiring that passes a clip URL to each speak button. Until that last piece
+lands, pages still fall back to browser speech everywhere.
 
 After that, listening comprehension builds on the same clips: dialogues need
 only a second configured voice, passed as the `:voice` option.
