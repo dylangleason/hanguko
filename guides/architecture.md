@@ -51,7 +51,7 @@ flowchart TB
   subgraph hanguko[Hanguko]
     web["Phoenix LiveView app<br/>Elixir / OTP"]
     db[("PostgreSQL<br/>curriculum, progress, clip index")]
-    clips[("Clip storage<br/>local directory or S3")]
+    clips[("Clip storage<br/>a served directory")]
   end
 
   packs[/"Content packs<br/>YAML in priv/content"/]
@@ -80,10 +80,14 @@ like code without the app depending on a file layout.
 
 Clip storage is a container of its own because the browser fetches from it
 directly: audio bytes never travel over the LiveView socket, and a clip is
-served like any other static file. What sits behind it is configuration — a
-directory served by the endpoint's `Plug.Static` in development, an
-S3-compatible bucket in production — and `Hanguko.Audio.Storage` is the
-contract both satisfy. The database holds only the index: one row per clip,
+served like any other static file. Behind it is a directory served by the
+endpoint's `Plug.Static`, in every environment — the app runs on one host, so
+a bucket would add credentials and a second origin to solve a problem it
+doesn't have. In production that directory has to be a mounted volume rather
+than a path inside the image: clips are bought once from a metered API, and a
+deploy that discards them buys them all again. `Hanguko.Audio.Storage` is the
+contract, so moving to an object store later is a new module and a config
+line, not a rewrite. The database holds only the index: one row per clip,
 identified by a hash of its text, provider and voice.
 
 ## The central split
@@ -361,9 +365,9 @@ manifest.
 Audio is mid-delivery. `Hanguko.Audio` keys, stores and indexes clips, the
 rate limiter and the monthly budget hold the line on spend, `Storage.Local`
 writes the bytes and `Providers.Google` synthesizes them; what remains is the
-S3 backend, the batch generator that pre-renders the curriculum, and the web
-wiring that passes a clip URL to each speak button. Until that last piece
-lands, pages still fall back to browser speech everywhere.
+batch generator that pre-renders the curriculum and the web wiring that passes
+a clip URL to each speak button. Until that last piece lands, pages still fall
+back to browser speech everywhere.
 
 After that, listening comprehension builds on the same clips: dialogues need
 only a second configured voice, passed as the `:voice` option.
