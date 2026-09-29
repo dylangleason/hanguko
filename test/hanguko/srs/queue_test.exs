@@ -3,7 +3,6 @@ defmodule Hanguko.SRS.QueueTest do
 
   import Hanguko.AccountsFixtures
   import Hanguko.ContentFixtures
-  import Hanguko.SRSFixtures, except: [card_fixture: 2, card_fixture: 3]
 
   alias Hanguko.SRS
   alias Hanguko.SRS.Queue
@@ -13,7 +12,7 @@ defmodule Hanguko.SRS.QueueTest do
   # 2026-09-11 04:00 to 2026-09-12 04:00 UTC.
   @now ~U[2026-09-11 12:00:00Z]
 
-  defp card_fixture(user, item, attrs \\ %{}) do
+  defp card_fixture(user, item, attrs) do
     SRSFixtures.card_fixture(user, item, Map.put(Map.new(attrs), :now, @now))
   end
 
