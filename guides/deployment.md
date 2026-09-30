@@ -62,6 +62,40 @@ half-importing and leaving the curriculum in a state nobody wrote.
 Run `bin/migrate` from the new image against the database before starting the
 new version.
 
+## Generated audio outlives the container
+
+Korean audio is synthesized once by a metered API and then served as a static
+file. The clips are content-addressed — a clip's path is derived from a hash of
+its text, provider and voice — so they are never rewritten and never expire,
+and regenerating one always produces the same bytes at the same path.
+
+That makes them cheap to keep and expensive to lose. `AUDIO_DIR` names the
+directory `Hanguko.Audio.Storage.Local` writes them to, and in production it
+**must be a mounted volume**, not a path inside the image: the `Dockerfile`
+copies `priv` into the build, so anything written there is discarded by the
+next deploy, and every clip is paid for a second time. `config/runtime.exs`
+refuses to boot without it whenever a TTS key is configured — audio switched
+off entirely is fine, audio with nowhere durable to write is not.
+
+`mix hanguko.audio.generate` pre-renders the curriculum in development;
+`Hanguko.Release.generate_audio/0` is the same task for a release:
+
+```sh
+./hanguko eval "Hanguko.Release.generate_audio()"
+```
+
+Unlike `import_content/0`, this is *not* part of `bin/migrate`. It calls a paid
+API, and a release that synthesized on boot would do it again on every restart.
+Run it by hand after a deploy that adds content, or after changing
+`GOOGLE_TTS_VOICE` — a new voice is a new hash for every phrase, and so a whole
+regeneration. It reports clips it couldn't render rather than raising, because a
+missing clip degrades to the browser's own speech instead of breaking a page.
+
+If the volume ever comes back empty while the database still has the rows,
+`mix hanguko.audio.generate --verify` re-synthesizes the clips whose files are
+gone. Nothing else notices that case: a clip row is the app's record that its
+text has already been paid for.
+
 ## Version pinning
 
 The Elixir and OTP versions are pinned in three places: the development
@@ -77,3 +111,8 @@ Production configuration is read at boot from the environment in
 environment. `DATABASE_URL`, `SECRET_KEY_BASE` and `PHX_HOST` are required;
 `PORT`, `POOL_SIZE`, `ECTO_IPV6` and `DNS_CLUSTER_QUERY` are optional. Mail
 delivery for magic-link sign-in is configured there too, on `Hanguko.Mailer`.
+
+`GOOGLE_TTS_API_KEY` is what enables recorded audio, and setting it makes
+`AUDIO_DIR` required as well (see above). Without the key no provider is
+configured, nothing is synthesized, and every page falls back to the browser's
+own speech synthesis.

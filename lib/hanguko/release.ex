@@ -8,6 +8,9 @@ defmodule Hanguko.Release do
   which is what `mix ecto.migrate` and `mix hanguko.content.import` do in
   development.
   """
+  alias Hanguko.Audio
+  alias Hanguko.Audio.Batch
+  alias Hanguko.Content
   alias Hanguko.Content.Importer
 
   @app :hanguko
@@ -60,6 +63,45 @@ defmodule Hanguko.Release do
           "#{unchanged} unchanged, #{retired} retired"
       )
     end
+
+    :ok
+  end
+
+  @doc """
+  Pre-renders audio for the curriculum, as `mix hanguko.audio.generate` does in
+  development.
+
+  Meant for `bin/hanguko eval \'Hanguko.Release.generate_audio()\'` after a
+  deploy that adds content, not for every boot: it calls a metered API, and a
+  release that synthesized on startup would do so again on every restart.
+
+  Unlike `import_content/0`, this reports failures and returns `:ok` rather than
+  raising. Broken content is a reason to stop a deploy; a clip that didn't
+  render is not, because every page falls back to the browser's own speech.
+  """
+  def generate_audio do
+    load_app()
+    {:ok, _} = Application.ensure_all_started(:req)
+
+    {:ok, _, _} =
+      Ecto.Migrator.with_repo(Hanguko.Repo, fn _repo ->
+        if Audio.enabled?() do
+          texts = Content.speech_texts()
+          %{texts: missing, characters: characters} = Batch.pending(texts)
+
+          IO.puts("Generating #{length(missing)} clips (#{characters} characters)")
+
+          %{generated: generated, skipped: skipped, failed: failed} = Batch.generate(texts)
+
+          IO.puts("  #{generated} generated, #{skipped} already stored")
+
+          for {text, reason} <- failed do
+            IO.puts("  failed: #{text} (#{inspect(reason)})")
+          end
+        else
+          IO.puts("No audio provider is configured; nothing to generate")
+        end
+      end)
 
     :ok
   end

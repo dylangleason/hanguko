@@ -45,6 +45,20 @@ defmodule Hanguko.Audio do
   end
 
   @doc """
+  Returns whether audio is switched on, that is, whether a provider is
+  configured.
+
+  Absence of a provider is a supported state, not a misconfiguration: the app
+  runs without an API key and every page falls back to the browser's own
+  speech. This is how a caller with no error channel - a Mix task deciding
+  whether to start, a page deciding whether to offer a speak button - asks,
+  rather than reading the config itself.
+
+  Takes the same `:provider` option as `clip_key/2`.
+  """
+  def enabled?(opts \\ []), do: not is_nil(get_provider(opts))
+
+  @doc """
   Returns `%{text => url}` for each of `texts` that already has a clip, in one
   query, so a page can pass `audio={url}` to every speak button it renders
   without a query per button.

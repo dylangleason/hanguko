@@ -4,7 +4,7 @@ defmodule Hanguko.Audio.Providers.GoogleTest do
   alias Hanguko.Audio.Providers.Google
 
   @text "안녕하세요"
-  @voice "ko-KR-Chirp3-HD-Achernar"
+  @voice "ko-KR-WaveNet-C"
 
   # Real MP3 bytes are not valid UTF-8, which is the bug worth guarding
   # against: anything that treats the audio as a string breaks on them.

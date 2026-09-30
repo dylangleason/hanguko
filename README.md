@@ -41,6 +41,9 @@ Sign-in is by magic link. In development the mail is not sent anywhere: open
 | `mix test path/to/test.exs:42` | Run one test or file |
 | `mix hanguko.content.import` | Load `priv/content` into the database; safe to re-run |
 | `mix hanguko.content.import --path tmp/packs` | Import from somewhere else |
+| `mix hanguko.audio.generate` | Synthesize a clip for everything the curriculum says; safe to re-run |
+| `mix hanguko.audio.generate --dry-run` | Print what would be synthesized, and what it would cost, without calling the API |
+| `mix hanguko.audio.generate --verify` | Re-synthesize clips whose audio has gone missing from storage |
 | `mix ecto.migrate` / `mix ecto.rollback` | Apply or undo migrations |
 | `mix ecto.gen.migration name` | Start a new migration |
 | `mix ecto.reset` | Drop, recreate, migrate and re-seed — **deletes all study progress** |
@@ -161,7 +164,9 @@ Korean audio: with a key, phrases are synthesized once by Google Cloud
 Text-to-Speech and served from storage from then on. Without one, no provider
 is configured, nothing is synthesized, and pages fall back to the browser's
 own speech synthesis — audio quality degrades, nothing breaks. The key is
-read at boot and never reaches the browser.
+read at boot and never reaches the browser. `GOOGLE_TTS_VOICE` overrides the
+configured voice, and `AUDIO_DIR` says where clips are written — required in
+production, where it must be a mounted volume (see `guides/deployment.md`).
 
 ## Where things live
 
