@@ -8,7 +8,7 @@ defmodule Hanguko.Content do
   """
   alias Hanguko.Accounts.Scope
   alias Hanguko.Repo
-  alias Hanguko.Content.{GrammarPoint, GrammarProgress, Queries}
+  alias Hanguko.Content.{GrammarPoint, GrammarProgress, Item, Queries}
 
   @doc """
   Lists active decks with `item_count` populated, in curriculum order: by
@@ -118,6 +118,25 @@ defmodule Hanguko.Content do
       on_conflict: :nothing,
       conflict_target: [:user_id, :grammar_point_id]
     )
+  end
+
+  @doc """
+  Returns the distinct texts every active item is pronounced with, in no
+  particular order, for `mix hanguko.audio.generate` to pre-render.
+
+  This is `Hanguko.Content.Item.speech_text/1` over the live curriculum, which
+  is not always `item.korean`: a jamo item is spoken as its example syllable.
+  Pages must speak the same function's output, or they will key to a clip that
+  was never generated.
+
+  Distinct, because one phrase can appear as both a deck item and a grammar
+  example, and a clip is shared by every text that canonicalizes to it.
+  """
+  def speech_texts do
+    Queries.active_items()
+    |> Repo.all()
+    |> Enum.map(&Item.speech_text/1)
+    |> Enum.uniq()
   end
 
   @doc """

@@ -16,6 +16,12 @@ defmodule Hanguko.Audio.Storage.Local do
   end
 
   @impl true
+  def exists?(path) do
+    path = full_path(path)
+    File.exists?(path) and not File.dir?(path)
+  end
+
+  @impl true
   def url(path) do
     :hanguko
     |> Application.fetch_env!(Hanguko.Audio)

@@ -39,6 +39,28 @@ defmodule Hanguko.Audio.StorageTest do
     end
   end
 
+  describe "Local.exists?/1" do
+    test "is true once the object has been written", %{path: path} do
+      refute Storage.Local.exists?(path)
+
+      assert :ok == Storage.Local.put(path, "test data", "audio/mpeg")
+      assert Storage.Local.exists?(path)
+    end
+
+    test "is false for an object that was removed", %{path: path} do
+      assert :ok == Storage.Local.put(path, "test data", "audio/mpeg")
+      File.rm!(Storage.Local.full_path(path))
+
+      refute Storage.Local.exists?(path)
+    end
+
+    test "is false for a directory at that path", %{path: path} do
+      path |> Storage.Local.full_path() |> File.mkdir_p!()
+
+      refute Storage.Local.exists?(path)
+    end
+  end
+
   describe "Local.url/1" do
     test "returns the expected URL for a specified path" do
       path = "te/st/example.mp3"

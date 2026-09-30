@@ -244,9 +244,8 @@ defmodule Hanguko.Audio do
     voice = get_voice(opts)
 
     with true <- valid_text?(text),
-         {:ok, %{data: data, content_type: content_type}} <- provider.synthesize(text, voice),
-         path <- storage_path(key, content_type),
-         :ok <- storage.put(path, data, content_type) do
+         {:ok, %{data: data, content_type: content_type, path: path}} <-
+           store_clip(text, voice, key, provider, storage) do
       canonical_text = canonical(text)
       source = Keyword.get(opts, :source, :on_demand)
 
@@ -277,6 +276,92 @@ defmodule Hanguko.Audio do
   defp get_clip(key), do: Queries.clips() |> Queries.with_key(key) |> Repo.one()
 
   @doc """
+  Returns the clips whose audio is no longer in storage, for
+  `mix hanguko.audio.generate --verify` to repair.
+
+  Only clips matching the configured provider and voice are considered. A clip
+  recorded under another voice keys to audio this configuration cannot
+  reproduce (`clip_key/2` hashes the voice), so regenerating it would write
+  different speech at a path that claims to be the old one. Those clips are
+  left alone: they are stale, not broken.
+
+  One `c:Hanguko.Audio.Storage.exists?/1` call per clip, which is a stat per
+  file on local storage. Fine for a few hundred clips run from a Mix task, and
+  not something to put on a request path.
+
+  Raises when no provider is configured. A list has no error channel, and
+  answering "no orphans" for a subsystem that is switched off would be a lie;
+  callers establish that audio is enabled before asking.
+
+  Takes the same `:provider`, `:voice` and `:storage` options as `clip_key/2`.
+  """
+  def orphaned_clips(opts \\ []) do
+    provider = get_provider(opts) || raise "no audio provider is configured"
+    voice = get_voice(opts)
+    storage = get_storage(opts)
+
+    clips =
+      Queries.clips()
+      |> Queries.with_provider(provider.name())
+      |> Queries.with_voice(voice)
+      |> Repo.all()
+
+    for clip <- clips, not storage.exists?(clip.storage_path), do: clip
+  end
+
+  @doc """
+  Re-synthesizes `clip` and writes it back to its existing path, returning
+  `{:ok, clip}` with the row brought in line with the new bytes.
+
+  This is the repair half of `--verify`, and the one place audio is bought for
+  a text that already has a row. `ensure_clip/2` deliberately won't: a row is
+  its record that the text has been paid for.
+
+  The key and the text are untouched, since both are derived from content that
+  hasn't changed. `byte_size`, `content_type` and `storage_path` are taken from
+  the new synthesis: a second render of the same text is not guaranteed to
+  return byte for byte what the first one did, and the path follows the content
+  type, so a provider that begins answering in another format moves the file
+  instead of leaving the row describing one that isn't there. Whatever was at
+  the old path stays there, unreferenced.
+
+  Errors:
+
+    * `{:error, :disabled}` - no provider is configured
+    * `{:error, :provider_mismatch}` - `clip` was made by another provider or
+      voice than the configured one, so its key cannot be reproduced. The
+      caller should regenerate under the current configuration instead, which
+      gives a different key and leaves this row as it is
+    * `{:error, term}` - the provider or storage failed. The row keeps pointing
+      at the missing object, and the next `--verify` tries again
+
+  Takes the same options as `ensure_clip/2`, except `:source` and
+  `:requested_by_id`, which belong to the row that already exists.
+  """
+  def rewrite_clip(%Clip{} = clip, opts \\ []) do
+    case get_provider(opts) do
+      nil ->
+        {:error, :disabled}
+
+      provider ->
+        with true <- provider.name() == clip.provider and get_voice(opts) == clip.voice,
+             {:ok, %{data: data, content_type: content_type, path: path}} <-
+               store_clip(clip.text, clip.voice, clip.key, provider, get_storage(opts)) do
+          clip
+          |> Clip.changeset(%{
+            byte_size: byte_size(data),
+            content_type: content_type,
+            storage_path: path
+          })
+          |> Repo.update()
+        else
+          false -> {:error, :provider_mismatch}
+          {:error, reason} -> {:error, reason}
+        end
+    end
+  end
+
+  @doc """
   Returns the form of `text` that the key is derived from and that clips are
   stored with: trimmed, with runs of whitespace collapsed to one space, in
   Unicode NFC. Punctuation and case are kept, since they change how the text
@@ -297,6 +382,14 @@ defmodule Hanguko.Audio do
     String.slice(key, 0, 2)
     |> Path.join(String.slice(key, 2, 2))
     |> Path.join(name)
+  end
+
+  defp store_clip(text, voice, key, provider, storage) do
+    with {:ok, %{data: data, content_type: content_type}} <- provider.synthesize(text, voice),
+         path <- storage_path(key, content_type),
+         :ok <- storage.put(path, data, content_type) do
+      {:ok, %{data: data, path: path, content_type: content_type}}
+    end
   end
 
   defp valid_text?(text), do: String.length(canonical(text)) <= 200 and Korean.text?(text)

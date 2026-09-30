@@ -45,6 +45,26 @@ defmodule Hanguko.Audio.Queries do
   end
 
   @doc """
+  Narrows `query` to the clips a given provider synthesized, by
+  `c:Hanguko.Audio.Provider.name/0` rather than by module, since that string is
+  what the key was derived from and what the row records.
+  """
+  def with_provider(query, name) do
+    where(query, [clip: c], c.provider == ^name)
+  end
+
+  @doc """
+  Narrows `query` to the clips spoken in `voice`.
+
+  Together with `with_provider/2` this isolates the clips whose keys agree with
+  the current configuration - the only ones that can be regenerated, since a
+  key is derived from the provider and the voice as well as the text.
+  """
+  def with_voice(query, voice) do
+    where(query, [clip: c], c.voice == ^voice)
+  end
+
+  @doc """
   Replaces the selection with the total `characters` of the matching clips,
   coalescing to `0` so an empty month returns a number rather than `nil`.
   """

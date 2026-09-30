@@ -18,11 +18,7 @@ defmodule Hanguko.AudioFixtures do
     {voice, attrs} = pop_attr!(attrs, :voice)
 
     key = Audio.clip_key(text)
-
-    storage_path =
-      String.slice(key, 0, 2)
-      |> Path.join(String.slice(key, 2, 2))
-      |> Path.join("voice.mp3")
+    storage_path = Audio.storage_path(key, "audio/mpeg")
 
     %Clip{
       key: key,

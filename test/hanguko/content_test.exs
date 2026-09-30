@@ -187,4 +187,45 @@ defmodule Hanguko.ContentTest do
       refute GrammarPoint.learned?(Content.get_grammar_point_by_slug!(scope, point.slug))
     end
   end
+
+  describe "speech_texts/0" do
+    test "returns the text of every active item" do
+      deck = deck_fixture()
+      item_fixture(deck, korean: "사과")
+      item_fixture(deck, korean: "학교")
+
+      assert Enum.sort(Content.speech_texts()) == ["사과", "학교"]
+    end
+
+    test "speaks a jamo item as its example syllable" do
+      deck = deck_fixture(kind: :hangeul)
+      item_fixture(deck, korean: "ᄀ", kind: :jamo, metadata: %{"example_syllable" => "가"})
+
+      assert Content.speech_texts() == ["가"]
+    end
+
+    test "leaves out retired items" do
+      deck = deck_fixture()
+      item_fixture(deck, korean: "사과")
+
+      item_fixture(deck, korean: "학교")
+      |> Ecto.Changeset.change(retired: true)
+      |> Repo.update!()
+
+      assert Content.speech_texts() == ["사과"]
+    end
+
+    test "returns one entry for a phrase two items share" do
+      deck = deck_fixture()
+      other = deck_fixture()
+      item_fixture(deck, korean: "사과")
+      item_fixture(other, korean: "사과")
+
+      assert Content.speech_texts() == ["사과"]
+    end
+
+    test "is empty with no content" do
+      assert Content.speech_texts() == []
+    end
+  end
 end

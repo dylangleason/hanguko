@@ -400,6 +400,93 @@ defmodule Hanguko.AudioTest do
     end
   end
 
+  describe "orphaned_clips/1" do
+    test "is empty when every clip's audio is in storage" do
+      {:ok, clip} = Audio.ensure_clip("안녕하세요")
+      remove_on_exit(clip)
+
+      assert [] == Audio.orphaned_clips()
+    end
+
+    test "returns the clip whose audio is gone" do
+      {:ok, present} = Audio.ensure_clip("안녕하세요")
+      remove_on_exit(present)
+      missing = clip_fixture("어머니")
+
+      assert [orphan] = Audio.orphaned_clips()
+      assert orphan.id == missing.id
+    end
+
+    test "leaves out a clip recorded under another voice" do
+      clip_fixture("어머니", voice: "an-older-voice")
+
+      assert [] == Audio.orphaned_clips()
+    end
+
+    test "leaves out a clip recorded by another provider" do
+      clip_fixture("어머니", provider: Google)
+
+      assert [] == Audio.orphaned_clips()
+    end
+
+    test "is empty when there are no clips at all" do
+      assert [] == Audio.orphaned_clips()
+    end
+  end
+
+  describe "rewrite_clip/2" do
+    test "re-synthesizes the clip's text and writes it back to the same path" do
+      clip = clip_fixture("어머니") |> remove_on_exit()
+
+      assert {:ok, rewritten} = Audio.rewrite_clip(clip)
+      assert_received {Fake, :synthesize, "어머니", "test-voice"}
+
+      assert rewritten.id == clip.id
+      assert rewritten.key == clip.key
+      assert rewritten.text == clip.text
+      assert rewritten.storage_path == clip.storage_path
+      assert {:ok, _} = clip.storage_path |> Local.full_path() |> File.read()
+    end
+
+    test "brings byte_size and content_type in line with the new bytes" do
+      clip = clip_fixture("어머니", byte_size: 1, content_type: "audio/ogg") |> remove_on_exit()
+
+      assert {:ok, rewritten} = Audio.rewrite_clip(clip)
+
+      {:ok, data} = clip.storage_path |> Local.full_path() |> File.read()
+      assert rewritten.byte_size == byte_size(data)
+      assert rewritten.content_type == "audio/mpeg"
+      assert query_clip(clip.key).byte_size == byte_size(data)
+    end
+
+    test "refuses a clip recorded under another voice" do
+      clip = clip_fixture("어머니", voice: "an-older-voice")
+
+      assert {:error, :provider_mismatch} == Audio.rewrite_clip(clip)
+      refute_received {Fake, :synthesize, _, _}
+    end
+
+    test "refuses a clip recorded by another provider" do
+      clip = clip_fixture("어머니", provider: Google)
+
+      assert {:error, :provider_mismatch} == Audio.rewrite_clip(clip)
+      refute_received {Fake, :synthesize, _, _}
+    end
+
+    test "returns :disabled when no provider is configured" do
+      clip = clip_fixture("어머니")
+
+      assert {:error, :disabled} == Audio.rewrite_clip(clip, provider: nil)
+    end
+
+    test "reports a synthesis failure and leaves the row as it was" do
+      clip = clip_fixture("어머니", provider: Failing)
+
+      assert {:error, :synthesis_failed} == Audio.rewrite_clip(clip, provider: Failing)
+      assert query_clip(clip.key).byte_size == clip.byte_size
+    end
+  end
+
   defp query_clip(key), do: Queries.clips() |> Queries.with_key(key) |> Repo.one()
 
   # `ensure_clip/2` writes into the configured `tmp/audio`, which other test
