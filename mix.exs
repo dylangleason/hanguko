@@ -69,6 +69,17 @@ defmodule Hanguko.MixProject do
           Hanguko.SRS.Settings
         ],
         Progress: [Hanguko.Progress, Hanguko.Progress.Queries],
+        Audio: [
+          Hanguko.Audio,
+          Hanguko.Audio.Batch,
+          Hanguko.Audio.Clip,
+          Hanguko.Audio.Provider,
+          Hanguko.Audio.Providers.Google,
+          Hanguko.Audio.Queries,
+          Hanguko.Audio.RateLimiter,
+          Hanguko.Audio.Storage,
+          Hanguko.Audio.Storage.Local
+        ],
         Korean: [Hanguko.Korean],
         Accounts: [
           Hanguko.Accounts,
@@ -80,7 +91,7 @@ defmodule Hanguko.MixProject do
         Web: [~r"HangukoWeb\."],
         Operations: [Hanguko.Release]
       ],
-      nest_modules_by_prefix: [Hanguko.Content, Hanguko.SRS, HangukoWeb]
+      nest_modules_by_prefix: [Hanguko.Audio, Hanguko.Content, Hanguko.SRS, HangukoWeb]
     ]
   end
 

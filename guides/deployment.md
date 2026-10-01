@@ -77,6 +77,14 @@ next deploy, and every clip is paid for a second time. `config/runtime.exs`
 refuses to boot without it whenever a TTS key is configured — audio switched
 off entirely is fine, audio with nowhere durable to write is not.
 
+The app serves that directory itself, through a second `Plug.Static` mounted at
+`/audio` in `HangukoWeb.Endpoint`. It reads the path through an MFA tuple rather
+than a compiled-in string, because endpoint plugs are initialised at compile
+time while `AUDIO_DIR` isn't known until boot. So the volume needs no web server
+in front of it — only to be readable by the user the release runs as. Responses
+carry `cache-control: public, max-age=31536000, immutable`, which is safe
+precisely because the paths are content-addressed.
+
 `mix hanguko.audio.generate` pre-renders the curriculum in development;
 `Hanguko.Release.generate_audio/0` is the same task for a release:
 

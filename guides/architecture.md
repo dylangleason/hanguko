@@ -329,6 +329,24 @@ each page growing its own.
 `HangukoWeb.Layouts` documents the navigation, and `HangukoWeb.Nav` the hook
 that tells it which section is current.
 
+Pronunciation is the one feature whose pieces sit on both sides of the socket,
+so the shape of it is worth stating here even though each rule lives in one
+module. A press of a speak button resolves in three steps, best to worst: a
+clip the page already found, then one the server synthesizes on request, then
+the browser's own voice. Pages do the first by looking every text on the page
+up in one `Hanguko.Audio.urls_for/2` call, which is why none of them queries
+per button. The second is `HangukoWeb.AudioHook`, an `on_mount` attached to
+every `live_session` rather than a `handle_event/3` clause per LiveView: it
+answers `"audio:speak"` wherever a button is pressed, and decides once per
+mount whether offering it makes sense at all. The third needs no server. Which
+of the three a given button can reach is carried entirely by its data
+attributes — see `HangukoWeb.KoreanComponents.speak_button/1` for what they
+mean and `assets/js/hooks/speak.js` for the order they are tried in.
+
+The two cases that can't be pre-rendered, the syllable builder and the grammar
+"try it" box, are the reason the middle step exists: their text is invented as
+the learner types, so no batch run could have bought a clip for it.
+
 Every page is laid out for a phone first: the nav collapses to a menu below
 1024px, and pages that put controls beside content (the card browser, the
 page header, the dashboard's counts) give the content its own line on a
@@ -362,12 +380,7 @@ manifest.
 
 ## What comes next
 
-Audio is mid-delivery. `Hanguko.Audio` keys, stores and indexes clips, the
-rate limiter and the monthly budget hold the line on spend, `Storage.Local`
-writes the bytes and `Providers.Google` synthesizes them; what remains is the
-batch generator that pre-renders the curriculum and the web wiring that passes
-a clip URL to each speak button. Until that last piece lands, pages still fall
-back to browser speech everywhere.
-
-After that, listening comprehension builds on the same clips: dialogues need
-only a second configured voice, passed as the `:voice` option.
+Listening comprehension builds on the clips audio already produces: dialogues
+need only a second configured voice, passed to `Hanguko.Audio.ensure_clip/2` as
+the `:voice` option. A `listening` card template and a dictation drill are the
+new parts, not the audio under them.

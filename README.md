@@ -165,17 +165,18 @@ Text-to-Speech and served from storage from then on. Without one, no provider
 is configured, nothing is synthesized, and pages fall back to the browser's
 own speech synthesis — audio quality degrades, nothing breaks. The key is
 read at boot and never reaches the browser. `GOOGLE_TTS_VOICE` overrides the
-configured voice, and `AUDIO_DIR` says where clips are written — required in
-production, where it must be a mounted volume (see `guides/deployment.md`).
+configured voice, and `AUDIO_DIR` is the directory clips are written to and
+served from — required in production, where it must be a mounted volume (see
+`guides/deployment.md`).
 
 ## Where things live
 
 ```
-lib/hanguko/          contexts: Accounts, Content, SRS, plus the Korean language helpers
+lib/hanguko/          contexts: Accounts, Audio, Content, Progress, SRS, plus the Korean helpers
 lib/hanguko_web/      LiveViews, components and the router
 priv/content/         the curriculum, as YAML packs
 priv/repo/migrations/ schema history
-assets/js/hooks/      speech synthesis and study keyboard shortcuts
+assets/js/hooks/      pronunciation and study keyboard shortcuts
 guides/               architecture, domain model and deployment
 test/                 mirrors lib/
 ```
