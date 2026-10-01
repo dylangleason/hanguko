@@ -369,7 +369,7 @@ defmodule Hanguko.Audio do
              {:ok, %{data: data, content_type: content_type, path: path}} <-
                store_clip(clip.text, clip.voice, clip.key, provider, get_storage(opts)) do
           clip
-          |> Clip.changeset(%{
+          |> Clip.rewrite_changeset(%{
             byte_size: byte_size(data),
             content_type: content_type,
             storage_path: path
