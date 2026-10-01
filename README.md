@@ -179,7 +179,9 @@ Read the guides straight from the repository:
   the rules they enforce
 * [guides/deployment.md](guides/deployment.md) — how a commit becomes something
   running in production, and why it's built that way
-* `AGENTS.md` — Phoenix 1.8 and LiveView conventions this codebase follows
+* `AGENTS.md` — project-wide conventions this codebase follows; Phoenix 1.8 and
+  LiveView conventions live in `lib/hanguko_web/AGENTS.md`, LiveView test
+  conventions in `test/hanguko_web/AGENTS.md`
 
 Or build them together with the module documentation, where the guides and
 every `@doc` are cross-linked:
