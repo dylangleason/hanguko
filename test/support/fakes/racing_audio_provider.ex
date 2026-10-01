@@ -14,8 +14,7 @@ defmodule Hanguko.Fakes.RacingAudioProvider do
   @behaviour Hanguko.Audio.Provider
 
   alias Hanguko.Audio
-  alias Hanguko.Audio.Clip
-  alias Hanguko.Repo
+  alias Hanguko.AudioFixtures
 
   @content_type "audio/mpeg"
 
@@ -25,19 +24,8 @@ defmodule Hanguko.Fakes.RacingAudioProvider do
   @impl true
   def synthesize(text, voice) do
     text = Audio.canonical(text)
-    key = Audio.clip_key(text, provider: __MODULE__, voice: voice)
 
-    Repo.insert!(%Clip{
-      key: key,
-      text: text,
-      provider: name(),
-      voice: voice,
-      storage_path: Audio.storage_path(key, @content_type),
-      content_type: @content_type,
-      source: :batch,
-      byte_size: 0,
-      characters: String.length(text)
-    })
+    AudioFixtures.clip_fixture(text, provider: __MODULE__, voice: voice, byte_size: 0)
 
     {:ok, %{data: :crypto.hash(:sha256, text), content_type: @content_type}}
   end
