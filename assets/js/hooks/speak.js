@@ -47,6 +47,12 @@ const koreanVoice = () => {
 
 const Speak = {
   mounted() {
+    // `warn` replaces the button's tooltip with its complaint, and that tooltip
+    // is static in the HEEx, so LiveView never patches it back. Keep the
+    // resting one to restore on the next press: a complaint belongs to the
+    // press that caused it, not to the rest of the page's life.
+    this.restingTitle = this.el.title
+
     this.onClick = event => {
       event.preventDefault()
       event.stopPropagation()
@@ -61,8 +67,24 @@ const Speak = {
 
   speak() {
     stopPlaying()
+
+    if (this.el.title !== this.restingTitle) {
+      this.el.title = this.restingTitle
+    }
+
     this.el.dataset.speaking = ""
-    this.pronounce().finally(() => delete this.el.dataset.speaking)
+
+    // Only the newest press owns the indicator. Pressing the same button twice
+    // settles the first `pronounce` through the synthetic "ended" that
+    // `stopPlaying` dispatches, and its `finally` runs as a microtask - after
+    // this press has already set the attribute again. Without this check the
+    // second clip would play with no indicator showing.
+    const attempt = (this.attempt = this.pronounce())
+    attempt.finally(() => {
+      if (this.attempt === attempt) {
+        delete this.el.dataset.speaking
+      }
+    })
   },
 
   async pronounce() {
