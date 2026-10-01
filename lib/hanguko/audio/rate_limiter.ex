@@ -160,9 +160,5 @@ defmodule Hanguko.Audio.RateLimiter do
     ]
   end
 
-  defp configured_limit() do
-    :hanguko
-    |> Application.fetch_env!(Hanguko.Audio)
-    |> Keyword.fetch!(:requests_per_user_per_hour)
-  end
+  defp configured_limit(), do: Hanguko.Audio.config!(:requests_per_user_per_hour)
 end

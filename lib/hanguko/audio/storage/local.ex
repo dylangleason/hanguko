@@ -42,12 +42,7 @@ defmodule Hanguko.Audio.Storage.Local do
   end
 
   @impl true
-  def url(path) do
-    :hanguko
-    |> Application.fetch_env!(Hanguko.Audio)
-    |> Keyword.fetch!(:storage_url_prefix)
-    |> Path.join(path)
-  end
+  def url(path), do: Hanguko.Audio.config!(:storage_url_prefix) |> Path.join(path)
 
   @doc """
   Returns the directory clips are written to and served from.
@@ -57,11 +52,7 @@ defmodule Hanguko.Audio.Storage.Local do
   the directory is runtime configuration - in production it comes from
   `AUDIO_DIR` and must be a mounted volume, which no compiled-in path can name.
   """
-  def root do
-    :hanguko
-    |> Application.fetch_env!(Hanguko.Audio)
-    |> Keyword.fetch!(:storage_dir)
-  end
+  def root, do: Hanguko.Audio.config!(:storage_dir)
 
   @doc """
   Returns the path on disk for a stored clip, under `root/0`.
