@@ -25,38 +25,30 @@ defmodule HangukoWeb.AudioHook do
   than fall back to browser speech. `"unavailable"` is also logged, because
   from the outside a dead API key looks exactly like working browser speech.
 
-  A `text` far larger than any speak button could hold is refused as
-  `"invalid_text"` here, before `Hanguko.Audio.speak/4` is called at all. That
-  function canonicalizes the text and hashes it to look the clip up, and sums
-  the month's characters, all before the 200-character limit is checked on a
-  miss - so without this an oversized payload would buy that work on every
-  press, whether or not the press was within the user's rate limit.
+  A non-binary or missing `text` is refused as `"invalid_text"` here, before
+  `Hanguko.Audio.speak/4` is called at all - that function expects a binary.
+  An oversized `text` is also refused as `"invalid_text"`, but by `speak/4`
+  itself, which checks the byte size before canonicalizing, hashing or summing
+  the month's characters, so an oversized payload buys none of that work.
 
-  Also assigns `speak_remote?`, which is what a page passes to
-  `HangukoWeb.KoreanComponents.speak_button/1` as `remote`. It mirrors the first
-  two checks in `Hanguko.Audio.speak/4`: there is no sense offering a round trip
-  that would be refused for want of a signed-in user or a configured provider.
-  Deciding it here rather than per page keeps one copy of the rule, and a page
-  that gets it wrong either wastes a request per button or quietly drops every
-  learner to browser speech.
+  Also assigns `speak_remote?`, via `Hanguko.Audio.available?/2`, which is
+  what a page passes to `HangukoWeb.KoreanComponents.speak_button/1` as
+  `remote`. There is no sense offering a round trip that would be refused for
+  want of a signed-in user or a configured provider. Deciding it here rather
+  than per page keeps one copy of the rule, and a page that gets it wrong
+  either wastes a request per button or quietly drops every learner to browser
+  speech.
   """
 
   import Phoenix.Component, only: [assign: 3]
   import Phoenix.LiveView, only: [attach_hook: 4]
 
-  alias Hanguko.Accounts.Scope
   alias Hanguko.Audio
 
   require Logger
 
   # Client errors
   @reported ~w(unauthenticated disabled rate_limited budget_exceeded invalid_text)a
-
-  # Generous ceiling on the event payload, in bytes rather than characters
-  # because the point is to spend nothing deciding. `Hanguko.Audio` holds the
-  # real rule - 200 characters of Korean, which even as three-byte Hangul with
-  # punctuation is well under this - and still applies it.
-  @max_text_bytes 1_000
 
   def on_mount(:default, _params, _session, socket) do
     socket =
@@ -67,8 +59,7 @@ defmodule HangukoWeb.AudioHook do
     {:cont, socket}
   end
 
-  defp handle_event("audio:speak", %{"text" => text}, socket)
-       when is_binary(text) and byte_size(text) <= @max_text_bytes do
+  defp handle_event("audio:speak", %{"text" => text}, socket) when is_binary(text) do
     reply =
       case Audio.speak(socket.assigns.current_scope, text, DateTime.utc_now()) do
         {:ok, url} -> %{url: url}
@@ -84,9 +75,7 @@ defmodule HangukoWeb.AudioHook do
 
   defp handle_event(_event, _params, socket), do: {:cont, socket}
 
-  defp offer_synthesis?(%Scope{user: nil}), do: false
-  defp offer_synthesis?(%Scope{}), do: Audio.enabled?()
-  defp offer_synthesis?(nil), do: false
+  defp offer_synthesis?(scope), do: Audio.available?(scope)
 
   defp reason(reason) when reason in @reported, do: Atom.to_string(reason)
 
