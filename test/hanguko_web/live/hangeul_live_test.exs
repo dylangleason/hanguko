@@ -96,9 +96,10 @@ defmodule HangukoWeb.HangeulLiveTest do
            )
   end
 
-  # Every syllable the builder makes is new, so no batch run can have bought a
-  # clip for it and synthesis is the only way to hear a real voice say it.
-  test "only ever synthesizes for the syllable builder", %{conn: conn} do
+  # The page looks up the letters it renders and nothing else, so a clip that
+  # exists for the built syllable but wasn't part of that lookup is not reached
+  # for - synthesis is how the builder says it instead.
+  test "synthesizes for a built syllable the page didn't look up", %{conn: conn} do
     %{conn: conn} = register_and_log_in_user(%{conn: conn})
     clip_fixture("한")
 
@@ -106,5 +107,21 @@ defmodule HangukoWeb.HangeulLiveTest do
 
     assert has_element?(view, "#builder-speak[data-remote='true']")
     refute has_element?(view, "#builder-speak[data-audio]")
+  end
+
+  # Not every built syllable is new: clear the final from 간 and it is 가, the
+  # syllable ㄱ's clip was bought for. That URL is already in the assign from
+  # the page's one lookup, so asking the server for it again buys nothing.
+  test "reuses a clip the page already holds for a built syllable", %{conn: conn} do
+    %{conn: conn} = register_and_log_in_user(%{conn: conn})
+    clip = clip_fixture("가")
+
+    {:ok, view, _html} = live(conn, ~p"/hangeul")
+
+    view |> element("#picker-initial button[phx-value-jamo='ㄱ']") |> render_click()
+    view |> element("#picker-final button[phx-value-jamo='']") |> render_click()
+
+    assert syllable(view) == "가"
+    assert has_element?(view, "#builder-speak[data-audio='#{Local.url(clip.storage_path)}']")
   end
 end

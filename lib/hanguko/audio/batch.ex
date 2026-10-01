@@ -1,6 +1,4 @@
 defmodule Hanguko.Audio.Batch do
-  alias Hanguko.Audio
-
   @moduledoc """
   Pre-renders many clips at once, for `mix hanguko.audio.generate` and
   `Hanguko.Release.generate_audio/0`.
@@ -31,8 +29,11 @@ defmodule Hanguko.Audio.Batch do
   so the decision to spend is made against a number rather than a hope. The
   texts are those with no clip yet, found in one query with
   `Hanguko.Audio.urls_for/2`; `characters` counts them the way the provider
-  bills and the monthly budget sums, over the canonical form. A text given
-  twice counts once, since one clip serves every text that canonicalizes to it.
+  bills and the monthly budget sums, over the canonical form. De-duplication
+  goes by that same canonical form rather than by literal spelling, so two
+  spellings differing only in spacing or Unicode normalization are one text
+  here - one clip serves both, and counting them separately would overstate the
+  spend and buy the clip twice.
 
   Returns `%{texts: [], characters: 0}` when audio is disabled, since no text
   can be matched to a clip without a provider to key it by. A caller that
@@ -43,7 +44,7 @@ defmodule Hanguko.Audio.Batch do
   `Hanguko.Audio.clip_key/2`.
   """
   def pending(texts, opts \\ []) do
-    texts = Enum.uniq(texts)
+    texts = Enum.uniq_by(texts, &Audio.canonical/1)
 
     if Audio.enabled?(opts) do
       stored = Audio.urls_for(texts, opts)
@@ -79,7 +80,7 @@ defmodule Hanguko.Audio.Batch do
     * `:max_concurrency` - how many texts to synthesize at once
   """
   def generate(texts, opts \\ []) do
-    texts = Enum.uniq(texts)
+    texts = Enum.uniq_by(texts, &Audio.canonical/1)
 
     if Audio.enabled?(opts) do
       %{texts: missing} = pending(texts, opts)

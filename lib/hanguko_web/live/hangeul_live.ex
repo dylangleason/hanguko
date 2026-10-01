@@ -60,6 +60,7 @@ defmodule HangukoWeb.HangeulLive do
               <.speak_button
                 id="builder-speak"
                 text={@syllable}
+                audio={@audio[@syllable]}
                 remote={@speak_remote?}
                 size="lg"
               />

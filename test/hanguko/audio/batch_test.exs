@@ -13,7 +13,7 @@ defmodule Hanguko.Audio.BatchTest do
   # Every text this file can generate a clip for. Paths are derived from the
   # text, so they can be cleaned up without asking the database - `on_exit`
   # runs in ExUnit's own process, which doesn't own the sandbox connection.
-  @texts ["어머니", "아버지"]
+  @texts ["어머니", "아버지", "안녕 하세요"]
 
   setup do
     # Generated clips land in the configured `tmp/audio`, which other test
@@ -55,6 +55,13 @@ defmodule Hanguko.Audio.BatchTest do
       assert %{texts: ["어머니"], characters: 3} == Batch.pending(["어머니", "어머니"])
     end
 
+    # One clip serves both spellings, since the key is derived from the
+    # canonical form, so counting them separately would overstate the spend.
+    test "counts two spellings of one text once" do
+      assert %{texts: ["안녕 하세요"], characters: 6} ==
+               Batch.pending(["안녕 하세요", "안녕  하세요"])
+    end
+
     test "reaches the provider not at all" do
       Batch.pending(["어머니"])
 
@@ -78,6 +85,19 @@ defmodule Hanguko.Audio.BatchTest do
         refute is_nil(clip)
         assert {:ok, _} = clip.storage_path |> Local.full_path() |> File.read()
       end
+    end
+
+    # Without de-duplicating by canonical form these would both be missing, and
+    # with `max_concurrency` above one they could be synthesized side by side -
+    # paying twice for the clip that the second one then reads back.
+    test "buys one clip for two spellings of one text" do
+      # `skipped` stays 0: the duplicate is collapsed before the counts are
+      # taken, and it never "already had a clip" the way a skip means.
+      assert %{generated: 1, skipped: 0, failed: []} =
+               Batch.generate(["안녕 하세요", "안녕  하세요"])
+
+      assert_received {Fake, :synthesize, "안녕 하세요", "test-voice"}
+      refute_received {Fake, :synthesize, _, _}
     end
 
     test "records the clips as batch generated, with no requesting user" do

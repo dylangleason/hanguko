@@ -17,7 +17,10 @@ defmodule Hanguko.AudioFixtures do
     {provider, attrs} = pop_attr!(attrs, :provider)
     {voice, attrs} = pop_attr!(attrs, :voice)
 
-    key = Audio.clip_key(text)
+    # Keyed with the provider and voice this row claims, not the configured
+    # ones: a row saying "google" while carrying the test provider's key is a
+    # trap for any test that looks a clip up by key.
+    key = Audio.clip_key(text, provider: provider, voice: voice)
     storage_path = Audio.storage_path(key, "audio/mpeg")
 
     %Clip{

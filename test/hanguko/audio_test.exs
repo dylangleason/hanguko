@@ -197,6 +197,7 @@ defmodule Hanguko.AudioTest do
     test "returns the same clip when two processes miss at once" do
       tasks = for _ <- 1..2, do: Task.async(fn -> Audio.ensure_clip("한") end)
       [{:ok, a}, {:ok, b}] = Task.await_many(tasks)
+      remove_on_exit(a)
 
       assert a.id == b.id
       assert 1 == Repo.aggregate(Clip, :count)
@@ -418,13 +419,20 @@ defmodule Hanguko.AudioTest do
     end
 
     test "leaves out a clip recorded under another voice" do
-      clip_fixture("어머니", voice: "an-older-voice")
+      clip = clip_fixture("어머니", voice: "an-older-voice")
+
+      # The fixture keys a row by the voice it records, so this row is the one a
+      # real older-voice clip would be - not the configured voice's key wearing
+      # another voice's name.
+      assert clip.key == Audio.clip_key("어머니", voice: "an-older-voice")
 
       assert [] == Audio.orphaned_clips()
     end
 
     test "leaves out a clip recorded by another provider" do
-      clip_fixture("어머니", provider: Google)
+      clip = clip_fixture("어머니", provider: Google)
+
+      assert clip.key == Audio.clip_key("어머니", provider: Google)
 
       assert [] == Audio.orphaned_clips()
     end

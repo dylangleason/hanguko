@@ -11,7 +11,27 @@ defmodule Hanguko.Audio.Storage.Local do
     fp = full_path(path)
 
     with :ok <- Path.dirname(fp) |> File.mkdir_p() do
-      File.write(fp, data)
+      write_atomically(fp, data)
+    end
+  end
+
+  # `Hanguko.Audio` allows two callers to miss the same text and both
+  # synthesize it, and `rewrite_clip/2` says a second render isn't guaranteed to
+  # be byte for byte the first, so two writers can hold different bytes for one
+  # path. Writing in place would let them interleave into a file matching
+  # neither, and whose length matches neither row's `byte_size`. A rename is
+  # atomic, so every reader sees one whole version or the other - which is what
+  # `Hanguko.Audio.Storage` means by requiring `put/3` to be idempotent.
+  defp write_atomically(fp, data) do
+    tmp = "#{fp}.#{System.unique_integer([:positive])}.tmp"
+
+    with :ok <- File.write(tmp, data),
+         :ok <- File.rename(tmp, fp) do
+      :ok
+    else
+      {:error, reason} ->
+        File.rm(tmp)
+        {:error, reason}
     end
   end
 
