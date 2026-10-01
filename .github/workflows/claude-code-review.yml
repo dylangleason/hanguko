@@ -89,6 +89,14 @@ jobs:
           # history, not just the tip.
           fetch-depth: 0
 
+      # actions/checkout never sets refs/remotes/origin/HEAD, and the built-in
+      # /security-review diffs against it. Without this it fails and Claude
+      # falls back to reviewing the diff by hand.
+      - name: Point origin/HEAD at the PR base
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: git remote set-head origin "$BASE_REF"
+
       - name: Run Claude Security Review
         id: claude-security-review
         uses: anthropics/claude-code-action@v1
