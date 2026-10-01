@@ -401,6 +401,10 @@ defmodule Hanguko.AudioTest do
     end
   end
 
+  # These tests turn on a clip row having no file in storage, so their text has
+  # to be one no other async test file writes a clip for - `Hanguko.Audio.BatchTest`
+  # generates 어머니 and 아버지, and a row for either looks present rather than
+  # orphaned while that file is on disk.
   describe "orphaned_clips/1" do
     test "is empty when every clip's audio is in storage" do
       {:ok, clip} = Audio.ensure_clip("안녕하세요")
@@ -412,27 +416,27 @@ defmodule Hanguko.AudioTest do
     test "returns the clip whose audio is gone" do
       {:ok, present} = Audio.ensure_clip("안녕하세요")
       remove_on_exit(present)
-      missing = clip_fixture("어머니")
+      missing = clip_fixture("선생님")
 
       assert [orphan] = Audio.orphaned_clips()
       assert orphan.id == missing.id
     end
 
     test "leaves out a clip recorded under another voice" do
-      clip = clip_fixture("어머니", voice: "an-older-voice")
+      clip = clip_fixture("선생님", voice: "an-older-voice")
 
       # The fixture keys a row by the voice it records, so this row is the one a
       # real older-voice clip would be - not the configured voice's key wearing
       # another voice's name.
-      assert clip.key == Audio.clip_key("어머니", voice: "an-older-voice")
+      assert clip.key == Audio.clip_key("선생님", voice: "an-older-voice")
 
       assert [] == Audio.orphaned_clips()
     end
 
     test "leaves out a clip recorded by another provider" do
-      clip = clip_fixture("어머니", provider: Google)
+      clip = clip_fixture("선생님", provider: Google)
 
-      assert clip.key == Audio.clip_key("어머니", provider: Google)
+      assert clip.key == Audio.clip_key("선생님", provider: Google)
 
       assert [] == Audio.orphaned_clips()
     end
@@ -442,12 +446,16 @@ defmodule Hanguko.AudioTest do
     end
   end
 
+  # Two of these tests write a clip file for their text, and `remove_on_exit/1`
+  # deletes it afterwards, so the text has to be one no other async test file
+  # generates - `Hanguko.Audio.BatchTest` owns 어머니 and 아버지 - or the two
+  # files take turns deleting a path the other is still reading.
   describe "rewrite_clip/2" do
     test "re-synthesizes the clip's text and writes it back to the same path" do
-      clip = clip_fixture("어머니") |> remove_on_exit()
+      clip = clip_fixture("할머니") |> remove_on_exit()
 
       assert {:ok, rewritten} = Audio.rewrite_clip(clip)
-      assert_received {Fake, :synthesize, "어머니", "test-voice"}
+      assert_received {Fake, :synthesize, "할머니", "test-voice"}
 
       assert rewritten.id == clip.id
       assert rewritten.key == clip.key
@@ -457,7 +465,7 @@ defmodule Hanguko.AudioTest do
     end
 
     test "brings byte_size and content_type in line with the new bytes" do
-      clip = clip_fixture("어머니", byte_size: 1, content_type: "audio/ogg") |> remove_on_exit()
+      clip = clip_fixture("할머니", byte_size: 1, content_type: "audio/ogg") |> remove_on_exit()
 
       assert {:ok, rewritten} = Audio.rewrite_clip(clip)
 
@@ -468,27 +476,27 @@ defmodule Hanguko.AudioTest do
     end
 
     test "refuses a clip recorded under another voice" do
-      clip = clip_fixture("어머니", voice: "an-older-voice")
+      clip = clip_fixture("할머니", voice: "an-older-voice")
 
       assert {:error, :provider_mismatch} == Audio.rewrite_clip(clip)
       refute_received {Fake, :synthesize, _, _}
     end
 
     test "refuses a clip recorded by another provider" do
-      clip = clip_fixture("어머니", provider: Google)
+      clip = clip_fixture("할머니", provider: Google)
 
       assert {:error, :provider_mismatch} == Audio.rewrite_clip(clip)
       refute_received {Fake, :synthesize, _, _}
     end
 
     test "returns :disabled when no provider is configured" do
-      clip = clip_fixture("어머니")
+      clip = clip_fixture("할머니")
 
       assert {:error, :disabled} == Audio.rewrite_clip(clip, provider: nil)
     end
 
     test "reports a synthesis failure and leaves the row as it was" do
-      clip = clip_fixture("어머니", provider: Failing)
+      clip = clip_fixture("할머니", provider: Failing)
 
       assert {:error, :synthesis_failed} == Audio.rewrite_clip(clip, provider: Failing)
       assert query_clip(clip.key).byte_size == clip.byte_size
