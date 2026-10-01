@@ -11,7 +11,7 @@ defmodule HangukoWeb.PhraseLive do
 
   import HangukoWeb.DeckLive.Components
 
-  alias Hanguko.{Content, SRS}
+  alias Hanguko.{Audio, Content, SRS}
   alias Hanguko.Content.Item
   alias HangukoWeb.Live.PerUserAction
 
@@ -127,6 +127,8 @@ defmodule HangukoWeb.PhraseLive do
                 <.speak_button
                   id={"#{dom_id}-speak"}
                   text={Item.speech_text(item)}
+                  audio={@audio[Item.speech_text(item)]}
+                  remote={@speak_remote?}
                   rate={@tts_rate}
                   class="mt-0.5"
                 />
@@ -196,6 +198,7 @@ defmodule HangukoWeb.PhraseLive do
     deck = Enum.find(decks, &(&1.slug == params["situation"])) || List.first(decks)
     politeness = Enum.find(Item.politeness_levels(), &(&1 == params["politeness"]))
     items = if deck, do: deck.items, else: []
+    shown = filter_politeness(items, politeness)
 
     {:noreply,
      socket
@@ -203,7 +206,10 @@ defmodule HangukoWeb.PhraseLive do
      |> assign(:politeness, politeness)
      |> assign(:page_title, if(deck, do: "#{deck.title} · Phrases", else: "Phrases"))
      |> assign(:variants, variants(items))
-     |> stream(:phrases, filter_politeness(items, politeness), reset: true)}
+     # Rebuilt alongside the stream, since the filter decides which phrases are
+     # on the page and so which clips the page needs.
+     |> assign(:audio, Audio.urls_for(Enum.map(shown, &Item.speech_text/1)))
+     |> stream(:phrases, shown, reset: true)}
   end
 
   @impl true

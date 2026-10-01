@@ -67,4 +67,17 @@ defmodule Hanguko.Audio.StorageTest do
       assert "/audio/#{path}" == Storage.Local.url(path)
     end
   end
+
+  describe "Local.root/0" do
+    test "is the configured storage directory" do
+      configured =
+        :hanguko |> Application.fetch_env!(Hanguko.Audio) |> Keyword.fetch!(:storage_dir)
+
+      assert configured == Storage.Local.root()
+    end
+
+    test "is the directory every stored path resolves against" do
+      assert Path.join(Storage.Local.root(), "te/st.mp3") == Storage.Local.full_path("te/st.mp3")
+    end
+  end
 end

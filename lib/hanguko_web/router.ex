@@ -51,7 +51,7 @@ defmodule HangukoWeb.Router do
     pipe_through [:browser, :require_authenticated_user]
 
     live_session :require_authenticated_user,
-      on_mount: [{HangukoWeb.UserAuth, :require_authenticated}] do
+      on_mount: [{HangukoWeb.UserAuth, :require_authenticated}, HangukoWeb.AudioHook] do
       live "/users/settings", UserLive.Settings, :edit
       live "/users/settings/confirm-email/:token", UserLive.Settings, :confirm_email
 
@@ -65,7 +65,11 @@ defmodule HangukoWeb.Router do
     # loads those settings once (detecting the browser's time zone first if
     # needed) and assigns them, rather than each page repeating that dance.
     live_session :require_authenticated_user_study,
-      on_mount: [{HangukoWeb.UserAuth, :require_authenticated}, HangukoWeb.DetectTimezone] do
+      on_mount: [
+        {HangukoWeb.UserAuth, :require_authenticated},
+        HangukoWeb.DetectTimezone,
+        HangukoWeb.AudioHook
+      ] do
       live "/dashboard", DashboardLive, :index
       live "/study", StudyLive, :index
       live "/stats", StatsLive, :index
@@ -78,7 +82,7 @@ defmodule HangukoWeb.Router do
     pipe_through [:browser]
 
     live_session :current_user,
-      on_mount: [{HangukoWeb.UserAuth, :mount_current_scope}] do
+      on_mount: [{HangukoWeb.UserAuth, :mount_current_scope}, HangukoWeb.AudioHook] do
       live "/users/register", UserLive.Registration, :new
       live "/users/log-in", UserLive.Login, :new
       live "/users/log-in/:token", UserLive.Confirmation, :new

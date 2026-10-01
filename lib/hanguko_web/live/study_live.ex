@@ -20,7 +20,7 @@ defmodule HangukoWeb.StudyLive do
 
   import HangukoWeb.StudyComponents
 
-  alias Hanguko.{Content, Korean, SRS}
+  alias Hanguko.{Audio, Content, Korean, SRS}
   alias Hanguko.Content.Item
   alias Hanguko.SRS.Queue
 
@@ -71,6 +71,8 @@ defmodule HangukoWeb.StudyLive do
             entry={@entry}
             revealed={@revealed}
             settings={@settings}
+            audio={@audio}
+            remote={@speak_remote?}
             deck_title={@deck_titles[@entry.item.deck_id]}
             typed={typed_answer?(assigns)}
             answer={@answer}
@@ -140,6 +142,8 @@ defmodule HangukoWeb.StudyLive do
   attr :entry, :map, required: true
   attr :revealed, :boolean, required: true
   attr :settings, :any, required: true
+  attr :audio, :map, required: true, doc: "stored clips by text, from Hanguko.Audio.urls_for/2"
+  attr :remote, :boolean, required: true
   attr :deck_title, :string, default: nil
   attr :typed, :boolean, default: false, doc: "ask for the answer to be typed"
   attr :answer, :map, default: nil, doc: "the checked typed answer, once submitted"
@@ -214,6 +218,8 @@ defmodule HangukoWeb.StudyLive do
               <.speak_button
                 id="study-speak"
                 text={Item.speech_text(@entry.item)}
+                audio={@audio[Item.speech_text(@entry.item)]}
+                remote={@remote}
                 rate={@settings.tts_rate}
                 size="lg"
                 data-primary-speak
@@ -235,6 +241,8 @@ defmodule HangukoWeb.StudyLive do
               <.speak_button
                 id="study-speak"
                 text={@entry.item.korean}
+                audio={@audio[@entry.item.korean]}
+                remote={@remote}
                 rate={@settings.tts_rate}
                 size="lg"
                 data-primary-speak
@@ -248,6 +256,8 @@ defmodule HangukoWeb.StudyLive do
               <.speak_button
                 id="study-speak"
                 text={Item.speech_text(@entry.item)}
+                audio={@audio[Item.speech_text(@entry.item)]}
+                remote={@remote}
                 rate={@settings.tts_rate}
                 size="lg"
                 data-primary-speak
@@ -466,6 +476,7 @@ defmodule HangukoWeb.StudyLive do
       |> assign(:deck, deck)
       |> assign(:deck_titles, Map.new(enrolled, &{&1.id, &1.title}))
       |> assign(:has_decks, enrolled != [])
+      |> assign(:audio, %{})
       |> assign(:last_log, nil)
       |> assign(:refresh_timer, nil)
       |> assign(:session, %{
@@ -599,6 +610,7 @@ defmodule HangukoWeb.StudyLive do
   defp show_entry(socket, entry) do
     socket
     |> assign(:entry, entry)
+    |> assign(:audio, Audio.urls_for(spoken_texts(entry)))
     |> assign(:revealed, false)
     |> assign(:answer, nil)
     |> assign(:answer_form, to_form(%{"text" => ""}, as: :answer))
@@ -608,6 +620,12 @@ defmodule HangukoWeb.StudyLive do
     )
     |> assign(:shown_at, System.monotonic_time(:millisecond))
   end
+
+  # Every text one card might pronounce, looked up in one go when the card is
+  # shown. A card's two sides don't always say the same thing - a jamo card
+  # speaks its example syllable while a cloze card speaks the whole sentence -
+  # and the back is rendered before the learner reveals it.
+  defp spoken_texts(%{item: item}), do: Enum.uniq([Item.speech_text(item), item.korean])
 
   # When only learning cards remain for later today, check back when the
   # next one enters the learn-ahead window.

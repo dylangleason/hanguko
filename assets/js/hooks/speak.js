@@ -1,11 +1,41 @@
-// Pronounces Korean text with the browser's speech synthesis (Web Speech API).
+// Pronounces Korean text, trying three sources in order:
 //
-//   <button id="..." phx-hook="Speak" data-text="안녕하세요" data-rate="0.9">
+//   1. `data-audio` - a clip the page already found, played straight away
+//   2. `data-remote` - ask the server to synthesize it, over "audio:speak"
+//      (answered by HangukoWeb.AudioHook), then play what comes back
+//   3. the browser's own speech synthesis (Web Speech API)
 //
-// If the element has a `data-audio` URL (pre-generated audio), that file is
-// played instead, so pages upgrade automatically once recorded audio exists.
-// That is the swap point for cloud TTS: pass an item's clip and this hook
-// prefers it over browser speech, with no change here.
+//   <button id="..." phx-hook="Speak" data-text="안녕하세요" data-rate="0.9"
+//           data-audio="/audio/4f/2a/4f2ab1c3.mp3" data-remote="true">
+//
+// Each step falls through to the next on failure, so a missing clip or a
+// provider outage degrades to a worse voice rather than to silence.
+
+// Clips synthesized during this page's life, by text, so pressing the same
+// button twice is one round trip. Clips are immutable, so there is nothing to
+// invalidate; the map goes away with the page.
+const synthesized = new Map()
+
+// How long to wait for the server before speaking the text locally instead.
+// Long enough for a cold synthesis including the provider's own retries, short
+// enough that a learner isn't left wondering whether the button did anything.
+const REMOTE_TIMEOUT_MS = 4000
+
+// Only one pronunciation is ever audible, across every button on the page.
+let playing = null
+
+const stopPlaying = () => {
+  if (playing) {
+    playing.pause()
+    // Settles whatever is waiting on this clip, so the button that started it
+    // stops pulsing. Pausing on its own fires no event.
+    playing.dispatchEvent(new Event("ended"))
+    playing = null
+  }
+  if ("speechSynthesis" in window) {
+    window.speechSynthesis.cancel()
+  }
+}
 
 const isKorean = voice => voice.lang.replace("_", "-").toLowerCase().startsWith("ko")
 
@@ -30,15 +60,75 @@ const Speak = {
   },
 
   speak() {
-    const {text, audio, rate} = this.el.dataset
+    stopPlaying()
+    this.el.dataset.speaking = ""
+    this.pronounce().finally(() => delete this.el.dataset.speaking)
+  },
 
-    if (audio) {
-      const player = new Audio(audio)
-      player.playbackRate = parseFloat(rate || "1")
-      this.playing(player.play().then(() => new Promise(resolve => (player.onended = resolve))))
-      return
+  async pronounce() {
+    const {text, audio, remote} = this.el.dataset
+    const url = audio || synthesized.get(text)
+
+    if (url) {
+      return this.play(url, text)
     }
 
+    if (remote) {
+      const synthesizedUrl = await this.requestClip(text)
+      if (synthesizedUrl) {
+        return this.play(synthesizedUrl, text)
+      }
+    }
+
+    return this.speakLocally(text)
+  },
+
+  // Resolves to a URL, or to null when the server request fails for
+  // whatever reason.
+  requestClip(text) {
+    return new Promise(resolve => {
+      const timer = setTimeout(() => resolve(null), REMOTE_TIMEOUT_MS)
+      this.pushEvent("audio:speak", {text}, reply => {
+        clearTimeout(timer)
+
+        if (reply && reply.url) {
+          synthesized.set(text, reply.url)
+          resolve(reply.url)
+        } else {
+          this.warn(`the server didn't pronounce this (${reply && reply.error})`)
+          resolve(null)
+        }
+      })
+    })
+  },
+
+  async play(url, text) {
+    const player = new Audio(url)
+    player.playbackRate = parseFloat(this.el.dataset.rate || "1")
+    player.preservesPitch = true
+    playing = player
+
+    const outcome = new Promise(resolve => {
+      player.onended = () => resolve("ended")
+      player.onerror = () => resolve("failed")
+    })
+
+    try {
+      await player.play()
+    } catch (error) {
+      this.warn(`couldn't play ${url} (${error.message})`)
+      return this.speakLocally(text)
+    }
+
+    // A clip whose row outlived its file answers 404 here, which is what
+    // `mix hanguko.audio.generate --verify` exists to repair.
+    if ((await outcome) === "failed") {
+      this.warn(`${url} stopped playing`)
+      return this.speakLocally(text)
+    }
+  },
+
+  speakLocally(text) {
     if (!("speechSynthesis" in window)) {
       this.warn("Your browser can't speak text aloud.")
       return
@@ -46,7 +136,7 @@ const Speak = {
 
     const utterance = new SpeechSynthesisUtterance(text)
     utterance.lang = "ko-KR"
-    utterance.rate = parseFloat(rate || "0.9")
+    utterance.rate = parseFloat(this.el.dataset.rate || "0.9")
 
     const voice = koreanVoice()
     if (voice) {
@@ -55,19 +145,11 @@ const Speak = {
       this.warn("No Korean voice is installed; add one in your system's speech settings.")
     }
 
-    window.speechSynthesis.cancel()
-    this.playing(
-      new Promise(resolve => {
-        utterance.onend = resolve
-        utterance.onerror = resolve
-        window.speechSynthesis.speak(utterance)
-      })
-    )
-  },
-
-  playing(promise) {
-    this.el.dataset.speaking = ""
-    promise.finally(() => delete this.el.dataset.speaking)
+    return new Promise(resolve => {
+      utterance.onend = resolve
+      utterance.onerror = resolve
+      window.speechSynthesis.speak(utterance)
+    })
   },
 
   warn(message) {

@@ -29,10 +29,24 @@ defmodule Hanguko.Audio.Storage.Local do
     |> Path.join(path)
   end
 
-  def full_path(path) do
+  @doc """
+  Returns the directory clips are written to and served from.
+
+  `HangukoWeb.Endpoint` passes this as an MFA tuple to `Plug.Static`, which
+  calls it per request. Endpoint plugs are initialised at compile time, while
+  the directory is runtime configuration - in production it comes from
+  `AUDIO_DIR` and must be a mounted volume, which no compiled-in path can name.
+  """
+  def root do
     :hanguko
     |> Application.fetch_env!(Hanguko.Audio)
     |> Keyword.fetch!(:storage_dir)
-    |> Path.join(path)
+  end
+
+  @doc """
+  Returns the path on disk for a stored clip, under `root/0`.
+  """
+  def full_path(path) do
+    Path.join(root(), path)
   end
 end

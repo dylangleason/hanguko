@@ -1,7 +1,7 @@
 defmodule HangukoWeb.GrammarLive.Show do
   use HangukoWeb, :live_view
 
-  alias Hanguko.{Content, Korean, SRS}
+  alias Hanguko.{Audio, Content, Korean, SRS}
   alias Hanguko.Content.{GrammarPoint, Item}
   alias HangukoWeb.Markdown
   alias HangukoWeb.Live.PerUserAction
@@ -133,7 +133,12 @@ defmodule HangukoWeb.GrammarLive.Show do
             >
               <span class="text-base-content/60">{elem(@try_result, 1)["when"]} →</span>
               <.korean class="text-lg font-semibold">{elem(@try_result, 2)}</.korean>
-              <.speak_button id="try-speak" text={elem(@try_result, 2)} rate={@tts_rate} />
+              <.speak_button
+                id="try-speak"
+                text={elem(@try_result, 2)}
+                remote={@speak_remote?}
+                rate={@tts_rate}
+              />
             </p>
           </form>
         </section>
@@ -152,6 +157,8 @@ defmodule HangukoWeb.GrammarLive.Show do
               <.speak_button
                 id={"example-speak-#{item.id}"}
                 text={item.korean}
+                audio={@audio[item.korean]}
+                remote={@speak_remote?}
                 rate={@tts_rate}
                 class="mt-0.5"
               />
@@ -187,6 +194,8 @@ defmodule HangukoWeb.GrammarLive.Show do
      |> assign(:deck, point.deck)
      |> assign(:learned, GrammarPoint.learned?(point))
      |> assign(:batchim_rows, Enum.filter(point.formation, &is_boolean(&1["batchim"])))
+     # One lookup for every example sentence, rather than a query per button.
+     |> assign(:audio, Audio.urls_for(Enum.map(point.items, & &1.korean)))
      |> assign(:tts_rate, SRS.get_settings(scope).tts_rate)
      |> assign_try("")}
   end

@@ -3,7 +3,7 @@ defmodule HangukoWeb.DeckLive.Show do
 
   import HangukoWeb.DeckLive.Components
 
-  alias Hanguko.{Content, SRS}
+  alias Hanguko.{Audio, Content, SRS}
   alias Hanguko.Content.Item
   alias HangukoWeb.Live.PerUserAction
 
@@ -74,7 +74,14 @@ defmodule HangukoWeb.DeckLive.Show do
           id={dom_id}
           class="flex items-start gap-3 px-4 py-3.5 transition hover:bg-base-200/50 sm:gap-4 sm:px-5"
         >
-          <.speak_button id={"#{dom_id}-speak"} text={Item.speech_text(item)} class="mt-0.5" />
+          <.speak_button
+            id={"#{dom_id}-speak"}
+            text={Item.speech_text(item)}
+            audio={@audio[Item.speech_text(item)]}
+            remote={@speak_remote?}
+            class="mt-0.5"
+          />
+
           <div class="min-w-0 flex-1">
             <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
               <.korean class="text-2xl font-medium">{item.korean}</.korean>
@@ -121,6 +128,7 @@ defmodule HangukoWeb.DeckLive.Show do
      |> assign(:page_title, deck.title)
      |> assign(:deck, %{deck | items: []})
      |> assign(:item_count, length(deck.items))
+     |> assign(:audio, deck.items |> Enum.map(&Item.speech_text/1) |> Audio.urls_for())
      |> assign(:enrolled, SRS.enrolled?(socket.assigns.current_scope, deck))
      |> stream(:items, deck.items)}
   end

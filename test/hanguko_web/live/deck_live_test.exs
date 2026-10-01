@@ -1,8 +1,10 @@
 defmodule HangukoWeb.DeckLiveTest do
   use HangukoWeb.ConnCase, async: true
 
+  import Hanguko.AudioFixtures
   import Hanguko.ContentFixtures
 
+  alias Hanguko.Audio.Storage.Local
   alias Hanguko.SRS
 
   setup do
@@ -74,6 +76,27 @@ defmodule HangukoWeb.DeckLiveTest do
       assert has_element?(view, "#items-#{hello.id}", "해요체")
       assert has_element?(view, "#items-#{hello.id}-speak[data-text='안녕하세요']")
       assert has_element?(view, "#toggle-meaning")
+    end
+
+    test "plays the clip an item already has", %{conn: conn, phrases: phrases, hello: hello} do
+      clip = clip_fixture("안녕하세요")
+
+      {:ok, view, _html} = live(conn, ~p"/decks/#{phrases.slug}")
+
+      assert has_element?(
+               view,
+               "#items-#{hello.id}-speak[data-audio='#{Local.url(clip.storage_path)}']"
+             )
+    end
+
+    test "offers no clip for an item that hasn't got one", %{
+      conn: conn,
+      phrases: phrases,
+      hello: hello
+    } do
+      {:ok, view, _html} = live(conn, ~p"/decks/#{phrases.slug}")
+
+      refute has_element?(view, "#items-#{hello.id}-speak[data-audio]")
     end
 
     test "enrolls the current user", %{conn: conn, food: food} do

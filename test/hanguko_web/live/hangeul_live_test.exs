@@ -1,7 +1,10 @@
 defmodule HangukoWeb.HangeulLiveTest do
   use HangukoWeb.ConnCase, async: true
 
+  import Hanguko.AudioFixtures
   import Hanguko.ContentFixtures
+
+  alias Hanguko.Audio.Storage.Local
 
   setup do
     deck = deck_fixture(kind: :hangeul, slug: "hangeul-consonants", title: "Basic consonants")
@@ -78,5 +81,30 @@ defmodule HangukoWeb.HangeulLiveTest do
     assert has_element?(view, "#analysis-0", "dak")
     assert has_element?(view, "#analysis-1", "a")
     refute has_element?(view, "#analysis-2")
+  end
+
+  # A jamo is pronounced as its example syllable, so that - not the letter -
+  # is the text a clip was bought for.
+  test "plays the clip stored for a letter's example syllable", %{conn: conn, giyeok: giyeok} do
+    clip = clip_fixture("가")
+
+    {:ok, view, _html} = live(conn, ~p"/hangeul")
+
+    assert has_element?(
+             view,
+             "#jamo-#{giyeok.id}-speak[data-audio='#{Local.url(clip.storage_path)}']"
+           )
+  end
+
+  # Every syllable the builder makes is new, so no batch run can have bought a
+  # clip for it and synthesis is the only way to hear a real voice say it.
+  test "only ever synthesizes for the syllable builder", %{conn: conn} do
+    %{conn: conn} = register_and_log_in_user(%{conn: conn})
+    clip_fixture("한")
+
+    {:ok, view, _html} = live(conn, ~p"/hangeul")
+
+    assert has_element?(view, "#builder-speak[data-remote='true']")
+    refute has_element?(view, "#builder-speak[data-audio]")
   end
 end

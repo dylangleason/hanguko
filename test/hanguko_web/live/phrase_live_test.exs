@@ -1,8 +1,10 @@
 defmodule HangukoWeb.PhraseLiveTest do
   use HangukoWeb.ConnCase, async: true
 
+  import Hanguko.AudioFixtures
   import Hanguko.ContentFixtures
 
+  alias Hanguko.Audio.Storage.Local
   alias Hanguko.SRS
 
   setup do
@@ -200,5 +202,29 @@ defmodule HangukoWeb.PhraseLiveTest do
       refute has_element?(view, "#studying-pl-greetings")
       refute has_element?(view, "#study-situation")
     end
+  end
+
+  test "plays the stored clip for a phrase that has one", %{conn: conn, polite: polite} do
+    clip = clip_fixture("잘 지냈어요?")
+
+    {:ok, view, _html} = live(conn, ~p"/phrases")
+
+    assert has_element?(
+             view,
+             "#phrases-#{polite.id}-speak[data-audio='#{Local.url(clip.storage_path)}']"
+           )
+  end
+
+  # The clips a page needs depend on the filter, so the lookup is rebuilt with
+  # the stream rather than once on mount.
+  test "looks clips up again when the politeness filter changes", %{conn: conn, formal: formal} do
+    clip = clip_fixture("안녕하십니까")
+
+    {:ok, view, _html} = live(conn, ~p"/phrases?politeness=formal")
+
+    assert has_element?(
+             view,
+             "#phrases-#{formal.id}-speak[data-audio='#{Local.url(clip.storage_path)}']"
+           )
   end
 end
