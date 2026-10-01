@@ -26,6 +26,24 @@ config :hanguko, HangukoWeb.Endpoint,
 # Deterministic review intervals in tests
 config :hanguko, Hanguko.SRS, fuzz: false
 
+# Configure the provider using a Fake to simulate an external API
+# handling generation of audio clips
+config :hanguko, Hanguko.Audio,
+  provider: Hanguko.Fakes.AudioProvider,
+  voice: "test-voice",
+  storage_dir: "tmp/audio"
+
+# The Google adapter is exercised directly by its own test, against a Req.Test
+# stub rather than the network. Retries happen with no delay and no log line so
+# the retry tests stay fast and quiet.
+config :hanguko, Hanguko.Audio.Providers.Google,
+  api_key: "test-api-key",
+  req_options: [
+    plug: {Req.Test, Hanguko.Audio.Providers.Google},
+    retry_delay: 0,
+    retry_log_level: false
+  ]
+
 # In test we don't send emails
 config :hanguko, Hanguko.Mailer, adapter: Swoosh.Adapters.Test
 

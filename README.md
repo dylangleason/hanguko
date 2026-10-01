@@ -41,6 +41,9 @@ Sign-in is by magic link. In development the mail is not sent anywhere: open
 | `mix test path/to/test.exs:42` | Run one test or file |
 | `mix hanguko.content.import` | Load `priv/content` into the database; safe to re-run |
 | `mix hanguko.content.import --path tmp/packs` | Import from somewhere else |
+| `mix hanguko.audio.generate` | Synthesize a clip for everything the curriculum says; safe to re-run |
+| `mix hanguko.audio.generate --dry-run` | Print what would be synthesized, and what it would cost, without calling the API |
+| `mix hanguko.audio.generate --verify` | Re-synthesize clips whose audio has gone missing from storage |
 | `mix ecto.migrate` / `mix ecto.rollback` | Apply or undo migrations |
 | `mix ecto.gen.migration name` | Start a new migration |
 | `mix ecto.reset` | Drop, recreate, migrate and re-seed — **deletes all study progress** |
@@ -156,14 +159,24 @@ The production environment variables are listed in `config/runtime.exs`:
 `DATABASE_URL`, `SECRET_KEY_BASE` and `PHX_HOST` are required; `PORT`,
 `POOL_SIZE`, `ECTO_IPV6` and `DNS_CLUSTER_QUERY` are optional.
 
+`GOOGLE_TTS_API_KEY` is optional as well, and is what turns on recorded
+Korean audio: with a key, phrases are synthesized once by Google Cloud
+Text-to-Speech and served from storage from then on. Without one, no provider
+is configured, nothing is synthesized, and pages fall back to the browser's
+own speech synthesis — audio quality degrades, nothing breaks. The key is
+read at boot and never reaches the browser. `GOOGLE_TTS_VOICE` overrides the
+configured voice, and `AUDIO_DIR` is the directory clips are written to and
+served from — required in production, where it must be a mounted volume (see
+`guides/deployment.md`).
+
 ## Where things live
 
 ```
-lib/hanguko/          contexts: Accounts, Content, SRS, plus the Korean language helpers
+lib/hanguko/          contexts: Accounts, Audio, Content, Progress, SRS, plus the Korean helpers
 lib/hanguko_web/      LiveViews, components and the router
 priv/content/         the curriculum, as YAML packs
 priv/repo/migrations/ schema history
-assets/js/hooks/      speech synthesis and study keyboard shortcuts
+assets/js/hooks/      pronunciation and study keyboard shortcuts
 guides/               architecture, domain model and deployment
 test/                 mirrors lib/
 ```

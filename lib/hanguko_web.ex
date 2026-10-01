@@ -18,7 +18,7 @@ defmodule HangukoWeb do
   """
 
   def static_paths,
-    do: ~w(assets fonts images favicon.ico manifest.webmanifest robots.txt)
+    do: ~w(assets fonts images favicon.ico manifest.webmanifest robots.txt audio)
 
   def router do
     quote do

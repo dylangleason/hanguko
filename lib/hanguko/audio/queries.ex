@@ -1,0 +1,74 @@
+defmodule Hanguko.Audio.Queries do
+  @moduledoc """
+  Queries over audio clips, used by `Hanguko.Audio`.
+
+  Functions here build `Ecto.Query` structs and never touch the database; the
+  caller decides what to run. Queries name their binding `:clip`, so the
+  narrowing functions can be chained onto any query that has it.
+  """
+  import Ecto.Query, warn: false
+
+  alias Hanguko.Audio.Clip
+
+  @doc "All clips, bound as `:clip`."
+  def clips, do: from(c in Clip, as: :clip)
+
+  @doc """
+  Narrows `query` to the clips with `key`, or with any of the keys when given
+  a list. A single key matches at most one clip, since keys are unique.
+  """
+  def with_key(query, keys) when is_list(keys), do: where(query, [clip: c], c.key in ^keys)
+  def with_key(query, key), do: where(query, [clip: c], c.key == ^key)
+
+  @doc """
+  Selects the given clip `fields` into a map
+  """
+  def to_map(query, fields), do: select(query, [clip: c], map(c, ^fields))
+
+  @doc """
+  Narrows `query` to the clips a given `source` produced, `:on_demand` or
+  `:batch`. Only on-demand clips count against the monthly budget; batch
+  generation is a deliberate spend that the operator has already decided on.
+  """
+  def with_source(query, source) do
+    where(query, [clip: c], c.source == ^source)
+  end
+
+  @doc """
+  Narrows `query` to the clips inserted at or after `instant`.
+
+  Clips are never updated, so `inserted_at` is when the characters were spent
+  and the only timestamp the table needs.
+  """
+  def inserted_since(query, %DateTime{} = instant) do
+    where(query, [clip: c], c.inserted_at >= ^instant)
+  end
+
+  @doc """
+  Narrows `query` to the clips a given provider synthesized, by
+  `c:Hanguko.Audio.Provider.name/0` rather than by module, since that string is
+  what the key was derived from and what the row records.
+  """
+  def with_provider(query, name) do
+    where(query, [clip: c], c.provider == ^name)
+  end
+
+  @doc """
+  Narrows `query` to the clips spoken in `voice`.
+
+  Together with `with_provider/2` this isolates the clips whose keys agree with
+  the current configuration - the only ones that can be regenerated, since a
+  key is derived from the provider and the voice as well as the text.
+  """
+  def with_voice(query, voice) do
+    where(query, [clip: c], c.voice == ^voice)
+  end
+
+  @doc """
+  Replaces the selection with the total `characters` of the matching clips,
+  coalescing to `0` so an empty month returns a number rather than `nil`.
+  """
+  def sum_characters(query) do
+    select(query, [clip: c], c.characters |> sum() |> coalesce(0))
+  end
+end

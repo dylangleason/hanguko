@@ -5,7 +5,8 @@ defmodule HangukoWeb.HangeulLive do
   """
   use HangukoWeb, :live_view
 
-  alias Hanguko.{Content, Korean}
+  alias Hanguko.{Audio, Content, Korean}
+  alias Hanguko.Content.Item
 
   # How final consonants (batchim) are pronounced: only seven sounds exist.
   @final_sounds [
@@ -56,7 +57,13 @@ defmodule HangukoWeb.HangeulLive do
               <.korean id="builder-syllable" class="text-8xl leading-none font-medium">
                 {@syllable}
               </.korean>
-              <.speak_button id="builder-speak" text={@syllable} size="lg" />
+              <.speak_button
+                id="builder-speak"
+                text={@syllable}
+                audio={@audio[@syllable]}
+                remote={@speak_remote?}
+                size="lg"
+              />
             </div>
             <p class="mt-3 text-lg font-semibold text-secondary">{Korean.romanize(@syllable)}</p>
             <p lang="ko" class="mt-1 text-sm text-base-content/60">
@@ -111,6 +118,8 @@ defmodule HangukoWeb.HangeulLive do
                 id={"jamo-#{item.id}"}
                 item={item}
                 event="pick"
+                audio={@audio[Item.speech_text(item)]}
+                remote={@speak_remote?}
                 selected={item.korean in [@initial, @medial]}
               />
             </div>
@@ -233,10 +242,18 @@ defmodule HangukoWeb.HangeulLive do
 
   @impl true
   def mount(_params, _session, socket) do
+    decks = Content.list_decks_with_items(:hangeul)
+
     {:ok,
      socket
      |> assign(:page_title, "Hangeul")
-     |> assign(:decks, Content.list_decks_with_items(:hangeul))
+     |> assign(:decks, decks)
+     # One lookup for every letter on the page. A jamo is pronounced as its
+     # example syllable, which is what `Item.speech_text/1` returns.
+     |> assign(
+       :audio,
+       Audio.urls_for(for deck <- decks, item <- deck.items, do: Item.speech_text(item))
+     )
      |> assign(:initials, Korean.initials())
      |> assign(:medials, Korean.medials())
      |> assign(:finals, Korean.finals())

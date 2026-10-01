@@ -11,9 +11,27 @@ defmodule HangukoWeb.Endpoint do
     same_site: "Lax"
   ]
 
+  # Must match :storage_url_prefix, which is what
+  # Hanguko.Audio.Storage.Local puts in front of every clip path. A
+  # mismatch has no symptom but 404s.
+  @audio_prefix Application.compile_env!(:hanguko, [Hanguko.Audio, :storage_url_prefix])
+
   socket "/live", Phoenix.LiveView.Socket,
     websocket: [connect_info: [session: @session_options]],
     longpoll: [connect_info: [session: @session_options]]
+
+  # Generated audio clips, which live outside the release: in production
+  # AUDIO_DIR is a mounted volume, so clips survive a redeploy instead of
+  # being paid for again. Hence the MFA tuple rather than `from: :hanguko`.
+  #
+  # Clips are content-addressed (`Hanguko.Audio.clip_key/2`), so the bytes at
+  # a URL never change and the browser can keep them for a year. Plug.Static's
+  # own long-cache header applies only to URLs carrying a cache-busting query
+  # string, which these don't have, so without this every play revalidates.
+  plug Plug.Static,
+    at: @audio_prefix,
+    from: {Hanguko.Audio.Storage.Local, :root, []},
+    cache_control_for_etags: "public, max-age=31536000, immutable"
 
   # Serve at "/" the static files from "priv/static" directory.
   #

@@ -1,7 +1,10 @@
 defmodule HangukoWeb.HangeulLiveTest do
   use HangukoWeb.ConnCase, async: true
 
+  import Hanguko.AudioFixtures
   import Hanguko.ContentFixtures
+
+  alias Hanguko.Audio.Storage.Local
 
   setup do
     deck = deck_fixture(kind: :hangeul, slug: "hangeul-consonants", title: "Basic consonants")
@@ -78,5 +81,47 @@ defmodule HangukoWeb.HangeulLiveTest do
     assert has_element?(view, "#analysis-0", "dak")
     assert has_element?(view, "#analysis-1", "a")
     refute has_element?(view, "#analysis-2")
+  end
+
+  # A jamo is pronounced as its example syllable, so that - not the letter -
+  # is the text a clip was bought for.
+  test "plays the clip stored for a letter's example syllable", %{conn: conn, giyeok: giyeok} do
+    clip = clip_fixture("가")
+
+    {:ok, view, _html} = live(conn, ~p"/hangeul")
+
+    assert has_element?(
+             view,
+             "#jamo-#{giyeok.id}-speak[data-audio='#{Local.url(clip.storage_path)}']"
+           )
+  end
+
+  # The page looks up the letters it renders and nothing else, so a clip that
+  # exists for the built syllable but wasn't part of that lookup is not reached
+  # for - synthesis is how the builder says it instead.
+  test "synthesizes for a built syllable the page didn't look up", %{conn: conn} do
+    %{conn: conn} = register_and_log_in_user(%{conn: conn})
+    clip_fixture("한")
+
+    {:ok, view, _html} = live(conn, ~p"/hangeul")
+
+    assert has_element?(view, "#builder-speak[data-remote='true']")
+    refute has_element?(view, "#builder-speak[data-audio]")
+  end
+
+  # Not every built syllable is new: clear the final from 간 and it is 가, the
+  # syllable ㄱ's clip was bought for. That URL is already in the assign from
+  # the page's one lookup, so asking the server for it again buys nothing.
+  test "reuses a clip the page already holds for a built syllable", %{conn: conn} do
+    %{conn: conn} = register_and_log_in_user(%{conn: conn})
+    clip = clip_fixture("가")
+
+    {:ok, view, _html} = live(conn, ~p"/hangeul")
+
+    view |> element("#picker-initial button[phx-value-jamo='ㄱ']") |> render_click()
+    view |> element("#picker-final button[phx-value-jamo='']") |> render_click()
+
+    assert syllable(view) == "가"
+    assert has_element?(view, "#builder-speak[data-audio='#{Local.url(clip.storage_path)}']")
   end
 end

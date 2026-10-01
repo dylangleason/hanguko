@@ -26,12 +26,28 @@ defmodule HangukoWeb.KoreanComponents do
 
   @doc """
   A button that pronounces `text` (see the `Speak` hook in
-  `assets/js/hooks/speak.js`). When `audio` is given, that file is played
-  instead of synthesized speech.
+  `assets/js/hooks/speak.js`).
+
+  The hook tries three sources in order, and these attributes are how a page
+  says which of them it has:
+
+    * `audio` - a stored clip's URL, from `Hanguko.Audio.urls_for/2`. Played
+      immediately, with no round trip
+    * `remote` - there is no stored clip, but the viewer may ask the server to
+      synthesize this text over `"audio:speak"` (see `HangukoWeb.AudioHook`).
+      For text that can't be generated in advance, such as a syllable from the
+      builder or a stem from the grammar "try it" box, and for content imported
+      since the last `mix hanguko.audio.generate`
+    * neither - the browser's own speech synthesis, whose voice depends on the
+      operating system and may be absent altogether
+
+  `rate` is applied at playback, which is why a clip is stored once at normal
+  speed whatever a learner's `tts_rate` is.
   """
   attr :id, :string, required: true
   attr :text, :string, required: true
   attr :audio, :string, default: nil
+  attr :remote, :boolean, default: false
   attr :rate, :float, default: nil
   attr :size, :string, default: "md", values: ~w(sm md lg)
   attr :class, :any, default: nil
@@ -45,6 +61,7 @@ defmodule HangukoWeb.KoreanComponents do
       phx-hook="Speak"
       data-text={@text}
       data-audio={@audio}
+      data-remote={@remote && "true"}
       data-rate={@rate}
       aria-label={"Listen to #{@text}"}
       title="Listen"
@@ -78,6 +95,8 @@ defmodule HangukoWeb.KoreanComponents do
   attr :item, Item, required: true
   attr :event, :string, default: nil
   attr :selected, :boolean, default: false
+  attr :audio, :string, default: nil
+  attr :remote, :boolean, default: false
 
   def jamo_tile(assigns) do
     ~H"""
@@ -110,6 +129,8 @@ defmodule HangukoWeb.KoreanComponents do
       <.speak_button
         id={"#{@id}-speak"}
         text={Item.speech_text(@item)}
+        audio={@audio}
+        remote={@remote}
         size="sm"
         class="absolute top-1 right-1"
       />

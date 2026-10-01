@@ -40,6 +40,43 @@ if config_env() == :dev do
     ]
 end
 
+if config_env() != :test do
+  if api_key = System.get_env("GOOGLE_TTS_API_KEY") do
+    config :hanguko, Hanguko.Audio, provider: Hanguko.Audio.Providers.Google
+    config :hanguko, Hanguko.Audio.Providers.Google, api_key: api_key
+
+    # Overrides the voice in `config/config.exs`, so a different Chirp or
+    # WaveNet voice can be tried without a deploy. A voice is part of a clip's
+    # key, so changing it doesn't invalidate anything - it makes every phrase a
+    # miss, and `mix hanguko.audio.generate` regenerates the lot.
+    if voice = System.get_env("GOOGLE_TTS_VOICE") do
+      config :hanguko, Hanguko.Audio, voice: voice
+    end
+
+    # Clips are bought once from a metered API and never change, so production
+    # has to write them somewhere that outlives the container. A path inside the
+    # image is discarded by the next deploy, and every clip is paid for again.
+    # Dev and test keep the directories set in their own config files.
+    if config_env() == :prod do
+      audio_dir =
+        case System.get_env("AUDIO_DIR") do
+          dir when dir in [nil, ""] ->
+            raise """
+            environment variable AUDIO_DIR is missing.
+            Audio is enabled, so generated clips need a directory to live in, and it
+            must be a mounted volume rather than a path inside the image.
+            For example: AUDIO_DIR=/data/audio
+            """
+
+          dir ->
+            dir
+        end
+
+      config :hanguko, Hanguko.Audio, storage_dir: audio_dir
+    end
+  end
+end
+
 if config_env() == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||

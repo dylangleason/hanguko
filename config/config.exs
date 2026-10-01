@@ -86,6 +86,22 @@ config :elixir, :time_zone_database, Tz.TimeZoneDatabase
 # bunched together forever (FSRS interval fuzzing).
 config :hanguko, Hanguko.SRS, fuzz: true
 
+# Configure the provider and default voice used to generate Korean
+# language audio clips
+#
+# `storage_dir` has a default because `HangukoWeb.Endpoint` resolves it on every
+# request under `storage_url_prefix`, including when audio is switched off. Dev
+# and test name their own directory, and in production `AUDIO_DIR` replaces this
+# one; without the default, a production build with no TTS key has no
+# `storage_dir` at all and any `/audio` request raises instead of 404ing.
+config :hanguko, Hanguko.Audio,
+  voice: "ko-KR-Wavenet-C",
+  storage: Hanguko.Audio.Storage.Local,
+  storage_url_prefix: "/audio",
+  storage_dir: "priv/static/audio",
+  requests_per_user_per_hour: 30,
+  characters_per_month: 200_000
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"

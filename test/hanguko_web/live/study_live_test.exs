@@ -1,10 +1,12 @@
 defmodule HangukoWeb.StudyLiveTest do
   use HangukoWeb.ConnCase, async: true
 
+  import Hanguko.AudioFixtures
   import Hanguko.ContentFixtures
   import Hanguko.SRSFixtures
 
   alias Hanguko.Accounts.Scope
+  alias Hanguko.Audio.Storage.Local
   alias Hanguko.Repo
   alias Hanguko.SRS
   alias Hanguko.SRS.Card
@@ -31,6 +33,38 @@ defmodule HangukoWeb.StudyLiveTest do
 
     setup context do
       if context[:typed_answers], do: typed_recall_cards(context), else: :ok
+    end
+
+    test "plays the stored clip for the card on screen", %{conn: conn} do
+      clip = clip_fixture("사과")
+
+      {:ok, view, _html} = live(conn, ~p"/study?deck=food")
+
+      assert has_element?(view, "#study-speak[data-audio='#{Local.url(clip.storage_path)}']")
+    end
+
+    test "offers synthesis for a card with no clip", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/study?deck=food")
+
+      assert has_element?(view, "#study-speak[data-remote='true']")
+      refute has_element?(view, "#study-speak[data-audio]")
+    end
+
+    test "fetches the next card's clip while this one is on screen", %{conn: conn} do
+      clip_fixture("사과")
+      water = clip_fixture("물")
+
+      {:ok, view, _html} = live(conn, ~p"/study?deck=food")
+
+      assert has_element?(view, "#next-audio[src='#{Local.url(water.storage_path)}']")
+    end
+
+    test "fetches nothing when the next card has no clip", %{conn: conn} do
+      clip_fixture("사과")
+
+      {:ok, view, _html} = live(conn, ~p"/study?deck=food")
+
+      refute has_element?(view, "#next-audio")
     end
 
     defp rate(view, rating) do

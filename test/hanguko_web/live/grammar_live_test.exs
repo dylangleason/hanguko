@@ -1,10 +1,12 @@
 defmodule HangukoWeb.GrammarLiveTest do
   use HangukoWeb.ConnCase, async: true
 
+  import Hanguko.AudioFixtures
   import Hanguko.ContentFixtures
 
   alias Hanguko.{Content, SRS}
   alias Hanguko.Accounts.Scope
+  alias Hanguko.Audio.Storage.Local
 
   @particle_formation [
     %{"when" => "The noun ends in a consonant", "batchim" => true, "form" => "이에요"},
@@ -73,6 +75,31 @@ defmodule HangukoWeb.GrammarLiveTest do
       # The grammar itself is highlighted inside the sentence.
       assert has_element?(view, "#example-#{example.id} mark", "이에요")
       assert has_element?(view, "#example-speak-#{example.id}[data-text='저는 학생이에요.']")
+    end
+
+    test "plays the stored clip for an example that has one", %{conn: conn} do
+      %{example: example} = point_with_examples()
+      clip = clip_fixture("저는 학생이에요.")
+
+      {:ok, view, _html} = live(conn, ~p"/grammar/ieyo-yeyo")
+
+      assert has_element?(
+               view,
+               "#example-speak-#{example.id}[data-audio='#{Local.url(clip.storage_path)}']"
+             )
+    end
+
+    # The "try it" box conjugates a noun the learner typed, so its text exists
+    # nowhere in the curriculum and no batch run can ever have bought a clip.
+    test "only ever synthesizes for the try-it box", %{conn: conn} do
+      point_with_examples()
+      %{conn: conn} = register_and_log_in_user(%{conn: conn})
+
+      {:ok, view, _html} = live(conn, ~p"/grammar/ieyo-yeyo")
+      render_change(view, "try", %{"word" => "학생"})
+
+      assert has_element?(view, "#try-speak[data-remote='true']")
+      refute has_element?(view, "#try-speak[data-audio]")
     end
 
     test "the try-it box picks the form a word takes", %{conn: conn} do

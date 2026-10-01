@@ -20,7 +20,7 @@ defmodule HangukoWeb.StudyLive do
 
   import HangukoWeb.StudyComponents
 
-  alias Hanguko.{Content, Korean, SRS}
+  alias Hanguko.{Audio, Content, Korean, SRS}
   alias Hanguko.Content.Item
   alias Hanguko.SRS.Queue
 
@@ -71,11 +71,21 @@ defmodule HangukoWeb.StudyLive do
             entry={@entry}
             revealed={@revealed}
             settings={@settings}
+            audio={@audio}
+            remote={@speak_remote?}
             deck_title={@deck_titles[@entry.item.deck_id]}
             typed={typed_answer?(assigns)}
             answer={@answer}
             answer_form={@answer_form}
           />
+
+          <%!-- Downloads the next card's clip while this one is on screen, so
+                rating a card doesn't begin with a wait. It has to be in the
+                document for that: `preload="auto"` is what does the fetching,
+                and `hidden` keeps it out of the page and out of screen
+                readers. Only stored clips are pre-fetched; synthesis is not
+                started for a card nobody has reached yet. --%>
+          <audio :if={@next_audio} id="next-audio" src={@next_audio} preload="auto" hidden></audio>
 
           <div class="mt-4">
             <%= cond do %>
@@ -140,6 +150,8 @@ defmodule HangukoWeb.StudyLive do
   attr :entry, :map, required: true
   attr :revealed, :boolean, required: true
   attr :settings, :any, required: true
+  attr :audio, :map, required: true, doc: "stored clips by text, from Hanguko.Audio.urls_for/2"
+  attr :remote, :boolean, required: true
   attr :deck_title, :string, default: nil
   attr :typed, :boolean, default: false, doc: "ask for the answer to be typed"
   attr :answer, :map, default: nil, doc: "the checked typed answer, once submitted"
@@ -214,6 +226,8 @@ defmodule HangukoWeb.StudyLive do
               <.speak_button
                 id="study-speak"
                 text={Item.speech_text(@entry.item)}
+                audio={@audio[Item.speech_text(@entry.item)]}
+                remote={@remote}
                 rate={@settings.tts_rate}
                 size="lg"
                 data-primary-speak
@@ -235,6 +249,8 @@ defmodule HangukoWeb.StudyLive do
               <.speak_button
                 id="study-speak"
                 text={@entry.item.korean}
+                audio={@audio[@entry.item.korean]}
+                remote={@remote}
                 rate={@settings.tts_rate}
                 size="lg"
                 data-primary-speak
@@ -248,6 +264,8 @@ defmodule HangukoWeb.StudyLive do
               <.speak_button
                 id="study-speak"
                 text={Item.speech_text(@entry.item)}
+                audio={@audio[Item.speech_text(@entry.item)]}
+                remote={@remote}
                 rate={@settings.tts_rate}
                 size="lg"
                 data-primary-speak
@@ -466,6 +484,8 @@ defmodule HangukoWeb.StudyLive do
       |> assign(:deck, deck)
       |> assign(:deck_titles, Map.new(enrolled, &{&1.id, &1.title}))
       |> assign(:has_decks, enrolled != [])
+      |> assign(:audio, %{})
+      |> assign(:next_audio, nil)
       |> assign(:last_log, nil)
       |> assign(:refresh_timer, nil)
       |> assign(:session, %{
@@ -590,15 +610,22 @@ defmodule HangukoWeb.StudyLive do
       |> assign(:next_learning_due, queue.next_learning_due)
       |> assign(:limits, Map.take(queue, [:new_limit_reached, :review_limit_reached]))
 
-    case Queue.next(queue) do
-      nil -> socket |> assign(entry: nil, revealed: false, answer: nil) |> schedule_refresh(queue)
-      entry -> show_entry(socket, entry)
+    # `Queue.entries/1` is in study order, so the second one is the card the
+    # learner sees next - which is what gets its audio pre-fetched.
+    case Queue.entries(queue) do
+      [] -> socket |> assign(entry: nil, revealed: false, answer: nil) |> schedule_refresh(queue)
+      [entry | upcoming] -> show_entry(socket, entry, List.first(upcoming))
     end
   end
 
-  defp show_entry(socket, entry) do
+  defp show_entry(socket, entry, upcoming \\ nil) do
+    next_text = upcoming && Item.speech_text(upcoming.item)
+    audio = Audio.urls_for(spoken_texts(entry) ++ List.wrap(next_text))
+
     socket
     |> assign(:entry, entry)
+    |> assign(:audio, audio)
+    |> assign(:next_audio, next_text && audio[next_text])
     |> assign(:revealed, false)
     |> assign(:answer, nil)
     |> assign(:answer_form, to_form(%{"text" => ""}, as: :answer))
@@ -608,6 +635,12 @@ defmodule HangukoWeb.StudyLive do
     )
     |> assign(:shown_at, System.monotonic_time(:millisecond))
   end
+
+  # Every text one card might pronounce, looked up in one go when the card is
+  # shown. A card's two sides don't always say the same thing - a jamo card
+  # speaks its example syllable while a cloze card speaks the whole sentence -
+  # and the back is rendered before the learner reveals it.
+  defp spoken_texts(%{item: item}), do: Enum.uniq([Item.speech_text(item), item.korean])
 
   # When only learning cards remain for later today, check back when the
   # next one enters the learn-ahead window.
