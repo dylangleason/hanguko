@@ -50,6 +50,23 @@ defmodule HangukoWeb.StudyLiveTest do
       refute has_element?(view, "#study-speak[data-audio]")
     end
 
+    test "fetches the next card's clip while this one is on screen", %{conn: conn} do
+      clip_fixture("사과")
+      water = clip_fixture("물")
+
+      {:ok, view, _html} = live(conn, ~p"/study?deck=food")
+
+      assert has_element?(view, "#next-audio[src='#{Local.url(water.storage_path)}']")
+    end
+
+    test "fetches nothing when the next card has no clip", %{conn: conn} do
+      clip_fixture("사과")
+
+      {:ok, view, _html} = live(conn, ~p"/study?deck=food")
+
+      refute has_element?(view, "#next-audio")
+    end
+
     defp rate(view, rating) do
       key = view |> element("#study") |> render() |> data_key()
       render_hook(view, "rate", %{"rating" => to_string(rating), "key" => key})

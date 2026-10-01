@@ -79,6 +79,14 @@ defmodule HangukoWeb.StudyLive do
             answer_form={@answer_form}
           />
 
+          <%!-- Downloads the next card's clip while this one is on screen, so
+                rating a card doesn't begin with a wait. It has to be in the
+                document for that: `preload="auto"` is what does the fetching,
+                and `hidden` keeps it out of the page and out of screen
+                readers. Only stored clips are pre-fetched; synthesis is not
+                started for a card nobody has reached yet. --%>
+          <audio :if={@next_audio} id="next-audio" src={@next_audio} preload="auto" hidden></audio>
+
           <div class="mt-4">
             <%= cond do %>
               <% @revealed -> %>
@@ -477,6 +485,7 @@ defmodule HangukoWeb.StudyLive do
       |> assign(:deck_titles, Map.new(enrolled, &{&1.id, &1.title}))
       |> assign(:has_decks, enrolled != [])
       |> assign(:audio, %{})
+      |> assign(:next_audio, nil)
       |> assign(:last_log, nil)
       |> assign(:refresh_timer, nil)
       |> assign(:session, %{
@@ -601,16 +610,22 @@ defmodule HangukoWeb.StudyLive do
       |> assign(:next_learning_due, queue.next_learning_due)
       |> assign(:limits, Map.take(queue, [:new_limit_reached, :review_limit_reached]))
 
-    case Queue.next(queue) do
-      nil -> socket |> assign(entry: nil, revealed: false, answer: nil) |> schedule_refresh(queue)
-      entry -> show_entry(socket, entry)
+    # `Queue.entries/1` is in study order, so the second one is the card the
+    # learner sees next - which is what gets its audio pre-fetched.
+    case Queue.entries(queue) do
+      [] -> socket |> assign(entry: nil, revealed: false, answer: nil) |> schedule_refresh(queue)
+      [entry | upcoming] -> show_entry(socket, entry, List.first(upcoming))
     end
   end
 
-  defp show_entry(socket, entry) do
+  defp show_entry(socket, entry, upcoming \\ nil) do
+    next_text = upcoming && Item.speech_text(upcoming.item)
+    audio = Audio.urls_for(spoken_texts(entry) ++ List.wrap(next_text))
+
     socket
     |> assign(:entry, entry)
-    |> assign(:audio, Audio.urls_for(spoken_texts(entry)))
+    |> assign(:audio, audio)
+    |> assign(:next_audio, next_text && audio[next_text])
     |> assign(:revealed, false)
     |> assign(:answer, nil)
     |> assign(:answer_form, to_form(%{"text" => ""}, as: :answer))
