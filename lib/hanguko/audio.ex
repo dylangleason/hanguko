@@ -31,8 +31,8 @@ defmodule Hanguko.Audio do
   normalized via Unicode NFC.
   """
   def clip_key(text, opts \\ []) do
-    provider = Keyword.get_lazy(opts, :provider, &configured_provider/0)
-    voice = Keyword.get_lazy(opts, :voice, &configured_voice/0)
+    provider = get_provider(opts)
+    voice = get_voice(opts)
 
     case provider do
       nil ->
@@ -74,11 +74,11 @@ defmodule Hanguko.Audio do
   Takes the same `:provider` and `:voice` options as `clip_key/2`.
   """
   def urls_for(texts, opts \\ []) do
-    provider = Keyword.get_lazy(opts, :provider, &configured_provider/0)
+    provider = get_provider(opts)
 
     if provider do
       opts = Keyword.put(opts, :provider, provider)
-      storage = Keyword.get_lazy(opts, :storage, &configured_storage/0)
+      storage = get_storage(opts)
 
       keys = Map.new(texts, &{&1, clip_key(&1, opts)})
 
@@ -156,8 +156,6 @@ defmodule Hanguko.Audio do
                :ok <- check_budget(text, now, opts),
                {:ok, clip} <- ensure_clip(text, opts) do
             {:ok, clip.storage_path |> storage.url()}
-          else
-            {:error, reason} -> {:error, reason}
           end
         else
           {:ok, clip.storage_path |> storage.url()}
