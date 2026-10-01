@@ -23,7 +23,10 @@ defmodule Hanguko.Audio.RateLimiter do
 
   The limit is deliberately a blunt instrument. The monthly character budget in
   `Hanguko.Audio` is what bounds total spend; this one bounds the rate at which
-  a single account can reach it.
+  a single account can reach it, without preventing it from getting there. That
+  budget is a single shared allowance, so an account spending its hourly slots
+  all month can still exhaust it on everyone's behalf - see
+  `Hanguko.Audio.characters_used/1`.
   """
 
   use GenServer

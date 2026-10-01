@@ -111,7 +111,9 @@ defmodule Hanguko.Audio do
        has spent their allowance for the hour
     5. the monthly budget - `{:error, :budget_exceeded}` when this month's
        on-demand characters, plus this request's own, would pass the cap. The
-       request counts itself, so one long text can't step over the cap
+       request counts itself, so one long text can't step over the cap. The cap
+       is shared rather than per learner, so this is the one error here that
+       isn't about the caller: see `characters_used/1`
     6. `ensure_clip/2` with `source: :on_demand` and this user recorded
 
   Anything `ensure_clip/2` reports comes back unchanged, including
@@ -183,6 +185,13 @@ defmodule Hanguko.Audio do
   (`Hanguko.SRS.Day`) has nothing to do with it. Batch generation is excluded:
   pre-rendering the curriculum is a decision made once by whoever runs the
   task, not something to ration.
+
+  One bill means one allowance, deliberately: there is no per-learner share of
+  it. The consequence is worth stating plainly, because it is not the usual
+  shape of a limit - whoever spends the last of the month's characters drops
+  *every* learner to browser speech until the month turns, not only themselves.
+  `Hanguko.Audio.RateLimiter` caps how fast any one account can spend, which
+  makes reaching that point slow rather than impossible.
   """
   def characters_used(now) do
     this_month = now |> Date.beginning_of_month() |> DateTime.new!(~T[00:00:00], "Etc/UTC")

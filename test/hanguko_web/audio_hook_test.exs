@@ -16,6 +16,7 @@ defmodule HangukoWeb.AudioHookTest do
   import Hanguko.ContentFixtures
 
   alias Hanguko.Audio
+  alias Hanguko.Audio.RateLimiter
   alias Hanguko.Audio.Storage.Local
   alias Hanguko.Fakes.AudioProvider, as: Fake
 
@@ -66,6 +67,26 @@ defmodule HangukoWeb.AudioHookTest do
 
       assert_reply view, %{error: "invalid_text"}
       refute_received {Fake, :synthesize, _, _}
+    end
+
+    # Refused by the hook rather than by `Hanguko.Audio`, so nothing is spent
+    # deciding. Were it left to `speak/4`, an oversized payload would be
+    # canonicalized, hashed and looked up, and would take one of the user's
+    # hourly slots, all before the 200-character rule rejected it - which is why
+    # this asserts on the limiter and not only on the reply.
+    test "refuses an oversized payload without spending a slot", %{conn: conn, user: user} do
+      {:ok, view, _html} = live(conn, ~p"/hangeul")
+
+      oversized = String.duplicate("가", 1_000)
+      assert byte_size(oversized) > 1_000
+
+      render_hook(view, "audio:speak", %{"text" => oversized})
+
+      assert_reply view, %{error: "invalid_text"}
+      refute_received {Fake, :synthesize, _, _}
+
+      # Any window, so an hour boundary between here and the hook can't matter.
+      assert [] == :ets.match_object(RateLimiter, {{user.id, :_}, :_})
     end
 
     test "reports a request carrying no text at all", %{conn: conn} do
