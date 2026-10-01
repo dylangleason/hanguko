@@ -105,7 +105,15 @@ defmodule Hanguko.Audio.RateLimiter do
     if count <= limit do
       :ok
     else
-      :ets.update_counter(table, key, {2, -1})
+      # The decrement needs the same default as the increment. `sweep/2` can
+      # delete this row in between the two calls - `now` comes from the caller,
+      # so an hour boundary can fall between them - and `update_counter` raises
+      # on a missing key. Raising here would take the caller's LiveView down
+      # instead of degrading to browser speech.
+      #
+      # {2, -1, 0, 0}: subtract 1, but floor the result at 0 rather than
+      #                leaving a negative count behind for the window
+      :ets.update_counter(table, key, {2, -1, 0, 0}, {key, 0})
       {:error, :rate_limited}
     end
   end

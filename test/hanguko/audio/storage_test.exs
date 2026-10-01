@@ -79,5 +79,18 @@ defmodule Hanguko.Audio.StorageTest do
     test "is the directory every stored path resolves against" do
       assert Path.join(Storage.Local.root(), "te/st.mp3") == Storage.Local.full_path("te/st.mp3")
     end
+
+    # The Plug.Static in HangukoWeb.Endpoint resolves root/0 on every request
+    # under the audio prefix, whether or not audio is switched on, and root/0
+    # fetches the key rather than defaulting it. config/runtime.exs sets
+    # :storage_dir only inside its GOOGLE_TTS_API_KEY branch, so the base
+    # config has to carry a default: without one, a production build with no
+    # TTS key raises on any /audio request instead of falling through to 404.
+    # Read from the config files because the test environment sets its own.
+    test "is configured in production even when no TTS key switches audio on" do
+      audio = Config.Reader.read!("config/config.exs", env: :prod)[:hanguko][Hanguko.Audio]
+
+      assert Keyword.has_key?(audio, :storage_dir)
+    end
   end
 end
