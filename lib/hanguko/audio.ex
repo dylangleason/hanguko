@@ -429,5 +429,16 @@ defmodule Hanguko.Audio do
 
   defp configured_budget, do: config!(:characters_per_month)
 
-  defp config!(key), do: :hanguko |> Application.fetch_env!(__MODULE__) |> Keyword.fetch!(key)
+  @doc """
+  Fetches `key` from this module's own config, raising if either the config
+  block or the key is missing.
+
+  Shared with `Hanguko.Audio.Storage.Local` and `Hanguko.Audio.RateLimiter`,
+  which read other keys (`:storage_dir`, `:storage_url_prefix`,
+  `:requests_per_user_per_hour`) from the same `config :hanguko, Hanguko.Audio`
+  block. `Hanguko.Audio.Providers.Google` does not use this: its API key lives
+  under its own config key, deliberately separate (see that module's
+  `@moduledoc`).
+  """
+  def config!(key), do: :hanguko |> Application.fetch_env!(__MODULE__) |> Keyword.fetch!(key)
 end
