@@ -22,6 +22,13 @@ defmodule Hanguko.Audio do
   alias Hanguko.Korean
   alias Hanguko.Repo
 
+  # Generous ceiling on `speak/4`'s `text` argument, in bytes rather than
+  # characters because the point is to spend nothing deciding: this is checked
+  # before canonicalizing or hashing. The real limit - 200 characters of
+  # Korean, checked in `valid_text?/1` after canonicalization - is well under
+  # this even as three-byte Hangul with punctuation.
+  @max_text_bytes 1_000
+
   @doc """
   Generates a deterministic key for a Korean audio clip based on the text,
   provider and voice configuration. The key is generated using a SHA-256 hash
@@ -57,6 +64,25 @@ defmodule Hanguko.Audio do
   Takes the same `:provider` option as `clip_key/2`.
   """
   def enabled?(opts \\ []), do: not is_nil(get_provider(opts))
+
+  @doc """
+  Returns whether the learner in `scope` could get synthesized audio at all:
+  signed in, with a provider configured. This is the first two checks
+  `speak/4` makes, named once so a caller deciding whether to offer a speak
+  button - `HangukoWeb.AudioHook` - doesn't keep its own copy that can drift
+  from the real checks.
+
+  Doesn't check the rate limit, the monthly budget, or whether a clip already
+  exists - those depend on the text being spoken and are resolved only by
+  `speak/4` itself.
+
+  Takes the same `:provider` option as `clip_key/2`, so `speak/4` sees the
+  same answer for an overridden provider as a caller using the default
+  configuration.
+  """
+  def available?(scope, opts \\ []) do
+    match?(%Scope{user: %{}}, scope) and enabled?(opts)
+  end
 
   @doc """
   Returns `%{text => url}` for each of `texts` that already has a clip, in one
@@ -102,19 +128,30 @@ defmodule Hanguko.Audio do
 
   Checks run cheapest first, and only a miss is ever limited:
 
-    1. no signed-in user - `{:error, :unauthenticated}`. Anonymous visitors get
+    1. `text` larger than `@max_text_bytes` - `{:error, :invalid_text}`, before
+       anything else runs. This is a byte ceiling, not the real 200-character
+       rule, which is enforced in characters, after canonicalization, only on
+       a miss; this check exists so a payload too large to ever pass that rule
+       is turned away before it is canonicalized, hashed and counted against
+       the budget
+    2. no signed-in user - `{:error, :unauthenticated}`. Anonymous visitors get
        browser speech; synthesis is attributable or it doesn't happen
-    2. no provider configured - `{:error, :disabled}`
-    3. a stored clip - `{:ok, url}` immediately. Replaying audio costs nothing,
+    3. no provider configured - `{:error, :disabled}`
+    4. a stored clip - `{:ok, url}` immediately. Replaying audio costs nothing,
        so it takes no rate-limit slot and no budget
-    4. `Hanguko.Audio.RateLimiter` - `{:error, :rate_limited}` when this user
+    5. `Hanguko.Audio.RateLimiter` - `{:error, :rate_limited}` when this user
        has spent their allowance for the hour
-    5. the monthly budget - `{:error, :budget_exceeded}` when this month's
+    6. the monthly budget - `{:error, :budget_exceeded}` when this month's
        on-demand characters, plus this request's own, would pass the cap. The
        request counts itself, so one long text can't step over the cap. The cap
        is shared rather than per learner, so this is the one error here that
        isn't about the caller: see `characters_used/1`
-    6. `ensure_clip/2` with `source: :on_demand` and this user recorded
+    7. `ensure_clip/2` with `source: :on_demand` and this user recorded
+
+  Checks 2 and 3 are `available?/2` in disguise, kept as separate clauses only
+  so each can report its own reason; `available?/2` itself is for a caller
+  that only wants the yes-or-no, such as `HangukoWeb.AudioHook` deciding
+  whether to offer a speak button.
 
   Anything `ensure_clip/2` reports comes back unchanged, including
   `{:error, :invalid_text}` and provider or storage failures. Every error is
@@ -136,30 +173,33 @@ defmodule Hanguko.Audio do
   """
 
   def speak(scope, text, now, opts \\ [])
+
+  def speak(_scope, text, _now, _opts) when byte_size(text) > @max_text_bytes do
+    {:error, :invalid_text}
+  end
+
   def speak(nil, _text, _now, _opts), do: {:error, :unauthenticated}
   def speak(%Scope{user: nil}, _text, _now, _opts), do: {:error, :unauthenticated}
 
-  def speak(%Scope{user: user}, text, now, opts) do
-    case get_provider(opts) do
-      nil ->
-        {:error, :disabled}
+  def speak(%Scope{user: user} = scope, text, now, opts) do
+    if available?(scope, opts) do
+      key = clip_key(text, opts)
+      clip = get_clip(key)
+      storage = get_storage(opts)
 
-      _ ->
-        key = clip_key(text, opts)
-        clip = get_clip(key)
-        storage = get_storage(opts)
+      if is_nil(clip) do
+        opts = Keyword.merge(opts, requested_by_id: user.id, source: :on_demand)
 
-        if is_nil(clip) do
-          opts = Keyword.merge(opts, requested_by_id: user.id, source: :on_demand)
-
-          with :ok <- RateLimiter.take(user.id, now, Keyword.get(opts, :limiter, [])),
-               :ok <- check_budget(text, now, opts),
-               {:ok, clip} <- ensure_clip(text, opts) do
-            {:ok, clip.storage_path |> storage.url()}
-          end
-        else
+        with :ok <- RateLimiter.take(user.id, now, Keyword.get(opts, :limiter, [])),
+             :ok <- check_budget(text, now, opts),
+             {:ok, clip} <- ensure_clip(text, opts) do
           {:ok, clip.storage_path |> storage.url()}
         end
+      else
+        {:ok, clip.storage_path |> storage.url()}
+      end
+    else
+      {:error, :disabled}
     end
   end
 
