@@ -478,6 +478,15 @@ defmodule HangukoWeb.StudyLive do
     deck = params["deck"] && Content.get_deck_by_slug(params["deck"])
     enrolled = SRS.list_enrolled_decks(scope)
 
+    # Loaded from today's review logs rather than started at zero, so
+    # navigating away mid-session and back still shows the whole day's
+    # stats at the end, not just what's been reviewed since the remount.
+    session =
+      SRS.session_progress(scope, DateTime.utc_now(),
+        deck: deck,
+        settings: socket.assigns.settings
+      )
+
     socket =
       socket
       |> assign(:page_title, "Study")
@@ -488,11 +497,7 @@ defmodule HangukoWeb.StudyLive do
       |> assign(:next_audio, nil)
       |> assign(:last_log, nil)
       |> assign(:refresh_timer, nil)
-      |> assign(:session, %{
-        reviewed: 0,
-        ratings: %{1 => 0, 2 => 0, 3 => 0, 4 => 0},
-        duration_ms: 0
-      })
+      |> assign(:session, session)
 
     {:ok, load_next(socket)}
   end

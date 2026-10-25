@@ -225,6 +225,33 @@ defmodule Hanguko.SRS.Queries do
   @doc "Narrows a review log query to reviews made at or after `instant`."
   def reviewed_since(query, instant), do: where(query, [log: l], l.reviewed_at >= ^instant)
 
+  @doc "Narrows a review log query to reviews of `deck_id`'s cards. `nil` keeps every deck."
+  def logs_of_deck(query, nil), do: query
+
+  def logs_of_deck(query, deck_id) do
+    from [log: l] in query,
+      join: c in assoc(l, :card),
+      join: i in assoc(c, :item),
+      where: i.deck_id == ^deck_id
+  end
+
+  @doc """
+  `%{reviewed: count, duration_ms: total, rating_1: count, ..., rating_4:
+  count}` for a review log query: how many reviews it covers, how long they
+  took, and how many landed on each rating.
+  """
+  def rating_totals(query) do
+    from [log: l] in query,
+      select: %{
+        reviewed: count(l.id),
+        duration_ms: coalesce(sum(l.duration_ms), 0),
+        rating_1: filter(count(l.id), l.rating == 1),
+        rating_2: filter(count(l.id), l.rating == 2),
+        rating_3: filter(count(l.id), l.rating == 3),
+        rating_4: filter(count(l.id), l.rating == 4)
+      }
+  end
+
   @doc """
   Narrows a review log query to reviews of cards that were already in review,
   leaving out learning and relearning steps.

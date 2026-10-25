@@ -152,6 +152,24 @@ defmodule HangukoWeb.StudyLiveTest do
       assert has_element?(view, "#session-stats", "100%")
     end
 
+    test "resuming after navigating away keeps the whole day's stats", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/study?deck=food")
+
+      render_hook(view, "flip", %{})
+      rate(view, 4)
+      assert has_element?(view, "#card-front", "물")
+
+      # Navigating back to the study page, e.g. via the browser back button,
+      # tears down and remounts the LiveView.
+      {:ok, view, _html} = live(conn, ~p"/study?deck=food")
+
+      render_hook(view, "flip", %{})
+      rate(view, 4)
+
+      assert has_element?(view, "#session-done", "Nice work!")
+      assert has_element?(view, "#session-stats", "Cards 2")
+    end
+
     test "shows a summary when the session is done", %{conn: conn, scope: scope} do
       {:ok, _} = SRS.update_settings(scope, %{daily_new_limit: 1})
       {:ok, view, _html} = live(conn, ~p"/study")

@@ -10,7 +10,7 @@ defmodule Hanguko.SRS do
   alias Hanguko.Accounts.Scope
   alias Hanguko.Content
   alias Hanguko.Content.Deck
-  alias Hanguko.SRS.{Card, DeckEnrollment, Queries, Queue, ReviewLog, Scheduler, Settings}
+  alias Hanguko.SRS.{Card, Day, DeckEnrollment, Queries, Queue, ReviewLog, Scheduler, Settings}
 
   ## Enrollment
 
@@ -105,6 +105,49 @@ defmodule Hanguko.SRS do
     settings = opts[:settings] || get_settings(scope)
     deck_id = if deck = opts[:deck], do: deck.id
     Queue.build(user.id, settings, now, deck_id: deck_id)
+  end
+
+  @doc """
+  The scope's reviews so far in the study day containing `now`:
+  `%{reviewed: count, ratings: %{1 => count, 2 => count, 3 => count, 4 =>
+  count}, duration_ms: total}`.
+
+  A study session spans a whole study day, not just the time since the
+  study page was last loaded: it's how a learner who navigates away mid-way
+  through and comes back later sees the full count, rather than one that
+  restarted at zero.
+
+  ## Options
+
+    * `:deck` - only reviews of this (enrolled) deck's cards
+    * `:settings` - the user's settings, if already loaded
+  """
+  def session_progress(%Scope{user: user} = scope, %DateTime{} = now, opts \\ []) do
+    settings = opts[:settings] || get_settings(scope)
+
+    {day_start, _day_end} =
+      Day.bounds(now, Settings.timezone(settings), settings.day_rollover_hour)
+
+    deck_id = if deck = opts[:deck], do: deck.id
+
+    totals =
+      user.id
+      |> Queries.review_logs()
+      |> Queries.reviewed_since(day_start)
+      |> Queries.logs_of_deck(deck_id)
+      |> Queries.rating_totals()
+      |> Repo.one()
+
+    %{
+      reviewed: totals.reviewed,
+      ratings: %{
+        1 => totals.rating_1,
+        2 => totals.rating_2,
+        3 => totals.rating_3,
+        4 => totals.rating_4
+      },
+      duration_ms: totals.duration_ms
+    }
   end
 
   @doc """
